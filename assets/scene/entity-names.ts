@@ -7,5 +7,5 @@
 export enum EntityNames {
   Background_gltf = "Background.gltf",
   Ship_gltf = "Ship.gltf",
-  TestPlanet_gltf = "TestPlanet.gltf",
+  Star_gltf = "Star.gltf",
 } 

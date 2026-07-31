@@ -194,9 +194,9 @@
         "serializationType": "map"
       },
       "data": {
-        "1": {
+        "0": {
           "json": {
-            "gizmo": 2
+            "gizmo": 3
           }
         }
       }

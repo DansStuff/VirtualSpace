@@ -1,7 +1,7 @@
 import { engine, InputAction, inputSystem, PointerEventType } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { movePlayerTo } from '~system/RestrictedActions'
-import { SCENE_SHIP_POSITION } from './ship'
+import { CELESTIAL_SPHERE_INSET, SCENE_SHIP_POSITION } from './ship'
 
 /**
  * Returns the conjugate of a quaternion (-x, -y, -z, w).
@@ -44,26 +44,37 @@ export function directionFromTo(
 }
 
 /**
- * Computes Transform scale for a planet model authored at radius 1.
- *
- * In virtual space the planet has radius `virtualRadius`. On the enclosing sphere
- * we preserve its approximate angular size: scale ≈ virtualRadius * sphereRadius / distance.
+ * Angular radius (radians) of a virtual body as seen from the ship.
+ * Uses the sphere relation sin(α) = radius / distance when the body is not engulfing.
  */
-export function apparentScaleOnSphere(
-  distance: number,
-  sphereRadius: number,
-  virtualRadius: number,
+export function virtualAngularRadius(virtualRadius: number, virtualDistance: number): number {
+  if (virtualDistance < 1e-8) {
+    return Math.PI / 2
+  }
+  const ratio = virtualRadius / virtualDistance
+  if (ratio >= 1) {
+    return Math.PI / 2
+  }
+  return Math.asin(ratio)
+}
+
+/**
+ * Transform scale for a radius-1 mesh so it subtends `angularRadius` at
+ * `distanceFromViewer` (player → body center on the shell).
+ *
+ * scale = distance * sin(α). Same camera FOV (e.g. 50°) views virtual and scene
+ * space, so matching world angular size keeps on-screen size stable as the player walks.
+ */
+export function scaleForAngularRadiusAtDistance(
+  angularRadius: number,
+  distanceFromViewer: number,
   minScale: number = 0.01,
   maxScale: number = 40
 ): number {
-  // Step 1: avoid division by zero when the ship is on top of the body.
-  if (distance < 1e-8) {
+  if (distanceFromViewer < 1e-8) {
     return maxScale
   }
-  // Step 2: angular-size falloff — larger virtualRadius and/or nearer distance → bigger on screen.
-  //         Because the mesh itself has radius 1, this scale IS the apparent scene radius.
-  const scale = virtualRadius * (sphereRadius / distance)
-  // Step 3: clamp so planets never vanish or explode in size.
+  const scale = distanceFromViewer * Math.sin(angularRadius)
   return Math.min(maxScale, Math.max(minScale, scale))
 }
 
@@ -86,36 +97,66 @@ export function stationaryBodySceneRotation(shipVirtualRotation: Quaternion): Qu
 }
 
 /**
- * Projects a body from virtual space onto the enclosing scene sphere around the ship.
+ * Forward hit distance along a ray against a sphere (player is assumed inside).
+ * Solves |origin + t*dir - center|^2 = radius^2 and returns the t > 0 root.
+ */
+export function raySphereForwardDistance(
+  rayOrigin: Vector3,
+  rayDirection: Vector3,
+  sphereCenter: Vector3,
+  sphereRadius: number
+): number {
+  const originRelative = Vector3.subtract(rayOrigin, sphereCenter)
+  const b = Vector3.dot(originRelative, rayDirection)
+  const c = Vector3.lengthSquared(originRelative) - sphereRadius * sphereRadius
+  const discriminant = b * b - c
+  if (discriminant <= 0) {
+    // Numerical fallback if the player is slightly outside / grazing.
+    return Math.max(0.01, -b + sphereRadius)
+  }
+  return -b + Math.sqrt(discriminant)
+}
+
+/**
+ * Projects a body from virtual space onto a *fixed* enclosing scene sphere.
  *
- * The ship model stays fixed in the scene; only this projection moves, creating the
- * illusion that the ship is flying through a universe of distant planets.
+ * Direction comes from the virtual ship pose. The ray starts at the local player
+ * (free to move inside the sphere) and hits the shell — so walking closer to one
+ * side shortens that ray without moving the sphere itself.
  */
 export function projectVirtualBodyToSceneSphere(
   bodyVirtualPosition: Vector3,
   shipVirtualPosition: Vector3,
   shipVirtualRotation: Quaternion,
-  shipScenePosition: Vector3,
+  sphereCenter: Vector3,
+  rayOrigin: Vector3,
   sphereRadius: number,
   virtualRadius: number
 ): SphereProjection {
   // Step 1: world-space offset from the ship to the body in virtual coordinates.
   const offset = Vector3.subtract(bodyVirtualPosition, shipVirtualPosition)
-  // Step 2: true virtual distance (used for scale / depth illusion).
+  // Step 2: true virtual distance (for apparent size).
   const distance = Vector3.length(offset)
   // Step 3: unit direction from ship → body in virtual world space.
   const worldDirection = directionFromTo(shipVirtualPosition, bodyVirtualPosition)
-  // Step 4: rotate that direction into the ship's local frame so ship yaw/pitch/roll
-  //         moves planets around the enclosing sphere (not just translation).
+  // Step 4: express that direction in the ship's local / scene frame.
   const localDirection = rotateByInverse(worldDirection, shipVirtualRotation)
-  // Step 5: place the body on the enclosing sphere around the stationary scene ship.
-  const position = Vector3.add(shipScenePosition, Vector3.scale(localDirection, sphereRadius))
-  // Step 6: orient the mesh in the ship's frame. Planet has no virtual spin — only the
-  //         ship's changing viewpoint makes different faces appear toward the camera.
+  // Step 5: desired angular size from virtual radius + virtual distance (FOV-independent).
+  const angularRadius = virtualAngularRadius(virtualRadius, distance)
+  // Step 6: cast from the player onto the fixed shell at (40,40,40), then inset.
+  const hitDistance = raySphereForwardDistance(
+    rayOrigin,
+    localDirection,
+    sphereCenter,
+    sphereRadius
+  )
+  const centerDistance = Math.max(0.01, hitDistance - CELESTIAL_SPHERE_INSET)
+  const position = Vector3.add(rayOrigin, Vector3.scale(localDirection, centerDistance))
+  // Step 7: scale the radius-1 model so it keeps that angular size at the *actual*
+  //         player→body distance (shrinks when you walk closer, grows when farther).
+  const scale = scaleForAngularRadiusAtDistance(angularRadius, centerDistance)
+  // Step 8: orient the mesh for a non-spinning body under the ship's viewpoint.
   const rotation = stationaryBodySceneRotation(shipVirtualRotation)
-  // Step 7: scale from virtual radius + distance. Models are radius 1, so scale equals
-  //         the apparent radius on the enclosing sphere.
-  const scale = apparentScaleOnSphere(distance, sphereRadius, virtualRadius)
 
   return { position, rotation, scale, distance }
 }

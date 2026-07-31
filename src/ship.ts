@@ -4,8 +4,14 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 /** Fixed scene-space anchor for the visible ship model. */
 export const SCENE_SHIP_POSITION = Vector3.create(40, 40, 40)
 
-/** Radius of the enclosing sphere centered on the ship; planets are pinned to this shell. */
+/** Radius of the fixed enclosing sphere centered on SCENE_SHIP_POSITION. */
 export const ENCLOSING_SPHERE_RADIUS = 40
+
+/** Pull celestial body centers inward from the shell along the view ray (meters). */
+export const CELESTIAL_SPHERE_INSET = 0.75
+
+/** Assumed player camera vertical FOV (degrees). Angular matching is FOV-independent. */
+export const STANDARD_PLAYER_FOV_DEGREES = 50
 
 // NOTE: the ship should be synced once multiplayer is implemented
 export const ship = engine.addEntity()

@@ -10,33 +10,38 @@ import {
 import { projectVirtualBodyToSceneSphere } from './utilities'
 
 /**
- * Each frame, reproject every planet onto the enclosing sphere around the stationary
- * ship model. Virtual ship position and rotation both affect where planets appear.
+ * Each frame, reproject every planet onto the fixed enclosing sphere at scene center.
+ * Rays start at the local player (inside the sphere) and travel in the virtual
+ * celestial direction until they hit the shell.
  */
 export function PlanetSystem(_dt: number) {
   // Step 1: read the ship's virtual pose (not the fixed scene Transform).
   const virtualPosition = shipVirtualPosition
   const virtualRotation = shipVirtualRotation
 
-  // Step 2: visit every planet that has both simulation data and a scene Transform.
+  // Step 2: ray origin is the player; sphere stays fixed at the ship / scene anchor.
+  let rayOrigin = SCENE_SHIP_POSITION
+  if (Transform.has(engine.PlayerEntity)) {
+    rayOrigin = Transform.get(engine.PlayerEntity).position
+  }
+
+  // Step 3: visit every planet that has both simulation data and a scene Transform.
   for (const [entity, planet] of engine.getEntitiesWith(PlanetData, Transform)) {
-    // Step 3: get a writable Transform so we can move/scale the visible planet model.
+    // Step 4: get a writable Transform so we can move/scale the visible planet model.
     const transform = Transform.getMutable(entity)
 
-    // Step 4: project this planet's virtual coordinates onto the enclosing sphere.
-    //         - position on the sphere comes from direction relative to the ship
-    //         - rotation is inverse(ship) so a non-spinning planet shows the correct face
-    //         - scale uses virtual radius + distance (models are authored at radius 1)
+    // Step 5: player → celestial direction → intersection with the fixed sphere.
     const projection = projectVirtualBodyToSceneSphere(
       planet.position,
       virtualPosition,
       virtualRotation,
       SCENE_SHIP_POSITION,
+      rayOrigin,
       ENCLOSING_SPHERE_RADIUS,
       planet.radius
     )
 
-    // Step 5: apply the projected scene pose to the planet entity.
+    // Step 6: apply projected pose (center on the fixed enclosing sphere).
     transform.position = projection.position
     transform.rotation = projection.rotation
     transform.scale = Vector3.create(projection.scale, projection.scale, projection.scale)
@@ -48,7 +53,9 @@ export function PlanetSystem(_dt: number) {
 // local ±X axis while we face the tangent, which makes scene Y/Z look "stuck" at 40.
 const RADIUS = 10000
 const CENTER = { x: 0, y: 0, z: 0 }
-const SPEED = 0.15
+const SPEED = 0.1
+/** Bank into the turn (degrees). lookRotation makes local +X outward, so negative roll tips inward. */
+const INWARD_BANK_DEGREES = -6
 
 let angle = 0
 
@@ -65,13 +72,13 @@ export function TestShipAnimator(dt: number) {
   shipVirtualPosition.y = CENTER.y
   shipVirtualPosition.z = CENTER.z + Math.sin(angle) * RADIUS
 
-  // Step 3: face along the circle tangent so yaw changes each frame.
-  //         Direction ship→CENTER is always perpendicular to this tangent, so a planet
-  //         at CENTER projects to a fixed local side (±X) on the enclosing sphere.
+  // Step 3: face along the circle tangent, then apply a slight inward roll (bank).
   const tangent = Vector3.create(-Math.sin(angle), 0, Math.cos(angle))
   const facing = Quaternion.lookRotation(tangent)
-  shipVirtualRotation.x = facing.x
-  shipVirtualRotation.y = facing.y
-  shipVirtualRotation.z = facing.z
-  shipVirtualRotation.w = facing.w
+  const bank = Quaternion.fromAngleAxis(-INWARD_BANK_DEGREES, Vector3.Forward())
+  const orientation = Quaternion.multiply(facing, bank)
+  shipVirtualRotation.x = orientation.x
+  shipVirtualRotation.y = orientation.y
+  shipVirtualRotation.z = orientation.z
+  shipVirtualRotation.w = orientation.w
 }
