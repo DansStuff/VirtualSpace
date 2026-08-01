@@ -53,7 +53,7 @@ export function PlanetSystem(_dt: number) {
 // local ±X axis while we face the tangent, which makes scene Y/Z look "stuck" at 40.
 const RADIUS = 10000
 const CENTER = { x: 0, y: 0, z: 0 }
-const SPEED = 0.1
+const SPEED = 0.2
 /** Bank into the turn (degrees). lookRotation makes local +X outward, so negative roll tips inward. */
 const INWARD_BANK_DEGREES = -6
 

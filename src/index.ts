@@ -17,7 +17,7 @@ export function main() {
     position: Vector3.create(0, 0, 0),
     radius: 3500
   })
-  createPlanet('assets/scene/Models/TestPlanet.gltf', {
+  createPlanet('assets/scene/Models/TestMoon.gltf', {
     name: 'TestMoon',
     position: Vector3.create(20000, 0, 0),
     radius: 1000

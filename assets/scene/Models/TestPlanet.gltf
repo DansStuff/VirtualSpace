@@ -8,23 +8,39 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				0
+				0,
+				1
 			]
 		}
 	],
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Sphere"
+			"name":"Clouds"
+		},
+		{
+			"mesh":1,
+			"name":"Land"
 		}
 	],
 	"materials":[
 		{
+			"alphaMode":"BLEND",
 			"doubleSided":true,
 			"name":"AtlasEmissive",
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
 					"index":0
+				},
+				"metallicFactor":0
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"AtlasEmissive.001",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":1
 				},
 				"metallicFactor":0
 			}
@@ -44,19 +60,42 @@
 					"material":0
 				}
 			]
+		},
+		{
+			"name":"Sphere.006",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":4,
+						"NORMAL":5,
+						"TEXCOORD_0":6
+					},
+					"indices":3,
+					"material":1
+				}
+			]
 		}
 	],
 	"textures":[
 		{
 			"sampler":0,
 			"source":0
+		},
+		{
+			"sampler":0,
+			"source":1
 		}
 	],
 	"images":[
 		{
 			"mimeType":"image/png",
-			"name":"texture_atlas",
-			"uri":"texture_atlas.png"
+			"name":"CloudsDiffuse",
+			"uri":"CloudsDiffuse.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"TerrainDiffuse",
+			"uri":"TerrainDiffuse.png"
 		}
 	],
 	"accessors":[
@@ -65,14 +104,14 @@
 			"componentType":5126,
 			"count":559,
 			"max":[
-				0.9999997019767761,
-				1,
-				0.9999993443489075
+				1.072522521018982,
+				1.0725228786468506,
+				1.0725221633911133
 			],
 			"min":[
-				-0.9999990463256836,
-				-1,
-				-1
+				-1.0725219249725342,
+				-1.0725228786468506,
+				-1.0725228786468506
 			],
 			"type":"VEC3"
 		},
@@ -93,6 +132,34 @@
 			"componentType":5123,
 			"count":2880,
 			"type":"SCALAR"
+		},
+		{
+			"bufferView":4,
+			"componentType":5126,
+			"count":559,
+			"max":[
+				0.9999997019767761,
+				1,
+				0.9999993443489075
+			],
+			"min":[
+				-0.9999990463256836,
+				-1,
+				-1
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":5,
+			"componentType":5126,
+			"count":559,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":6,
+			"componentType":5126,
+			"count":559,
+			"type":"VEC2"
 		}
 	],
 	"bufferViews":[
@@ -119,6 +186,24 @@
 			"byteLength":5760,
 			"byteOffset":17888,
 			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":6708,
+			"byteOffset":23648,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":6708,
+			"byteOffset":30356,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":4472,
+			"byteOffset":37064,
+			"target":34962
 		}
 	],
 	"samplers":[
@@ -129,7 +214,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":23648,
+			"byteLength":41536,
 			"uri":"TestPlanet.bin"
 		}
 	]
