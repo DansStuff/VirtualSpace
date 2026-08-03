@@ -3,6 +3,8 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { PlanetData } from './components'
 import {
   ENCLOSING_SPHERE_RADIUS,
+  FIGURE8_MIDPOINT,
+  FIGURE8_SCALE,
   SCENE_SHIP_POSITION,
   shipVirtualPosition,
   shipVirtualRotation
@@ -48,37 +50,43 @@ export function PlanetSystem(_dt: number) {
   }
 }
 
-// Virtual orbit used only for testing ship motion / planet parallax.
-// CENTER is the orbit's hub — a planet sitting exactly there stays forever on the ship's
-// local ±X axis while we face the tangent, which makes scene Y/Z look "stuck" at 40.
-const RADIUS = 10000
-const CENTER = { x: 0, y: 0, z: 0 }
+// Figure-8 (Bernoulli lemniscate) test path with foci at FOCUS_A / FOCUS_B.
 const SPEED = 0.2
-/** Bank into the turn (degrees). lookRotation makes local +X outward, so negative roll tips inward. */
-const INWARD_BANK_DEGREES = -6
 
-let angle = 0
+let pathT = 0
+
+/** Bernoulli lemniscate in XZ, centered on FIGURE8_MIDPOINT, foci at FOCUS_A/B. */
+function lemniscatePosition(t: number): Vector3.Mutable {
+  const sinT = Math.sin(t)
+  const cosT = Math.cos(t)
+  const denom = 1 + sinT * sinT
+  return Vector3.create(
+    FIGURE8_MIDPOINT.x + (FIGURE8_SCALE * cosT) / denom,
+    FIGURE8_MIDPOINT.y,
+    FIGURE8_MIDPOINT.z + (FIGURE8_SCALE * sinT * cosT) / denom
+  )
+}
 
 /**
- * Animates the ship's *virtual* pose. The visible ship model stays at (40, 40, 40);
- * planets slide around the enclosing sphere in response to this motion.
+ * Animates the ship's *virtual* pose along a figure-8 around the two test planets.
+ * The visible ship model stays at (40, 40, 40).
  */
 export function TestShipAnimator(dt: number) {
-  // Step 1: advance the orbit angle in virtual space.
-  angle += SPEED * dt
+  // Step 1: advance the path parameter.
+  pathT += SPEED * dt
 
-  // Step 2: place the virtual ship on a large horizontal circle around CENTER.
-  shipVirtualPosition.x = CENTER.x + Math.cos(angle) * RADIUS
-  shipVirtualPosition.y = CENTER.y
-  shipVirtualPosition.z = CENTER.z + Math.sin(angle) * RADIUS
+  // Step 2: place the virtual ship on the lemniscate.
+  const position = lemniscatePosition(pathT)
+  shipVirtualPosition.x = position.x
+  shipVirtualPosition.y = position.y
+  shipVirtualPosition.z = position.z
 
-  // Step 3: face along the circle tangent, then apply a slight inward roll (bank).
-  const tangent = Vector3.create(-Math.sin(angle), 0, Math.cos(angle))
+  // Step 3: face along the path tangent only (no bank — nearest-focus roll flips caused jumps).
+  const ahead = lemniscatePosition(pathT + 0.01)
+  const tangent = Vector3.normalize(Vector3.subtract(ahead, position))
   const facing = Quaternion.lookRotation(tangent)
-  const bank = Quaternion.fromAngleAxis(-INWARD_BANK_DEGREES, Vector3.Forward())
-  const orientation = Quaternion.multiply(facing, bank)
-  shipVirtualRotation.x = orientation.x
-  shipVirtualRotation.y = orientation.y
-  shipVirtualRotation.z = orientation.z
-  shipVirtualRotation.w = orientation.w
+  shipVirtualRotation.x = facing.x
+  shipVirtualRotation.y = facing.y
+  shipVirtualRotation.z = facing.z
+  shipVirtualRotation.w = facing.w
 }
