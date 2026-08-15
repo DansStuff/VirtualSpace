@@ -1,7 +1,7 @@
 import { engine, InputAction, inputSystem, PointerEventType } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { movePlayerTo } from '~system/RestrictedActions'
-import { CELESTIAL_SPHERE_INSET, SCENE_SHIP_POSITION } from './ship'
+import { CELESTIAL_SPHERE_INSET, ENCLOSING_SPHERE_RADIUS, SCENE_SHIP_POSITION } from './ship'
 
 /**
  * Returns the conjugate of a quaternion (-x, -y, -z, w).
@@ -69,7 +69,7 @@ export function scaleForAngularRadiusAtDistance(
   angularRadius: number,
   distanceFromViewer: number,
   minScale: number = 0.01,
-  maxScale: number = 40
+  maxScale: number = ENCLOSING_SPHERE_RADIUS
 ): number {
   if (distanceFromViewer < 1e-8) {
     return maxScale
@@ -143,7 +143,7 @@ export function projectVirtualBodyToSceneSphere(
   const localDirection = rotateByInverse(worldDirection, shipVirtualRotation)
   // Step 5: desired angular size from virtual radius + virtual distance (FOV-independent).
   const angularRadius = virtualAngularRadius(virtualRadius, distance)
-  // Step 6: cast from the player onto the fixed shell at (40,40,40), then inset.
+  // Step 6: cast from the player onto the fixed enclosing shell, then inset.
   const hitDistance = raySphereForwardDistance(
     rayOrigin,
     localDirection,
@@ -162,7 +162,7 @@ export function projectVirtualBodyToSceneSphere(
 }
 
 /**
- * Debug helper: teleport the local player back to the ship anchor (40, 40, 40).
+ * Debug helper: teleport the local player back to the ship / enclosing-sphere center.
  *
  * Decentraland does not expose letter keys (including "T") as InputActions, so this
  * listens for IA_ACTION_3 — the "1" key on desktop.

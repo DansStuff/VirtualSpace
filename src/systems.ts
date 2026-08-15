@@ -69,7 +69,7 @@ function lemniscatePosition(t: number): Vector3.Mutable {
 
 /**
  * Animates the ship's *virtual* pose along a figure-8 around the two test planets.
- * The visible ship model stays at (40, 40, 40).
+ * The visible ship model stays at SCENE_SHIP_POSITION.
  */
 export function TestShipAnimator(dt: number) {
   // Step 1: advance the path parameter.

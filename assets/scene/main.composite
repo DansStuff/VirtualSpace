@@ -58,17 +58,12 @@
         "serializationType": "transform"
       },
       "data": {
-        "514": {
+        "512": {
           "json": {
             "position": {
               "x": 0,
               "y": 0,
               "z": 0
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "rotation": {
               "x": 0,
@@ -76,10 +71,15 @@
               "z": 0,
               "w": 1
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "parent": 0
           }
         },
-        "516": {
+        "514": {
           "json": {
             "position": {
               "x": 0,
@@ -103,20 +103,20 @@
         "518": {
           "json": {
             "position": {
-              "x": 34.5,
-              "y": 44.75,
-              "z": 31.5
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
+              "x": 58.12126922607422,
+              "y": 63.230716705322266,
+              "z": 54.73446273803711
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -124,20 +124,20 @@
         "519": {
           "json": {
             "position": {
-              "x": 46,
-              "y": 44.75,
-              "z": 31.5
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
+              "x": 69.62126922607422,
+              "y": 63.230716705322266,
+              "z": 54.73446273803711
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -153,17 +153,17 @@
         "protocolBuffer": "PBGltfContainer"
       },
       "data": {
+        "512": {
+          "json": {
+            "src": "assets/scene/Models/Ship.gltf",
+            "visibleMeshesCollisionMask": 3,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
         "514": {
           "json": {
             "src": "assets/scene/Models/Background.gltf",
             "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 3
-          }
-        },
-        "516": {
-          "json": {
-            "src": "assets/scene/Models/Ship.gltf",
-            "visibleMeshesCollisionMask": 3,
             "invisibleMeshesCollisionMask": 3
           }
         }
@@ -182,14 +182,14 @@
         "serializationType": "map"
       },
       "data": {
+        "512": {
+          "json": {
+            "value": "Ship.gltf"
+          }
+        },
         "514": {
           "json": {
             "value": "Background.gltf"
-          }
-        },
-        "516": {
-          "json": {
-            "value": "Ship.gltf"
           }
         },
         "518": {
@@ -293,7 +293,7 @@
       "data": {
         "0": {
           "json": {
-            "gizmo": 0
+            "gizmo": 1
           }
         }
       }
@@ -345,9 +345,9 @@
                 "open": true,
                 "children": [
                   514,
-                  516,
                   518,
-                  519
+                  519,
+                  512
                 ]
               },
               {
@@ -363,15 +363,15 @@
                 "children": []
               },
               {
-                "entity": 516,
-                "children": []
-              },
-              {
                 "entity": 518,
                 "children": []
               },
               {
                 "entity": 519,
+                "children": []
+              },
+              {
+                "entity": 512,
                 "children": []
               }
             ]
@@ -396,10 +396,10 @@
         "serializationType": "map"
       },
       "data": {
-        "514": {
+        "512": {
           "json": {}
         },
-        "516": {
+        "514": {
           "json": {}
         },
         "518": {
@@ -982,7 +982,7 @@
       }
     },
     {
-      "name": "inspector::SceneMetadata-v4",
+      "name": "inspector::SceneMetadata-v5",
       "jsonSchema": {
         "type": "object",
         "properties": {
@@ -1308,6 +1308,14 @@
               "type": "boolean",
               "serializationType": "boolean"
             }
+          },
+          "hideLandscapeTerrain": {
+            "type": "boolean",
+            "serializationType": "optional",
+            "optionalJsonSchema": {
+              "type": "boolean",
+              "serializationType": "boolean"
+            }
           }
         },
         "serializationType": "map"
@@ -1317,13 +1325,11 @@
           "json": {
             "name": "VirtualSpace",
             "description": "Space movement sample",
-            "thumbnail": "assets/images/autogenerated-thumbnail.png",
+            "thumbnail": "assets/scene/Images/blender_6fR8uFrIzt.png",
             "ageRating": "A",
             "categories": [],
             "author": "DanL",
-            "tags": [
-              ""
-            ],
+            "tags": [],
             "layout": {
               "base": {
                 "x": 0,
@@ -1332,6 +1338,102 @@
               "parcels": [
                 {
                   "x": 0,
+                  "y": 7
+                },
+                {
+                  "x": 1,
+                  "y": 7
+                },
+                {
+                  "x": 2,
+                  "y": 7
+                },
+                {
+                  "x": 3,
+                  "y": 7
+                },
+                {
+                  "x": 4,
+                  "y": 7
+                },
+                {
+                  "x": 5,
+                  "y": 7
+                },
+                {
+                  "x": 6,
+                  "y": 7
+                },
+                {
+                  "x": 7,
+                  "y": 7
+                },
+                {
+                  "x": 0,
+                  "y": 6
+                },
+                {
+                  "x": 1,
+                  "y": 6
+                },
+                {
+                  "x": 2,
+                  "y": 6
+                },
+                {
+                  "x": 3,
+                  "y": 6
+                },
+                {
+                  "x": 4,
+                  "y": 6
+                },
+                {
+                  "x": 5,
+                  "y": 6
+                },
+                {
+                  "x": 6,
+                  "y": 6
+                },
+                {
+                  "x": 7,
+                  "y": 6
+                },
+                {
+                  "x": 0,
+                  "y": 5
+                },
+                {
+                  "x": 1,
+                  "y": 5
+                },
+                {
+                  "x": 2,
+                  "y": 5
+                },
+                {
+                  "x": 3,
+                  "y": 5
+                },
+                {
+                  "x": 4,
+                  "y": 5
+                },
+                {
+                  "x": 5,
+                  "y": 5
+                },
+                {
+                  "x": 6,
+                  "y": 5
+                },
+                {
+                  "x": 7,
+                  "y": 5
+                },
+                {
+                  "x": 0,
                   "y": 4
                 },
                 {
@@ -1348,6 +1450,18 @@
                 },
                 {
                   "x": 4,
+                  "y": 4
+                },
+                {
+                  "x": 5,
+                  "y": 4
+                },
+                {
+                  "x": 6,
+                  "y": 4
+                },
+                {
+                  "x": 7,
                   "y": 4
                 },
                 {
@@ -1371,6 +1485,18 @@
                   "y": 3
                 },
                 {
+                  "x": 5,
+                  "y": 3
+                },
+                {
+                  "x": 6,
+                  "y": 3
+                },
+                {
+                  "x": 7,
+                  "y": 3
+                },
+                {
                   "x": 0,
                   "y": 2
                 },
@@ -1391,6 +1517,18 @@
                   "y": 2
                 },
                 {
+                  "x": 5,
+                  "y": 2
+                },
+                {
+                  "x": 6,
+                  "y": 2
+                },
+                {
+                  "x": 7,
+                  "y": 2
+                },
+                {
                   "x": 0,
                   "y": 1
                 },
@@ -1411,6 +1549,18 @@
                   "y": 1
                 },
                 {
+                  "x": 5,
+                  "y": 1
+                },
+                {
+                  "x": 6,
+                  "y": 1
+                },
+                {
+                  "x": 7,
+                  "y": 1
+                },
+                {
                   "x": 0,
                   "y": 0
                 },
@@ -1428,6 +1578,18 @@
                 },
                 {
                   "x": 4,
+                  "y": 0
+                },
+                {
+                  "x": 5,
+                  "y": 0
+                },
+                {
+                  "x": 6,
+                  "y": 0
+                },
+                {
+                  "x": 7,
                   "y": 0
                 }
               ]
@@ -1440,26 +1602,26 @@
                   "x": {
                     "$case": "range",
                     "value": [
-                      36.7599983215332,
-                      39.7599983215332
+                      62.7599983215332,
+                      65.76000213623047
                     ]
                   },
                   "y": {
                     "$case": "single",
-                    "value": 41.61000061035156
+                    "value": 59.86000061035156
                   },
                   "z": {
                     "$case": "range",
                     "value": [
-                      37.540000915527344,
-                      40.540000915527344
+                      59.040000915527344,
+                      62.040000915527344
                     ]
                   }
                 },
                 "cameraTarget": {
-                  "x": 39.630001068115234,
-                  "y": 42.68000030517578,
-                  "z": 46.77000045776367
+                  "x": 63.880001068115234,
+                  "y": 61.93000030517578,
+                  "z": 75.2699966430664
                 }
               }
             ],

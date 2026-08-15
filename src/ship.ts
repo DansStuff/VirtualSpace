@@ -1,11 +1,18 @@
 import { engine, Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
-/** Fixed scene-space anchor for the visible ship model. */
-export const SCENE_SHIP_POSITION = Vector3.create(40, 40, 40)
+/**
+ * Radius of the fixed enclosing celestial sphere (scene meters).
+ * Ship / sphere center sits at (R, R, R) so the shell fits a 2R cube from the origin.
+ */
+export const ENCLOSING_SPHERE_RADIUS = 64
 
-/** Radius of the fixed enclosing sphere centered on SCENE_SHIP_POSITION. */
-export const ENCLOSING_SPHERE_RADIUS = 40
+/** Fixed scene-space anchor for the visible ship model (center of the enclosing sphere). */
+export const SCENE_SHIP_POSITION = Vector3.create(
+  ENCLOSING_SPHERE_RADIUS,
+  ENCLOSING_SPHERE_RADIUS,
+  ENCLOSING_SPHERE_RADIUS
+)
 
 /** Pull celestial body centers inward from the shell along the view ray (meters). */
 export const CELESTIAL_SPHERE_INSET = 0.75
