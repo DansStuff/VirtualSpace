@@ -1,8 +1,8 @@
 import { engine } from '@dcl/sdk/ecs'
-import { createPlanet, spawnDistantStars } from './factory'
+import { createPlanet, spawnDistantStars, setupAsteroids } from './factory'
 import { FOCUS_A, FOCUS_B } from './ship'
 import { setupUi } from './ui'
-import { PlanetSystem, TestShipAnimator } from './systems'
+import { AsteroidSystem, PlanetSystem, TestShipAnimator } from './systems'
 import { setupDebugTeleportToShip } from './utilities'
 
 export function main() {
@@ -21,8 +21,10 @@ export function main() {
     radius: 1000
   })
   spawnDistantStars(40)
+  setupAsteroids()
 
   engine.addSystem(PlanetSystem)
   engine.addSystem(TestShipAnimator)
+  engine.addSystem(AsteroidSystem)
   setupDebugTeleportToShip()
 }

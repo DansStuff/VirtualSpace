@@ -1,6 +1,6 @@
-import { engine, Transform } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-import { PlanetData } from './components'
+import { AsteroidData, PlanetData } from './components'
 import {
   ENCLOSING_SPHERE_RADIUS,
   FIGURE8_MIDPOINT,
@@ -89,4 +89,37 @@ export function TestShipAnimator(dt: number) {
   shipVirtualRotation.y = facing.y
   shipVirtualRotation.z = facing.z
   shipVirtualRotation.w = facing.w
+}
+
+/** Degrees per second — slow tumble, not a fast spin. */
+const ASTEROID_SPIN_SPEED = 12
+
+const asteroidSpinAxes = new Map<Entity, Vector3>()
+
+/** Uniform random unit vector so each asteroid tumbles on its own axis. */
+function randomUnitAxis(): Vector3 {
+  const theta = Math.random() * Math.PI * 2
+  const z = Math.random() * 2 - 1
+  const radius = Math.sqrt(1 - z * z)
+  return Vector3.create(radius * Math.cos(theta), radius * Math.sin(theta), z)
+}
+
+/**
+ * Slowly spins every tagged asteroid around a per-entity random axis.
+ * Applies to any entity that has both Transform and AsteroidData.
+ */
+export function AsteroidSystem(dt: number) {
+  for (const [entity] of engine.getEntitiesWith(AsteroidData, Transform)) {
+    let axis = asteroidSpinAxes.get(entity)
+    if (!axis) {
+      axis = randomUnitAxis()
+      asteroidSpinAxes.set(entity, axis)
+    }
+
+    const transform = Transform.getMutable(entity)
+    transform.rotation = Quaternion.multiply(
+      transform.rotation,
+      Quaternion.fromAngleAxis(dt * ASTEROID_SPIN_SPEED, axis)
+    )
+  }
 }

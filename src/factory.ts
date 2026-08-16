@@ -1,6 +1,7 @@
-import { engine, Entity, GltfContainer, GltfNodeModifiers, Transform } from '@dcl/sdk/ecs'
+import { engine, Entity, GltfContainer, GltfNodeModifiers, Name, Transform } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
-import { PlanetData } from './components'
+import { EntityNames } from '../assets/scene/entity-names'
+import { AsteroidData, PlanetData } from './components'
 
 export type PlanetSpawnData = {
   name: string
@@ -91,5 +92,17 @@ export function spawnDistantStars(count: number = 20): void {
     // Slight per-star orange tint (0.15–0.45), stable across reloads.
     const tintStrength = 0.6 + ((i * 0.618) % 1) * 1
     applyStarOrangeTint(entity, tintStrength)
+  }
+}
+
+/**
+ * Tags every scene-hierarchy entity named Asteroid.gltf with AsteroidData
+ * so AsteroidSystem will spin it.
+ */
+export function setupAsteroids(): void {
+  for (const [entity, name] of engine.getEntitiesWith(Name, Transform)) {
+    if (name.value === EntityNames.Asteroid_gltf && !AsteroidData.has(entity)) {
+      AsteroidData.create(entity)
+    }
   }
 }
