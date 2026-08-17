@@ -1,0 +1,3 @@
+asteroids should now be able to spawn around the ship
+need a stationary ship position to test it though
+maybe worth just creating the planet path system first, if asteroid spawning is bad fall back to stationary hazards

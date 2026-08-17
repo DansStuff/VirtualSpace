@@ -154,7 +154,12 @@ export function projectVirtualBodyToSceneSphere(
   const position = Vector3.add(rayOrigin, Vector3.scale(localDirection, centerDistance))
   // Step 7: scale the radius-1 model so it keeps that angular size at the *actual*
   //         player→body distance (shrinks when you walk closer, grows when farther).
-  const scale = scaleForAngularRadiusAtDistance(angularRadius, centerDistance)
+  const scale = scaleForAngularRadiusAtDistance(
+    angularRadius,
+    centerDistance,
+    0.01,
+    sphereRadius
+  )
   // Step 8: orient the mesh for a non-spinning body under the ship's viewpoint.
   const rotation = stationaryBodySceneRotation(shipVirtualRotation)
 

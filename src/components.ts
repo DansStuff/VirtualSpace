@@ -7,5 +7,11 @@ export const PlanetData = engine.defineComponent('PlanetData', {
   radius: Schemas.Float
 })
 
-/** Tag for scene asteroids. Extra spin/orbit data can be added later. */
-export const AsteroidData = engine.defineComponent('AsteroidData', {})
+/**
+ * Virtual-space asteroid body. Projected like planets, but onto ASTEROID_ENCLOSING_SPHERE_RADIUS.
+ * Models are authored at radius 1; `radius` is the virtual size for apparent scale.
+ */
+export const AsteroidData = engine.defineComponent('AsteroidData', {
+  position: Schemas.Vector3,
+  radius: Schemas.Float
+})

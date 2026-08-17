@@ -7,6 +7,12 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
  */
 export const ENCLOSING_SPHERE_RADIUS = 64
 
+/**
+ * Smaller enclosing sphere for asteroids (closer shell than planets/stars).
+ * Center remains SCENE_SHIP_POSITION; only the projection radius differs.
+ */
+export const ASTEROID_ENCLOSING_SPHERE_RADIUS = 20
+
 /** Fixed scene-space anchor for the visible ship model (center of the enclosing sphere). */
 export const SCENE_SHIP_POSITION = Vector3.create(
   ENCLOSING_SPHERE_RADIUS,
