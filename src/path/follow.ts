@@ -8,8 +8,42 @@ export const SHIP_CRUISE_SPEED = 2500
 /** Placeholder park time until an encounter calls `resumeFromStop()`. */
 export const HOLD_SECONDS = 4
 
-const SAMPLES_PER_SEGMENT = 32
+/**
+ * Bake density for the runtime polyline. Follow is a linear lerp between these samples
+ * (writePositionAt), not a live Catmull-Rom eval.
+ *
+ * SAMPLE_SPACING is the target gap in virtual units. A waypoint-to-waypoint chord longer
+ * than MAX_SEGMENT_SAMPLES * SAMPLE_SPACING (8000) gets coarser samples, so tight bends
+ * across a huge gap can look slightly faceted. Raise/remove the cap if that shows up.
+ */
+const SAMPLE_SPACING = 40
+const MIN_SEGMENT_SAMPLES = 12
+const MAX_SEGMENT_SAMPLES = 200
+const TANGENT_LOOKAHEAD = 150
 const TANGENT_EPSILON = 1e-6
+const KNOT_EPSILON = 1e-4
+/**
+ * Bank from the Y of currentHeading × nextHeading (unit vectors on XZ).
+ * Cross Y > 0 is a right turn, < 0 is a left turn.
+ *
+ * BANK_GAIN is degrees of roll per unit of that cross Y (which is sin of the heading change).
+ * A gentle turn might be ~0.1, so 70 → about 7°. Raise it to lean harder on the same curve;
+ * MAX_BANK_DEGREES still clamps the result.
+ *
+ * If the ship banks the wrong way, negate BANK_GAIN (70 → -70). That flips left/right
+ * without changing how strong the lean is.
+ *
+ * ROLL_SMOOTH is how fast roll eases toward the target (higher = snappier).
+ */
+const MAX_BANK_DEGREES = 55
+const BANK_GAIN = -400
+const ROLL_SMOOTH = 2
+
+const scratchPoint: RoutePoint = { x: 0, z: 0 }
+const scratchAhead: RoutePoint = { x: 0, z: 0 }
+const scratchNext: RoutePoint = { x: 0, z: 0 }
+const scratchForward: Vector3.Mutable = Vector3.create(1, 0, 0)
+const scratchBankAxis: Vector3 = Vector3.Forward()
 
 type RoutePoint = { x: number; z: number }
 
@@ -23,6 +57,7 @@ type PreparedLeg = {
   stopId: string
   length: number
   duration: number
+  lookAhead: number
   samples: Sample[]
 }
 
@@ -34,19 +69,35 @@ type PathState = {
   finished: boolean
   /** Stop id while holding; 'start' before the first leg; null while transiting. */
   currentStopId: string | null
+  /** Smoothed bank in degrees. Positive = roll right. */
+  roll: number
 }
 
-function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): number {
-  const t2 = t * t
-  const t3 = t2 * t
-  return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3)
+function dist(a: RoutePoint, b: RoutePoint): number {
+  const dx = b.x - a.x
+  const dz = b.z - a.z
+  return Math.sqrt(dx * dx + dz * dz)
 }
 
+function lerpPoint(a: RoutePoint, b: RoutePoint, ta: number, tb: number, t: number): RoutePoint {
+  if (Math.abs(tb - ta) < 1e-8) return { x: a.x, z: a.z }
+  const u = (t - ta) / (tb - ta)
+  return { x: a.x + (b.x - a.x) * u, z: a.z + (b.z - a.z) * u }
+}
+
+/** Centripetal Catmull-Rom (α = 0.5) from p1 to p2, t in [0, 1]. Avoids cusps on uneven points. */
 function interpolatePoint(p0: RoutePoint, p1: RoutePoint, p2: RoutePoint, p3: RoutePoint, t: number): RoutePoint {
-  return {
-    x: catmullRom(p0.x, p1.x, p2.x, p3.x, t),
-    z: catmullRom(p0.z, p1.z, p2.z, p3.z, t)
-  }
+  const t0 = 0
+  const t1 = t0 + Math.pow(Math.max(dist(p0, p1), KNOT_EPSILON), 0.5)
+  const t2 = t1 + Math.pow(Math.max(dist(p1, p2), KNOT_EPSILON), 0.5)
+  const t3 = t2 + Math.pow(Math.max(dist(p2, p3), KNOT_EPSILON), 0.5)
+  const tVal = t1 + (t2 - t1) * t
+  const a1 = lerpPoint(p0, p1, t0, t1, tVal)
+  const a2 = lerpPoint(p1, p2, t1, t2, tVal)
+  const a3 = lerpPoint(p2, p3, t2, t3, tVal)
+  const b1 = lerpPoint(a1, a2, t0, t2, tVal)
+  const b2 = lerpPoint(a2, a3, t1, t3, tVal)
+  return lerpPoint(b1, b2, t1, t2, tVal)
 }
 
 /**
@@ -106,12 +157,15 @@ function prepareLegs(route: ShipRoute): PreparedLeg[] {
       const segments = leg.points.length - 1
       for (let seg = 0; seg < segments; seg++) {
         const { p0, p1, p2, p3 } = segmentHandles(route.legs, legIndex, seg)
-        for (let i = 1; i <= SAMPLES_PER_SEGMENT; i++) {
-          const t = i / SAMPLES_PER_SEGMENT
-          const point = interpolatePoint(p0, p1, p2, p3, t)
-          const dx = point.x - prev.x
-          const dz = point.z - prev.z
-          length += Math.sqrt(dx * dx + dz * dz)
+        const count = Math.min(
+          MAX_SEGMENT_SAMPLES,
+          Math.max(MIN_SEGMENT_SAMPLES, Math.ceil(dist(p1, p2) / SAMPLE_SPACING))
+        )
+        for (let i = 1; i <= count; i++) {
+          const point = interpolatePoint(p0, p1, p2, p3, i / count)
+          const step = dist(prev, point)
+          if (step < 1e-6) continue
+          length += step
           samples.push({ s: length, x: point.x, z: point.z })
           prev = point
         }
@@ -121,21 +175,27 @@ function prepareLegs(route: ShipRoute): PreparedLeg[] {
       stopId: leg.stopId,
       length,
       duration: length > 1 ? length / SHIP_CRUISE_SPEED : 0,
+      lookAhead: Math.min(TANGENT_LOOKAHEAD, Math.max(20, length * 0.02)),
       samples
     })
   }
   return prepared
 }
 
-function sampleAt(leg: PreparedLeg, s: number): { x: number; z: number; tx: number; tz: number } {
+/** Writes the point at arc-length `s` into `out`. No allocations. */
+function writePositionAt(leg: PreparedLeg, s: number, out: RoutePoint): void {
   const samples = leg.samples
   if (samples.length === 0) {
-    return { x: 0, z: 0, tx: 1, tz: 0 }
+    out.x = 0
+    out.z = 0
+    return
   }
   if (samples.length === 1 || leg.length <= 0) {
-    return { x: samples[0].x, z: samples[0].z, tx: 1, tz: 0 }
+    out.x = samples[0].x
+    out.z = samples[0].z
+    return
   }
-  const clamped = Math.min(leg.length, Math.max(0, s))
+  const clamped = s < 0 ? 0 : s > leg.length ? leg.length : s
   let lo = 0
   let hi = samples.length - 1
   while (lo < hi - 1) {
@@ -147,31 +207,76 @@ function sampleAt(leg: PreparedLeg, s: number): { x: number; z: number; tx: numb
   const b = samples[hi]
   const span = b.s - a.s
   const u = span > 1e-8 ? (clamped - a.s) / span : 0
-  const x = a.x + (b.x - a.x) * u
-  const z = a.z + (b.z - a.z) * u
-  let tx = b.x - a.x
-  let tz = b.z - a.z
-  if (tx * tx + tz * tz < TANGENT_EPSILON) {
-    const next = samples[Math.min(samples.length - 1, hi + 1)]
-    tx = next.x - a.x
-    tz = next.z - a.z
-  }
-  return { x, z, tx, tz }
+  out.x = a.x + (b.x - a.x) * u
+  out.z = a.z + (b.z - a.z) * u
 }
 
-function applyPose(x: number, y: number, z: number, tx: number, tz: number, updateFacing: boolean): void {
-  shipVirtualPosition.x = x
-  shipVirtualPosition.y = y
-  shipVirtualPosition.z = z
-  if (!updateFacing) return
-  const lenSq = tx * tx + tz * tz
-  if (lenSq < TANGENT_EPSILON) return
-  const inv = 1 / Math.sqrt(lenSq)
-  const facing = Quaternion.lookRotation(Vector3.create(tx * inv, 0, tz * inv))
-  shipVirtualRotation.x = facing.x
-  shipVirtualRotation.y = facing.y
-  shipVirtualRotation.z = facing.z
-  shipVirtualRotation.w = facing.w
+function applyLookAndBank(targetRoll: number, dt: number): void {
+  if (dt <= 0) {
+    state.roll = targetRoll
+  } else {
+    state.roll += (targetRoll - state.roll) * Math.min(1, dt * ROLL_SMOOTH)
+  }
+  const facing = Quaternion.lookRotation(scratchForward)
+  const banked = Quaternion.multiply(facing, Quaternion.fromAngleAxis(state.roll, scratchBankAxis))
+  shipVirtualRotation.x = banked.x
+  shipVirtualRotation.y = banked.y
+  shipVirtualRotation.z = banked.z
+  shipVirtualRotation.w = banked.w
+}
+
+/** Y of unit(current) × unit(next). Negative = left turn, positive = right. */
+function headingCrossY(ax: number, az: number, bx: number, bz: number): number {
+  const aLen = Math.sqrt(ax * ax + az * az)
+  const bLen = Math.sqrt(bx * bx + bz * bz)
+  if (aLen < 1e-8 || bLen < 1e-8) return 0
+  return (az * bx - ax * bz) / (aLen * bLen)
+}
+
+function bankFromHeadings(ax: number, az: number, bx: number, bz: number): number {
+  const crossY = headingCrossY(ax, az, bx, bz)
+  const roll = crossY * BANK_GAIN
+  if (roll > MAX_BANK_DEGREES) return MAX_BANK_DEGREES
+  if (roll < -MAX_BANK_DEGREES) return -MAX_BANK_DEGREES
+  return roll
+}
+
+function applySampledPose(leg: PreparedLeg, s: number, updateHeading: boolean, dt: number): void {
+  writePositionAt(leg, s, scratchPoint)
+  shipVirtualPosition.x = scratchPoint.x
+  shipVirtualPosition.y = SHIP_ROUTE.y
+  shipVirtualPosition.z = scratchPoint.z
+
+  let targetRoll = 0
+  if (updateHeading) {
+    const look = leg.lookAhead
+    writePositionAt(leg, s + look, scratchAhead)
+    let tx = scratchAhead.x - scratchPoint.x
+    let tz = scratchAhead.z - scratchPoint.z
+    let haveNext = true
+    if (tx * tx + tz * tz < TANGENT_EPSILON) {
+      writePositionAt(leg, s - look, scratchAhead)
+      tx = scratchPoint.x - scratchAhead.x
+      tz = scratchPoint.z - scratchAhead.z
+      haveNext = false
+    }
+    const lenSq = tx * tx + tz * tz
+    if (lenSq < TANGENT_EPSILON) {
+      applyLookAndBank(0, dt)
+      return
+    }
+    const inv = 1 / Math.sqrt(lenSq)
+    scratchForward.x = tx * inv
+    scratchForward.y = 0
+    scratchForward.z = tz * inv
+
+    if (haveNext) {
+      writePositionAt(leg, s + look * 2, scratchNext)
+      targetRoll = bankFromHeadings(tx, tz, scratchNext.x - scratchAhead.x, scratchNext.z - scratchAhead.z)
+    }
+  }
+
+  applyLookAndBank(targetRoll, dt)
 }
 
 const preparedLegs = prepareLegs(SHIP_ROUTE)
@@ -182,7 +287,8 @@ const state: PathState = {
   holding: true,
   holdElapsed: 0,
   finished: false,
-  currentStopId: preparedLegs.length > 0 ? 'start' : null
+  currentStopId: preparedLegs.length > 0 ? 'start' : null,
+  roll: 0
 }
 
 let skipHold = false
@@ -190,8 +296,7 @@ let skipHold = false
 {
   const startLeg = preparedLegs[0]
   if (startLeg && startLeg.samples.length > 0) {
-    const pose = sampleAt(startLeg, 0)
-    applyPose(pose.x, SHIP_ROUTE.y, pose.z, pose.tx, pose.tz, true)
+    applySampledPose(startLeg, 0, true, 0)
   }
 }
 
@@ -220,6 +325,7 @@ export function ShipPathSystem(dt: number): void {
   const step = Math.min(dt, 0.1)
 
   if (state.holding) {
+    applyLookAndBank(0, step)
     if (state.finished) return
     state.holdElapsed += step
     if (skipHold || state.holdElapsed >= HOLD_SECONDS) {
@@ -241,12 +347,9 @@ export function ShipPathSystem(dt: number): void {
 
   state.elapsed += step
   const u = accelDecelProgress(state.elapsed / leg.duration, SHIP_ROUTE.accelDecel)
-  const pose = sampleAt(leg, u * leg.length)
-  applyPose(pose.x, SHIP_ROUTE.y, pose.z, pose.tx, pose.tz, true)
+  applySampledPose(leg, u * leg.length, true, step)
 
   if (state.elapsed >= leg.duration) {
-    const end = sampleAt(leg, leg.length)
-    applyPose(end.x, SHIP_ROUTE.y, end.z, end.tx, end.tz, true)
     enterHold(leg.stopId, leg)
     finishOrAdvance()
   }
@@ -266,6 +369,8 @@ function enterHold(stopId: string | null, leg: PreparedLeg | undefined): void {
   state.currentStopId = stopId
   state.elapsed = 0
   if (!leg) return
-  const end = sampleAt(leg, leg.length)
-  applyPose(end.x, SHIP_ROUTE.y, end.z, end.tx, end.tz, false)
+  writePositionAt(leg, leg.length, scratchPoint)
+  shipVirtualPosition.x = scratchPoint.x
+  shipVirtualPosition.y = SHIP_ROUTE.y
+  shipVirtualPosition.z = scratchPoint.z
 }

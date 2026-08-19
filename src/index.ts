@@ -10,11 +10,11 @@ export function main() {
   //setupUi()
 
   spawnPlanetsFromRoute()
-  spawnDistantStars(40)
-  setupAsteroids()
+  //spawnDistantStars(40)
+  //setupAsteroids()
 
   engine.addSystem(PlanetSystem)
   engine.addSystem(ShipPathSystem)
-  engine.addSystem(AsteroidSystem)
+  //engine.addSystem(AsteroidSystem)
   setupDebugTeleportToShip()
 }

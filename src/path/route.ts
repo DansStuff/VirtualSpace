@@ -40,18 +40,58 @@ export const SHIP_ROUTE: ShipRoute = {
     {
       name: 'TestPlanet',
       model: 'assets/scene/Models/TestPlanet.gltf',
-      x: 0,
+      x: 9913.81,
       y: 0,
-      z: 0,
+      z: 19.41,
       radius: 3500
     },
     {
-      name: 'TestMoon',
-      model: 'assets/scene/Models/TestMoon.gltf',
-      x: 20000,
+      name: 'Planet_2',
+      model: 'assets/scene/Models/TestPlanet.gltf',
+      x: -10229.8,
       y: 0,
-      z: 0,
-      radius: 1000
+      z: 406.68,
+      radius: 3168.62
+    },
+    {
+      name: 'Planet_3',
+      model: 'assets/scene/Models/TestPlanet.gltf',
+      x: -28916.96,
+      y: 0,
+      z: 82.51,
+      radius: 3252.24
+    },
+    {
+      name: 'Planet_4',
+      model: 'assets/scene/Models/TestPlanet.gltf',
+      x: -48342.46,
+      y: 0,
+      z: -198.81,
+      radius: 3812.5
+    },
+    {
+      name: 'Planet_5',
+      model: 'assets/scene/Models/TestPlanet.gltf',
+      x: -65364.01,
+      y: 0,
+      z: 658.87,
+      radius: 3903.48
+    },
+    {
+      name: 'Planet_6',
+      model: 'assets/scene/Models/TestPlanet.gltf',
+      x: -83010.12,
+      y: 0,
+      z: 658.87,
+      radius: 3733.05
+    },
+    {
+      name: 'Planet_7',
+      model: 'assets/scene/Models/TestPlanet.gltf',
+      x: -111664.78,
+      y: 0,
+      z: 8686.88,
+      radius: 5494.45
     }
   ],
   legs: [
@@ -59,18 +99,16 @@ export const SHIP_ROUTE: ShipRoute = {
       stopId: 'end',
       points: [
         { x: 25018.66, z: 1440.69 },
-        { x: 22290.17, z: 3101.51 },
-        { x: 18573.09, z: 2112.93 },
-        { x: 17011.13, z: -655.1 },
-        { x: 15587.57, z: -1604.14 },
-        { x: 14124.47, z: 135.76 },
-        { x: 12740.45, z: -1445.97 },
-        { x: 11237.8, z: -141.04 },
-        { x: 9853.79, z: -1762.32 },
-        { x: 8272.05, z: -734.19 },
-        { x: 7362.55, z: -2434.55 },
-        { x: 5859.91, z: -1090.08 },
-        { x: 4376.34, z: -2588.69 }
+        { x: 18623.1, z: 6062.12 },
+        { x: 3663.14, z: 9658.27 },
+        { x: -11872.2, z: 10089.81 },
+        { x: -27551.39, z: 9802.11 },
+        { x: -43086.73, z: 9945.96 },
+        { x: -58478.23, z: 10952.88 },
+        { x: -69410.51, z: 10809.03 },
+        { x: -80486.63, z: 11384.42 },
+        { x: -95590.44, z: 13542.1 },
+        { x: -108392.71, z: 19727.47 }
       ]
     }
   ]
