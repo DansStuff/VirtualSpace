@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VirtualSpace path editor</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --stop: #f0883e;
+      --path: #7ee787;
+      --danger: #f85149;
+      --ship: #ffd33d;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 "Segoe UI", sans-serif; }
+    #app { display: grid; grid-template-columns: 280px 1fr; height: 100%; }
+    aside {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 12px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    h1 { font-size: 15px; margin: 0 0 4px; font-weight: 600; }
+    p.hint { margin: 0; color: var(--muted); }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; }
+    button, select, input {
+      background: #21262d;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font: inherit;
+    }
+    button { cursor: pointer; }
+    button:hover { border-color: var(--accent); }
+    button.active { background: #1f3a5f; border-color: var(--accent); }
+    button.primary { background: #1f6feb; border-color: #1f6feb; }
+    button.danger { border-color: var(--danger); color: #ffa198; }
+    label { display: flex; flex-direction: column; gap: 2px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; flex: 1; min-width: 0; }
+    input[type="text"], input[type="number"] { width: 100%; }
+    input[type="range"] { width: 100%; padding: 4px 0; accent-color: var(--accent); }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .slider-head { display: flex; justify-content: space-between; align-items: baseline; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; color: var(--muted); }
+    .slider-head span { text-transform: none; letter-spacing: 0; color: var(--text); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+    legend { color: var(--muted); padding: 0 4px; }
+    #stage { position: relative; overflow: hidden; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #status {
+      position: absolute; left: 10px; bottom: 10px;
+      background: rgba(13, 17, 23, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .toast { color: var(--path); font-size: 12px; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside>
+      <div>
+        <h1>Path editor</h1>
+        <p class="hint">Top-down XZ map. Copy TypeScript into <code>src/path/route.ts</code>, or paste that same block below to reload a map.</p>
+      </div>
+      <fieldset>
+        <legend>Tool</legend>
+        <div class="row">
+          <button id="tool-select" class="active" type="button">Select</button>
+          <button id="tool-waypoint" type="button">Add waypoint</button>
+          <button id="tool-remove-waypoint" type="button">Remove waypoint</button>
+          <button id="tool-planet" type="button">Add planet</button>
+        </div>
+        <p class="hint">Drag to move. First waypoint is Start; the path does not loop. Double-click a later waypoint to toggle a stop. Remove waypoint clicks a point to delete it. Right-drag pans. Wheel zooms.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Playback</legend>
+        <div class="row">
+          <button id="play" type="button">Play</button>
+          <button id="reset-play" type="button">Reset</button>
+        </div>
+        <div class="row">
+          <label>Hold (s)<input id="hold-seconds" type="number" min="0" step="0.5" value="1.5" /></label>
+          <label>Cruise<input id="cruise" type="number" min="1" step="100" value="2500" /></label>
+        </div>
+        <label>
+          <span class="slider-head">Accel / decel <span id="accel-value">1.00</span></span>
+          <input id="accel-decel" type="range" min="0" max="1" step="0.05" value="1" />
+        </label>
+        <p class="hint">0 = constant speed. 1 = longest ramp up from a stop and down into the next.</p>
+        <label>Clearance padding<input id="padding" type="number" min="0" step="50" value="200" /></label>
+      </fieldset>
+      <fieldset id="inspector">
+        <legend>Inspector</legend>
+        <p class="hint" id="inspector-empty">Nothing selected.</p>
+        <div id="insp-waypoint" hidden>
+          <div class="row">
+            <label>X<input id="wp-x" type="number" step="10" /></label>
+            <label>Z<input id="wp-z" type="number" step="10" /></label>
+          </div>
+          <label><span>Stop id</span><input id="wp-stop-id" type="text" /></label>
+          <div class="row">
+            <button id="wp-toggle-stop" type="button">Toggle stop</button>
+            <button id="wp-delete" class="danger" type="button">Delete waypoint</button>
+          </div>
+        </div>
+        <div id="insp-planet" hidden>
+          <label>Name<input id="pl-name" type="text" /></label>
+          <label>Model<input id="pl-model" type="text" /></label>
+          <div class="row">
+            <label>X<input id="pl-x" type="number" step="10" /></label>
+            <label>Z<input id="pl-z" type="number" step="10" /></label>
+          </div>
+          <label>Radius<input id="pl-radius" type="number" min="1" step="50" /></label>
+          <button id="pl-delete" class="danger" type="button">Delete planet</button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Map TypeScript</legend>
+        <textarea id="route-ts" spellcheck="false" placeholder="Paste export const SHIP_ROUTE = { ... } here, then Load map."></textarea>
+        <div class="row">
+          <button id="copy" class="primary" type="button">Copy TypeScript</button>
+          <button id="load-map" type="button">Load map</button>
+          <button id="reset-seed" type="button">Reset seed</button>
+          <button id="delete-map" class="danger" type="button">Delete map</button>
+        </div>
+      </fieldset>
+      <div class="toast" id="toast"></div>
+    </aside>
+    <div id="stage">
+      <canvas id="canvas"></canvas>
+      <div id="status"></div>
+    </div>
+  </div>
+  <script>
+    const STORAGE_KEY = 'virtualspace-path-editor-v2'
+    const PLANET_COLORS = ['#58a6ff', '#d2a8ff', '#79c0ff', '#a5d6ff', '#ffa657']
+    const LEG_COLORS = ['#7ee787', '#58a6ff', '#f0883e', '#d2a8ff', '#79c0ff', '#ffa198']
+
+    const SEED_PLANETS = [
+      { name: 'TestPlanet', model: 'assets/scene/Models/TestPlanet.gltf', x: 0, y: 0, z: 0, radius: 3500 },
+      { name: 'TestMoon', model: 'assets/scene/Models/TestMoon.gltf', x: 20000, y: 0, z: 0, radius: 1000 }
+    ]
+    const SEED_WAYPOINTS = [
+      { x: 25839, z: 0, isStop: false, stopId: '' },
+      { x: 22764, z: 4885, isStop: false, stopId: '' },
+      { x: 17467, z: 5280, isStop: false, stopId: '' },
+      { x: 13270, z: 3021, isStop: false, stopId: '' },
+      { x: 10000, z: 0, isStop: false, stopId: '' },
+      { x: 6730, z: -3021, isStop: false, stopId: '' },
+      { x: 2533, z: -5280, isStop: false, stopId: '' },
+      { x: -2764, z: -4885, isStop: false, stopId: '' },
+      { x: -5839, z: 0, isStop: true, stopId: 'encounter-a' },
+      { x: -2764, z: 4885, isStop: false, stopId: '' },
+      { x: 2533, z: 5280, isStop: false, stopId: '' },
+      { x: 6730, z: 3021, isStop: false, stopId: '' },
+      { x: 10000, z: 0, isStop: false, stopId: '' },
+      { x: 13270, z: -3021, isStop: false, stopId: '' },
+      { x: 17467, z: -5280, isStop: false, stopId: '' },
+      { x: 22764, z: -4885, isStop: true, stopId: 'encounter-b' }
+    ]
+
+    function cloneSeed() {
+      return {
+        planets: SEED_PLANETS.map((p) => ({ ...p })),
+        waypoints: SEED_WAYPOINTS.map((w) => ({ ...w }))
+      }
+    }
+
+    const canvas = document.getElementById('canvas')
+    const ctx = canvas.getContext('2d')
+    const statusEl = document.getElementById('status')
+    const toastEl = document.getElementById('toast')
+
+    let planets = []
+    let waypoints = []
+    let selected = null
+    let tool = 'select'
+    let camera = { x: 10000, z: 0, scale: 0.018 }
+    let dragging = null
+    let panning = null
+    let cursorWorld = { x: 0, z: 0 }
+    let playback = { playing: false, holding: true, holdElapsed: 0, legIndex: 0, elapsed: 0, finished: false, x: 0, z: 0, tx: 1, tz: 0 }
+    let lastTs = 0
+    let toastTimer = 0
+
+    function loadState() {
+      const seed = cloneSeed()
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (!raw) {
+          planets = seed.planets
+          waypoints = seed.waypoints
+          markStart()
+          return
+        }
+        const data = JSON.parse(raw)
+        planets = Array.isArray(data.planets) ? data.planets : seed.planets
+        waypoints = Array.isArray(data.waypoints) ? data.waypoints : seed.waypoints
+        markStart()
+        if (typeof data.accelDecel === 'number') {
+          document.getElementById('accel-decel').value = String(data.accelDecel)
+        }
+      } catch {
+        planets = seed.planets
+        waypoints = seed.waypoints
+        markStart()
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        planets,
+        waypoints,
+        accelDecel: readAccelDecel()
+      }))
+    }
+
+    function toast(msg) {
+      toastEl.textContent = msg
+      clearTimeout(toastTimer)
+      toastTimer = setTimeout(() => { toastEl.textContent = '' }, 2500)
+    }
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect()
+      const dpr = window.devicePixelRatio || 1
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr))
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr))
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      canvas.style.width = rect.width + 'px'
+      canvas.style.height = rect.height + 'px'
+    }
+
+    function viewSize() {
+      const dpr = window.devicePixelRatio || 1
+      return { w: canvas.width / dpr, h: canvas.height / dpr }
+    }
+
+    function worldToScreen(x, z) {
+      const { w, h } = viewSize()
+      return {
+        x: w / 2 + (x - camera.x) * camera.scale,
+        y: h / 2 - (z - camera.z) * camera.scale
+      }
+    }
+
+    function screenToWorld(sx, sy) {
+      const { w, h } = viewSize()
+      return {
+        x: camera.x + (sx - w / 2) / camera.scale,
+        z: camera.z - (sy - h / 2) / camera.scale
+      }
+    }
+
+    function catmullRom(p0, p1, p2, p3, t) {
+      const t2 = t * t
+      const t3 = t2 * t
+      return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3)
+    }
+
+    function crPoint(pts, i, t) {
+      const n = pts.length
+      const p0 = pts[(i - 1 + n) % n]
+      const p1 = pts[i]
+      const p2 = pts[(i + 1) % n]
+      const p3 = pts[(i + 2) % n]
+      return {
+        x: catmullRom(p0.x, p1.x, p2.x, p3.x, t),
+        z: catmullRom(p0.z, p1.z, p2.z, p3.z, t)
+      }
+    }
+
+    function stopIndices() {
+      const ids = []
+      for (let i = 1; i < waypoints.length; i++) if (waypoints[i].isStop) ids.push(i)
+      return ids
+    }
+
+    function isStartIndex(i) {
+      return i === 0 && waypoints.length > 0
+    }
+
+    function markStart() {
+      waypoints.forEach((w, i) => {
+        if (i === 0) {
+          w.isStop = false
+          w.stopId = ''
+        }
+      })
+    }
+
+    function nextStopId() {
+      let n = 1
+      const used = new Set(waypoints.filter((w) => w.isStop && w.stopId).map((w) => w.stopId))
+      while (used.has('encounter-' + n)) n++
+      return 'encounter-' + n
+    }
+
+    function waypointsToLegs() {
+      if (waypoints.length < 2) return []
+      const ends = [0]
+      stopIndices().forEach((i) => {
+        if (i > 0 && i !== ends[ends.length - 1]) ends.push(i)
+      })
+      const last = waypoints.length - 1
+      if (ends[ends.length - 1] !== last) ends.push(last)
+      const legs = []
+      for (let s = 0; s < ends.length - 1; s++) {
+        const start = ends[s]
+        const end = ends[s + 1]
+        const points = []
+        for (let i = start; i <= end; i++) {
+          points.push({ x: waypoints[i].x, z: waypoints[i].z })
+        }
+        const endWp = waypoints[end]
+        const stopId = endWp.isStop && endWp.stopId ? endWp.stopId : end === last ? 'end' : 'stop-' + (s + 1)
+        legs.push({ stopId, points })
+      }
+      return legs
+    }
+
+    function openHandles(allLegs, legIndex, segIndex) {
+      const pts = allLegs[legIndex].points
+      const p1 = pts[segIndex]
+      const p2 = pts[segIndex + 1]
+      const p0 =
+        segIndex === 0
+          ? legIndex > 0
+            ? allLegs[legIndex - 1].points[allLegs[legIndex - 1].points.length - 2]
+            : p1
+          : pts[segIndex - 1]
+      const p3 =
+        segIndex === pts.length - 2
+          ? legIndex < allLegs.length - 1
+            ? allLegs[legIndex + 1].points[1]
+            : p2
+          : pts[segIndex + 2]
+      return { p0, p1, p2, p3 }
+    }
+
+    function buildSamples(legPoints, allLegs, legIndex) {
+      const samples = []
+      if (legPoints.length < 2) return { samples, length: 0 }
+      let prevPt = legPoints[0]
+      let length = 0
+      samples.push({ s: 0, x: prevPt.x, z: prevPt.z })
+      const segs = legPoints.length - 1
+      for (let seg = 0; seg < segs; seg++) {
+        const { p0, p1, p2, p3 } = openHandles(allLegs, legIndex, seg)
+        for (let i = 1; i <= 24; i++) {
+          const t = i / 24
+          const pt = {
+            x: catmullRom(p0.x, p1.x, p2.x, p3.x, t),
+            z: catmullRom(p0.z, p1.z, p2.z, p3.z, t)
+          }
+          const dx = pt.x - prevPt.x
+          const dz = pt.z - prevPt.z
+          length += Math.sqrt(dx * dx + dz * dz)
+          samples.push({ s: length, x: pt.x, z: pt.z })
+          prevPt = pt
+        }
+      }
+      return { samples, length }
+    }
+
+    function sampleAt(samples, length, s) {
+      if (!samples.length) return { x: 0, z: 0, tx: 1, tz: 0 }
+      if (samples.length === 1 || length <= 0) return { x: samples[0].x, z: samples[0].z, tx: 1, tz: 0 }
+      const clamped = Math.min(length, Math.max(0, s))
+      let lo = 0
+      let hi = samples.length - 1
+      while (lo < hi - 1) {
+        const mid = (lo + hi) >> 1
+        if (samples[mid].s <= clamped) lo = mid
+        else hi = mid
+      }
+      const a = samples[lo]
+      const b = samples[hi]
+      const span = b.s - a.s
+      const u = span > 1e-8 ? (clamped - a.s) / span : 0
+      return {
+        x: a.x + (b.x - a.x) * u,
+        z: a.z + (b.z - a.z) * u,
+        tx: b.x - a.x,
+        tz: b.z - a.z
+      }
+    }
+
+    function accelDecelProgress(t, amount) {
+      if (t <= 0) return 0
+      if (t >= 1) return 1
+      const ramp = Math.min(1, Math.max(0, amount)) * 0.5
+      if (ramp < 1e-6) return t
+      const peak = 1 / (1 - ramp)
+      if (t < ramp) return (peak * t * t) / (2 * ramp)
+      if (t <= 1 - ramp) return peak * (ramp / 2 + (t - ramp))
+      const rest = 1 - t
+      return 1 - (peak * rest * rest) / (2 * ramp)
+    }
+
+    function readAccelDecel() {
+      const el = document.getElementById('accel-decel')
+      const v = Number(el.value)
+      return Number.isFinite(v) ? v : 1
+    }
+
+    function syncAccelLabel() {
+      document.getElementById('accel-value').textContent = readAccelDecel().toFixed(2)
+    }
+
+    function dist2(ax, az, bx, bz) {
+      const dx = ax - bx
+      const dz = az - bz
+      return dx * dx + dz * dz
+    }
+
+    function hitWaypoint(world, pxRadius) {
+      const r = pxRadius / camera.scale
+      const r2 = r * r
+      for (let i = waypoints.length - 1; i >= 0; i--) {
+        if (dist2(world.x, world.z, waypoints[i].x, waypoints[i].z) <= r2) return i
+      }
+      return -1
+    }
+
+    function hitPlanet(world) {
+      for (let i = planets.length - 1; i >= 0; i--) {
+        const p = planets[i]
+        const d = Math.sqrt(dist2(world.x, world.z, p.x, p.z))
+        const handle = Math.abs(d - p.radius) <= 12 / camera.scale
+        if (handle) return { index: i, resize: true }
+        if (d <= p.radius) return { index: i, resize: false }
+      }
+      return null
+    }
+
+    function nearestSegment(world) {
+      let best = 0
+      let bestD = Infinity
+      const n = waypoints.length
+      if (n < 2) return 0
+      for (let i = 0; i < n - 1; i++) {
+        const a = waypoints[i]
+        const b = waypoints[i + 1]
+        const abx = b.x - a.x
+        const abz = b.z - a.z
+        const len2 = abx * abx + abz * abz || 1
+        let t = ((world.x - a.x) * abx + (world.z - a.z) * abz) / len2
+        t = Math.max(0, Math.min(1, t))
+        const px = a.x + abx * t
+        const pz = a.z + abz * t
+        const d = dist2(world.x, world.z, px, pz)
+        if (d < bestD) {
+          bestD = d
+          best = i
+        }
+      }
+      return best
+    }
+
+    function setTool(next) {
+      tool = next
+      document.getElementById('tool-select').classList.toggle('active', next === 'select')
+      document.getElementById('tool-waypoint').classList.toggle('active', next === 'waypoint')
+      document.getElementById('tool-remove-waypoint').classList.toggle('active', next === 'remove-waypoint')
+      document.getElementById('tool-planet').classList.toggle('active', next === 'planet')
+    }
+
+    function removeWaypointAt(index) {
+      if (index < 0 || index >= waypoints.length) return false
+      waypoints.splice(index, 1)
+      markStart()
+      if (selected && selected.type === 'waypoint') {
+        selected = selected.index === index ? null : selected.index > index ? { type: 'waypoint', index: selected.index - 1 } : selected
+      }
+      refreshInspector()
+      saveState()
+      return true
+    }
+
+    function ensureStopId(wp) {
+      if (wp.isStop && !wp.stopId) wp.stopId = nextStopId()
+      if (!wp.isStop) wp.stopId = ''
+    }
+
+    function selectWaypoint(i) {
+      selected = i < 0 ? null : { type: 'waypoint', index: i }
+      refreshInspector()
+    }
+
+    function selectPlanet(i) {
+      selected = i < 0 ? null : { type: 'planet', index: i }
+      refreshInspector()
+    }
+
+    function refreshInspector() {
+      const empty = document.getElementById('inspector-empty')
+      const wpBox = document.getElementById('insp-waypoint')
+      const plBox = document.getElementById('insp-planet')
+      wpBox.hidden = true
+      plBox.hidden = true
+      empty.hidden = !!selected
+      if (!selected) return
+      if (selected.type === 'waypoint') {
+        const wp = waypoints[selected.index]
+        wpBox.hidden = false
+        document.getElementById('wp-x').value = Math.round(wp.x)
+        document.getElementById('wp-z').value = Math.round(wp.z)
+        const start = isStartIndex(selected.index)
+        document.getElementById('wp-stop-id').value = start ? 'start' : wp.stopId || ''
+        document.getElementById('wp-stop-id').disabled = start || !wp.isStop
+        document.getElementById('wp-toggle-stop').disabled = start
+        document.getElementById('wp-toggle-stop').textContent = start ? 'Start' : wp.isStop ? 'Make pass-through' : 'Make stop'
+      } else {
+        const p = planets[selected.index]
+        plBox.hidden = false
+        document.getElementById('pl-name').value = p.name
+        document.getElementById('pl-model').value = p.model
+        document.getElementById('pl-x').value = Math.round(p.x)
+        document.getElementById('pl-z').value = Math.round(p.z)
+        document.getElementById('pl-radius').value = Math.round(p.radius)
+      }
+    }
+
+    function fmtNum(n) {
+      const r = Math.round(n * 100) / 100
+      return Object.is(r, -0) ? '0' : String(r)
+    }
+
+    function exportTypeScript() {
+      const legs = waypointsToLegs()
+      const y = 0
+      const lines = []
+      lines.push('export const SHIP_ROUTE: ShipRoute = {')
+      lines.push('  y: ' + y + ',')
+      lines.push('  accelDecel: ' + fmtNum(readAccelDecel()) + ',')
+      lines.push('  planets: [')
+      planets.forEach((p, i) => {
+        lines.push('    {')
+        lines.push("      name: '" + p.name.replace(/'/g, "\\'") + "',")
+        lines.push("      model: '" + p.model.replace(/'/g, "\\'") + "',")
+        lines.push('      x: ' + fmtNum(p.x) + ',')
+        lines.push('      y: ' + fmtNum(p.y || 0) + ',')
+        lines.push('      z: ' + fmtNum(p.z) + ',')
+        lines.push('      radius: ' + fmtNum(p.radius))
+        lines.push('    }' + (i < planets.length - 1 ? ',' : ''))
+      })
+      lines.push('  ],')
+      lines.push('  legs: [')
+      legs.forEach((leg, i) => {
+        lines.push('    {')
+        lines.push("      stopId: '" + leg.stopId.replace(/'/g, "\\'") + "',")
+        lines.push('      points: [')
+        leg.points.forEach((pt, j) => {
+          const comma = j < leg.points.length - 1 ? ',' : ''
+          lines.push('        { x: ' + fmtNum(pt.x) + ', z: ' + fmtNum(pt.z) + ' }' + comma)
+        })
+        lines.push('      ]')
+        lines.push('    }' + (i < legs.length - 1 ? ',' : ''))
+      })
+      lines.push('  ]')
+      lines.push('}')
+      return lines.join('\n')
+    }
+
+    function extractObjectLiteral(text) {
+      const assign = text.search(/SHIP_ROUTE(?:\s*:\s*[\w$.]+)?\s*=/)
+      const from = text.indexOf('{', assign >= 0 ? assign : 0)
+      if (from < 0) throw new Error('No object literal found')
+      let depth = 0
+      let inStr = null
+      let escape = false
+      for (let i = from; i < text.length; i++) {
+        const c = text[i]
+        if (inStr) {
+          if (escape) {
+            escape = false
+            continue
+          }
+          if (c === '\\') {
+            escape = true
+            continue
+          }
+          if (c === inStr) inStr = null
+          continue
+        }
+        if (c === '"' || c === "'") {
+          inStr = c
+          continue
+        }
+        if (c === '{') depth++
+        else if (c === '}') {
+          depth--
+          if (depth === 0) return text.slice(from, i + 1)
+        }
+      }
+      throw new Error('Unclosed object literal')
+    }
+
+    function parseRouteTypeScript(text) {
+      const raw = String(text || '').trim()
+      if (!raw) throw new Error('Nothing to load')
+      let data
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        const literal = extractObjectLiteral(raw).replace(/,\s*([}\]])/g, '$1')
+        data = new Function('return (' + literal + ')')()
+      }
+      if (!data || typeof data !== 'object') throw new Error('Route is not an object')
+      if (!Array.isArray(data.planets) || !Array.isArray(data.legs)) {
+        throw new Error('Route needs planets[] and legs[]')
+      }
+      if (data.legs.length === 0) throw new Error('Route has no legs')
+      for (const leg of data.legs) {
+        if (!leg || !Array.isArray(leg.points) || leg.points.length < 2) {
+          throw new Error('Each leg needs at least two points')
+        }
+      }
+      return data
+    }
+
+    function legsToWaypoints(legs) {
+      const waypointsOut = []
+      const first = legs[0].points[0]
+      const lastLeg = legs[legs.length - 1]
+      const lastPt = lastLeg.points[lastLeg.points.length - 1]
+      const dropClosing = dist2(first.x, first.z, lastPt.x, lastPt.z) < 1
+      for (let i = 0; i < legs.length; i++) {
+        const leg = legs[i]
+        for (let j = 0; j < leg.points.length; j++) {
+          const pt = leg.points[j]
+          if (i > 0 && j === 0) continue
+          if (dropClosing && i === legs.length - 1 && j === leg.points.length - 1) continue
+          const isLast = j === leg.points.length - 1
+          waypointsOut.push({
+            x: Number(pt.x) || 0,
+            z: Number(pt.z) || 0,
+            isStop: isLast && waypointsOut.length > 0,
+            stopId: isLast && waypointsOut.length > 0 ? String(leg.stopId || '') : ''
+          })
+        }
+      }
+      if (waypointsOut.length < 2) throw new Error('Could not rebuild waypoints from legs')
+      if (waypointsOut[0]) {
+        waypointsOut[0].isStop = false
+        waypointsOut[0].stopId = ''
+      }
+      return waypointsOut
+    }
+
+    function applyLoadedRoute(data) {
+      planets = data.planets.map((p, i) => ({
+        name: String(p.name || 'Planet_' + (i + 1)),
+        model: String(p.model || 'assets/scene/Models/TestPlanet.gltf'),
+        x: Number(p.x) || 0,
+        y: Number(p.y) || 0,
+        z: Number(p.z) || 0,
+        radius: Math.max(50, Number(p.radius) || 2000)
+      }))
+      waypoints = legsToWaypoints(data.legs)
+      markStart()
+      const accel = Number(data.accelDecel)
+      document.getElementById('accel-decel').value = String(Number.isFinite(accel) ? Math.min(1, Math.max(0, accel)) : 1)
+      syncAccelLabel()
+      selected = null
+      refreshInspector()
+      resetPlayback()
+      frameMap()
+      saveState()
+    }
+
+    function frameMap() {
+      let minX = Infinity
+      let maxX = -Infinity
+      let minZ = Infinity
+      let maxZ = -Infinity
+      const include = (x, z, pad) => {
+        minX = Math.min(minX, x - pad)
+        maxX = Math.max(maxX, x + pad)
+        minZ = Math.min(minZ, z - pad)
+        maxZ = Math.max(maxZ, z + pad)
+      }
+      planets.forEach((p) => include(p.x, p.z, p.radius))
+      waypoints.forEach((w) => include(w.x, w.z, 0))
+      if (!Number.isFinite(minX)) return
+      const { w, h } = viewSize()
+      camera.x = (minX + maxX) / 2
+      camera.z = (minZ + maxZ) / 2
+      const spanX = Math.max(1, maxX - minX)
+      const spanZ = Math.max(1, maxZ - minZ)
+      camera.scale = Math.min(w / spanX, h / spanZ) * 0.82
+    }
+
+    function pointClearsPlanets(x, z, padding) {
+      for (const p of planets) {
+        if (Math.sqrt(dist2(x, z, p.x, p.z)) < p.radius + padding) return false
+      }
+      return true
+    }
+
+    function drawGrid(w, h) {
+      const step = niceGridStep()
+      const min = screenToWorld(0, h)
+      const max = screenToWorld(w, 0)
+      const x0 = Math.floor(min.x / step) * step
+      const z0 = Math.floor(min.z / step) * step
+      ctx.strokeStyle = '#21262d'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      for (let x = x0; x <= max.x; x += step) {
+        const a = worldToScreen(x, min.z)
+        const b = worldToScreen(x, max.z)
+        ctx.moveTo(a.x, a.y)
+        ctx.lineTo(b.x, b.y)
+      }
+      for (let z = z0; z <= max.z; z += step) {
+        const a = worldToScreen(min.x, z)
+        const b = worldToScreen(max.x, z)
+        ctx.moveTo(a.x, a.y)
+        ctx.lineTo(b.x, b.y)
+      }
+      ctx.stroke()
+      const origin = worldToScreen(0, 0)
+      ctx.strokeStyle = '#30363d'
+      ctx.beginPath()
+      ctx.moveTo(0, origin.y)
+      ctx.lineTo(w, origin.y)
+      ctx.moveTo(origin.x, 0)
+      ctx.lineTo(origin.x, h)
+      ctx.stroke()
+    }
+
+    function niceGridStep() {
+      const raw = 80 / camera.scale
+      const pow = Math.pow(10, Math.floor(Math.log10(raw)))
+      const n = raw / pow
+      if (n < 2) return pow
+      if (n < 5) return 2 * pow
+      return 5 * pow
+    }
+
+    function draw() {
+      const { w, h } = viewSize()
+      ctx.clearRect(0, 0, w, h)
+      drawGrid(w, h)
+
+      const padding = Number(document.getElementById('padding').value) || 0
+      const legs = waypointsToLegs()
+
+      planets.forEach((p, i) => {
+        const c = worldToScreen(p.x, p.z)
+        const r = p.radius * camera.scale
+        ctx.beginPath()
+        ctx.arc(c.x, c.y, Math.max(2, r), 0, Math.PI * 2)
+        ctx.fillStyle = PLANET_COLORS[i % PLANET_COLORS.length] + '33'
+        ctx.fill()
+        ctx.strokeStyle = PLANET_COLORS[i % PLANET_COLORS.length]
+        ctx.lineWidth = selected && selected.type === 'planet' && selected.index === i ? 3 : 1.5
+        ctx.stroke()
+        if (padding > 0) {
+          ctx.beginPath()
+          ctx.setLineDash([6, 4])
+          ctx.arc(c.x, c.y, Math.max(2, (p.radius + padding) * camera.scale), 0, Math.PI * 2)
+          ctx.strokeStyle = '#f8514988'
+          ctx.stroke()
+          ctx.setLineDash([])
+        }
+        const handle = worldToScreen(p.x + p.radius, p.z)
+        ctx.beginPath()
+        ctx.arc(handle.x, handle.y, 6, 0, Math.PI * 2)
+        ctx.fillStyle = '#e6edf3'
+        ctx.fill()
+        ctx.fillStyle = '#e6edf3'
+        ctx.font = '12px Segoe UI, sans-serif'
+        ctx.fillText(p.name, c.x + 8, c.y - 8)
+      })
+
+      if (waypoints.length >= 2 && legs.length) {
+        legs.forEach((leg, li) => {
+          const built = buildSamples(leg.points, legs, li)
+          ctx.beginPath()
+          built.samples.forEach((s, i) => {
+            const p = worldToScreen(s.x, s.z)
+            if (i === 0) ctx.moveTo(p.x, p.y)
+            else ctx.lineTo(p.x, p.y)
+          })
+          ctx.strokeStyle = LEG_COLORS[li % LEG_COLORS.length]
+          ctx.lineWidth = 2
+          ctx.stroke()
+          ctx.beginPath()
+          let drawingRed = false
+          built.samples.forEach((s) => {
+            const clear = pointClearsPlanets(s.x, s.z, padding)
+            const p = worldToScreen(s.x, s.z)
+            if (!clear) {
+              if (!drawingRed) {
+                ctx.moveTo(p.x, p.y)
+                drawingRed = true
+              } else ctx.lineTo(p.x, p.y)
+            } else if (drawingRed) {
+              ctx.strokeStyle = '#f85149'
+              ctx.lineWidth = 4
+              ctx.stroke()
+              ctx.beginPath()
+              drawingRed = false
+            }
+          })
+          if (drawingRed) {
+            ctx.strokeStyle = '#f85149'
+            ctx.lineWidth = 4
+            ctx.stroke()
+          }
+        })
+      }
+
+      waypoints.forEach((wp, i) => {
+        const p = worldToScreen(wp.x, wp.z)
+        const sel = selected && selected.type === 'waypoint' && selected.index === i
+        const start = isStartIndex(i)
+        if (start) {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, sel ? 8 : 6, 0, Math.PI * 2)
+          ctx.fillStyle = sel ? '#7ee787' : '#3fb950'
+          ctx.fill()
+          ctx.fillStyle = '#7ee787'
+          ctx.font = '11px Segoe UI, sans-serif'
+          ctx.fillText('start', p.x + 10, p.y + 4)
+        } else if (wp.isStop) {
+          ctx.save()
+          ctx.translate(p.x, p.y)
+          ctx.rotate(Math.PI / 4)
+          ctx.fillStyle = sel ? '#ffa657' : '#f0883e'
+          ctx.fillRect(-7, -7, 14, 14)
+          ctx.restore()
+          if (wp.stopId) {
+            ctx.fillStyle = '#f0883e'
+            ctx.font = '11px Segoe UI, sans-serif'
+            ctx.fillText(wp.stopId, p.x + 10, p.y + 4)
+          }
+        } else {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, sel ? 7 : 5, 0, Math.PI * 2)
+          ctx.fillStyle = sel ? '#e6edf3' : '#8b949e'
+          ctx.fill()
+        }
+      })
+
+      if (playback.playing || playback.holding || playback.elapsed > 0) {
+        const p = worldToScreen(playback.x, playback.z)
+        const ang = Math.atan2(-(playback.tz), playback.tx)
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.rotate(ang)
+        ctx.fillStyle = playback.holding ? '#f0883e' : '#ffd33d'
+        ctx.beginPath()
+        ctx.moveTo(10, 0)
+        ctx.lineTo(-7, 6)
+        ctx.lineTo(-7, -6)
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
+      }
+
+      const stops = stopIndices().length
+      statusEl.textContent =
+        'x ' + Math.round(cursorWorld.x) + '  z ' + Math.round(cursorWorld.z) +
+        '   zoom ' + camera.scale.toFixed(3) +
+        '   planets ' + planets.length +
+        '   waypoints ' + waypoints.length +
+        '   stops ' + stops +
+        (playback.holding ? '   HOLD ' + (playback.currentStopId || '') : '')
+    }
+
+    function resetPlayback() {
+      const legs = waypointsToLegs()
+      playback.playing = false
+      playback.holding = legs.length > 0
+      playback.holdElapsed = 0
+      playback.legIndex = 0
+      playback.elapsed = 0
+      playback.finished = false
+      playback.currentStopId = legs.length ? 'start' : null
+      document.getElementById('play').textContent = 'Play'
+      if (legs.length && legs[0].points.length) {
+        const built = buildSamples(legs[0].points, legs, 0)
+        const pose = sampleAt(built.samples, built.length, 0)
+        playback.x = pose.x
+        playback.z = pose.z
+        playback.tx = pose.tx
+        playback.tz = pose.tz
+      }
+    }
+
+    function tickPlayback(dt) {
+      if (!playback.playing) return
+      const legs = waypointsToLegs()
+      if (!legs.length) return
+      const holdSec = Number(document.getElementById('hold-seconds').value) || 0
+      const cruise = Number(document.getElementById('cruise').value) || 2500
+      if (playback.holding) {
+        if (playback.finished) return
+        playback.holdElapsed += dt
+        if (playback.holdElapsed >= holdSec) {
+          playback.holding = false
+          playback.holdElapsed = 0
+          playback.currentStopId = null
+          playback.elapsed = 0
+        }
+        return
+      }
+      const leg = legs[playback.legIndex]
+      const built = buildSamples(leg.points, legs, playback.legIndex)
+      const duration = built.length > 1 ? built.length / cruise : 0
+      if (duration <= 0) {
+        playback.holding = true
+        playback.currentStopId = leg.stopId
+        if (playback.legIndex >= legs.length - 1) playback.finished = true
+        else playback.legIndex += 1
+        return
+      }
+      playback.elapsed += dt
+      const u = accelDecelProgress(playback.elapsed / duration, readAccelDecel())
+      const pose = sampleAt(built.samples, built.length, u * built.length)
+      playback.x = pose.x
+      playback.z = pose.z
+      playback.tx = pose.tx
+      playback.tz = pose.tz
+      if (playback.elapsed >= duration) {
+        const end = sampleAt(built.samples, built.length, built.length)
+        playback.x = end.x
+        playback.z = end.z
+        playback.tx = end.tx
+        playback.tz = end.tz
+        playback.holding = true
+        playback.holdElapsed = 0
+        playback.currentStopId = leg.stopId
+        playback.elapsed = 0
+        if (playback.legIndex >= legs.length - 1) playback.finished = true
+        else playback.legIndex += 1
+      }
+    }
+
+    function canvasPos(ev) {
+      const rect = canvas.getBoundingClientRect()
+      return { x: ev.clientX - rect.left, y: ev.clientY - rect.top }
+    }
+
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+
+    canvas.addEventListener('mousedown', (ev) => {
+      const pos = canvasPos(ev)
+      const world = screenToWorld(pos.x, pos.y)
+      if (ev.button === 1 || ev.button === 2 || (ev.button === 0 && ev.altKey)) {
+        panning = { x: pos.x, y: pos.y, cx: camera.x, cz: camera.z }
+        return
+      }
+      if (ev.button !== 0) return
+      if (tool === 'planet') {
+        planets.push({
+          name: 'Planet_' + (planets.length + 1),
+          model: 'assets/scene/Models/TestPlanet.gltf',
+          x: world.x,
+          y: 0,
+          z: world.z,
+          radius: 2000
+        })
+        selectPlanet(planets.length - 1)
+        saveState()
+        return
+      }
+      if (tool === 'waypoint') {
+        if (waypoints.length === 0) {
+          waypoints.push({ x: world.x, z: world.z, isStop: false, stopId: '' })
+          selectWaypoint(0)
+        } else if (waypoints.length === 1) {
+          waypoints.push({ x: world.x, z: world.z, isStop: false, stopId: '' })
+          selectWaypoint(1)
+        } else {
+          const seg = nearestSegment(world)
+          waypoints.splice(seg + 1, 0, { x: world.x, z: world.z, isStop: false, stopId: '' })
+          selectWaypoint(seg + 1)
+        }
+        markStart()
+        saveState()
+        return
+      }
+      if (tool === 'remove-waypoint') {
+        const wp = hitWaypoint(world, 12)
+        if (wp >= 0) removeWaypointAt(wp)
+        return
+      }
+      const planetHit = hitPlanet(world)
+      if (planetHit) {
+        selectPlanet(planetHit.index)
+        dragging = planetHit.resize
+          ? { kind: 'resize', index: planetHit.index }
+          : { kind: 'planet', index: planetHit.index, dx: world.x - planets[planetHit.index].x, dz: world.z - planets[planetHit.index].z }
+        return
+      }
+      const wp = hitWaypoint(world, 10)
+      if (wp >= 0) {
+        selectWaypoint(wp)
+        dragging = { kind: 'waypoint', index: wp, dx: world.x - waypoints[wp].x, dz: world.z - waypoints[wp].z }
+        return
+      }
+      selected = null
+      refreshInspector()
+    })
+
+    canvas.addEventListener('dblclick', (ev) => {
+      const world = screenToWorld(canvasPos(ev).x, canvasPos(ev).y)
+      const wp = hitWaypoint(world, 12)
+      if (wp < 0) return
+      if (isStartIndex(wp)) {
+        toast('Start cannot be a stop')
+        return
+      }
+      waypoints[wp].isStop = !waypoints[wp].isStop
+      ensureStopId(waypoints[wp])
+      selectWaypoint(wp)
+      saveState()
+    })
+
+    window.addEventListener('mousemove', (ev) => {
+      const pos = canvasPos(ev)
+      cursorWorld = screenToWorld(pos.x, pos.y)
+      if (panning) {
+        camera.x = panning.cx - (pos.x - panning.x) / camera.scale
+        camera.z = panning.cz + (pos.y - panning.y) / camera.scale
+        return
+      }
+      if (!dragging) return
+      const world = cursorWorld
+      if (dragging.kind === 'waypoint') {
+        waypoints[dragging.index].x = world.x - dragging.dx
+        waypoints[dragging.index].z = world.z - dragging.dz
+        refreshInspector()
+      } else if (dragging.kind === 'planet') {
+        planets[dragging.index].x = world.x - dragging.dx
+        planets[dragging.index].z = world.z - dragging.dz
+        refreshInspector()
+      } else if (dragging.kind === 'resize') {
+        const p = planets[dragging.index]
+        p.radius = Math.max(50, Math.sqrt(dist2(world.x, world.z, p.x, p.z)))
+        refreshInspector()
+      }
+    })
+
+    window.addEventListener('mouseup', () => {
+      if (dragging) saveState()
+      dragging = null
+      panning = null
+    })
+
+    canvas.addEventListener('wheel', (ev) => {
+      ev.preventDefault()
+      const pos = canvasPos(ev)
+      const before = screenToWorld(pos.x, pos.y)
+      const factor = ev.deltaY < 0 ? 1.12 : 1 / 1.12
+      camera.scale = Math.min(2, Math.max(0.001, camera.scale * factor))
+      const after = screenToWorld(pos.x, pos.y)
+      camera.x += before.x - after.x
+      camera.z += before.z - after.z
+    }, { passive: false })
+
+    window.addEventListener('keydown', (ev) => {
+      if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) return
+      if (ev.key === 'Delete' || ev.key === 'Backspace') {
+        if (!selected) return
+        if (selected.type === 'waypoint') {
+          removeWaypointAt(selected.index)
+        } else {
+          planets.splice(selected.index, 1)
+          selected = null
+          refreshInspector()
+          saveState()
+        }
+      }
+      if (ev.key === 'Escape') {
+        selected = null
+        refreshInspector()
+      }
+      if (ev.key === ' ') {
+        ev.preventDefault()
+        document.getElementById('play').click()
+      }
+      if (ev.key === '1') setTool('select')
+      if (ev.key === '2') setTool('waypoint')
+      if (ev.key === '3') setTool('remove-waypoint')
+      if (ev.key === '4') setTool('planet')
+    })
+
+    document.getElementById('tool-select').onclick = () => setTool('select')
+    document.getElementById('tool-waypoint').onclick = () => setTool('waypoint')
+    document.getElementById('tool-remove-waypoint').onclick = () => setTool('remove-waypoint')
+    document.getElementById('tool-planet').onclick = () => setTool('planet')
+
+    document.getElementById('play').onclick = () => {
+      playback.playing = !playback.playing
+      document.getElementById('play').textContent = playback.playing ? 'Pause' : 'Play'
+    }
+    document.getElementById('reset-play').onclick = () => resetPlayback()
+    document.getElementById('accel-decel').addEventListener('input', () => {
+      syncAccelLabel()
+      saveState()
+    })
+    document.getElementById('reset-seed').onclick = () => {
+      const seed = cloneSeed()
+      planets = seed.planets
+      waypoints = seed.waypoints
+      markStart()
+      document.getElementById('accel-decel').value = '1'
+      syncAccelLabel()
+      selected = null
+      refreshInspector()
+      resetPlayback()
+      saveState()
+      toast('Restored figure-8 seed')
+    }
+    document.getElementById('delete-map').onclick = () => {
+      planets = []
+      waypoints = []
+      document.getElementById('accel-decel').value = '1'
+      document.getElementById('route-ts').value = ''
+      syncAccelLabel()
+      selected = null
+      refreshInspector()
+      resetPlayback()
+      saveState()
+      toast('Deleted current map')
+    }
+    document.getElementById('copy').onclick = async () => {
+      const text = exportTypeScript()
+      document.getElementById('route-ts').value = text
+      try {
+        await navigator.clipboard.writeText(text)
+        toast('Copied SHIP_ROUTE — paste into src/path/route.ts')
+      } catch {
+        toast('Copy failed — select the Map TypeScript box')
+        console.log(text)
+      }
+    }
+    document.getElementById('load-map').onclick = () => {
+      try {
+        const data = parseRouteTypeScript(document.getElementById('route-ts').value)
+        applyLoadedRoute(data)
+        toast('Loaded map from TypeScript')
+      } catch (err) {
+        toast(err && err.message ? err.message : 'Could not load map')
+      }
+    }
+
+    function bindNum(id, apply) {
+      document.getElementById(id).addEventListener('change', (e) => {
+        apply(Number(e.target.value))
+        saveState()
+      })
+    }
+    bindNum('wp-x', (v) => { if (selected && selected.type === 'waypoint') waypoints[selected.index].x = v })
+    bindNum('wp-z', (v) => { if (selected && selected.type === 'waypoint') waypoints[selected.index].z = v })
+    document.getElementById('wp-stop-id').addEventListener('change', (e) => {
+      if (selected && selected.type === 'waypoint' && waypoints[selected.index].isStop) {
+        waypoints[selected.index].stopId = e.target.value.trim()
+        saveState()
+      }
+    })
+    document.getElementById('wp-toggle-stop').onclick = () => {
+      if (!selected || selected.type !== 'waypoint') return
+      if (isStartIndex(selected.index)) { toast('Start cannot be a stop'); return }
+      const wp = waypoints[selected.index]
+      wp.isStop = !wp.isStop
+      ensureStopId(wp)
+      refreshInspector()
+      saveState()
+    }
+    document.getElementById('wp-delete').onclick = () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }))
+    }
+    document.getElementById('pl-name').addEventListener('change', (e) => {
+      if (selected && selected.type === 'planet') { planets[selected.index].name = e.target.value; saveState() }
+    })
+    document.getElementById('pl-model').addEventListener('change', (e) => {
+      if (selected && selected.type === 'planet') { planets[selected.index].model = e.target.value; saveState() }
+    })
+    bindNum('pl-x', (v) => { if (selected && selected.type === 'planet') planets[selected.index].x = v })
+    bindNum('pl-z', (v) => { if (selected && selected.type === 'planet') planets[selected.index].z = v })
+    bindNum('pl-radius', (v) => { if (selected && selected.type === 'planet') planets[selected.index].radius = Math.max(50, v) })
+    document.getElementById('pl-delete').onclick = () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }))
+    }
+
+    window.addEventListener('resize', resize)
+
+    function frame(ts) {
+      const dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0
+      lastTs = ts
+      tickPlayback(dt)
+      draw()
+      requestAnimationFrame(frame)
+    }
+
+    loadState()
+    syncAccelLabel()
+    resize()
+    refreshInspector()
+    resetPlayback()
+    requestAnimationFrame(frame)
+  </script>
+</body>
+</html>

@@ -2,7 +2,7 @@ import { engine, Entity, GltfContainer, GltfNodeModifiers, Name, Transform } fro
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { EntityNames } from '../assets/scene/entity-names'
 import { AsteroidData, PlanetData } from './components'
-import { FIGURE8_MIDPOINT } from './ship'
+import { SHIP_ROUTE, routePlanetCentroid } from './path/route'
 
 export type PlanetSpawnData = {
   name: string
@@ -96,23 +96,34 @@ export function spawnDistantStars(count: number = 20): void {
   }
 }
 
+/** Spawns authored planets from the path-editor route table. */
+export function spawnPlanetsFromRoute(): void {
+  for (const planet of SHIP_ROUTE.planets) {
+    createPlanet(planet.model, {
+      name: planet.name,
+      position: Vector3.create(planet.x, planet.y, planet.z),
+      radius: planet.radius
+    })
+  }
+}
+
 /**
  * Tags every scene-hierarchy entity named Asteroid.gltf with AsteroidData.
- * Assigns a virtual-space pose near the figure-8 midpoint so AsteroidSystem can project it.
+ * Assigns a virtual-space pose near the planet centroid so AsteroidSystem can project it.
  */
 export function setupAsteroids(): void {
+  const centroid = routePlanetCentroid(SHIP_ROUTE)
   let asteroidIndex = 0
   for (const [entity, name] of engine.getEntitiesWith(Name, Transform)) {
     if (name.value !== EntityNames.Asteroid_gltf || AsteroidData.has(entity)) {
       continue
     }
 
-    // Spread scene asteroids slightly in virtual space around the figure-8 midpoint.
     const yaw = asteroidIndex * 2.4
     const position = Vector3.create(
-      FIGURE8_MIDPOINT.x + Math.cos(yaw) * 2500,
-      FIGURE8_MIDPOINT.y + ((asteroidIndex % 3) - 1) * 800,
-      FIGURE8_MIDPOINT.z + Math.sin(yaw) * 2500
+      centroid.x + Math.cos(yaw) * 2500,
+      centroid.y + ((asteroidIndex % 3) - 1) * 800,
+      centroid.z + Math.sin(yaw) * 2500
     )
     AsteroidData.create(entity, {
       position,

@@ -4,8 +4,6 @@ import { AsteroidData, PlanetData } from './components'
 import {
   ASTEROID_ENCLOSING_SPHERE_RADIUS,
   ENCLOSING_SPHERE_RADIUS,
-  FIGURE8_MIDPOINT,
-  FIGURE8_SCALE,
   SCENE_SHIP_POSITION,
   shipVirtualPosition,
   shipVirtualRotation
@@ -103,46 +101,5 @@ export function AsteroidSystem(dt: number) {
     transform.rotation = Quaternion.multiply(projection.rotation, tumble)
     transform.scale = Vector3.create(projection.scale, projection.scale, projection.scale)
   }
-}
-
-// Figure-8 (Bernoulli lemniscate) test path with foci at FOCUS_A / FOCUS_B.
-const SPEED = 0.2
-
-let pathT = 0
-
-/** Bernoulli lemniscate in XZ, centered on FIGURE8_MIDPOINT, foci at FOCUS_A/B. */
-function lemniscatePosition(t: number): Vector3.Mutable {
-  const sinT = Math.sin(t)
-  const cosT = Math.cos(t)
-  const denom = 1 + sinT * sinT
-  return Vector3.create(
-    FIGURE8_MIDPOINT.x + (FIGURE8_SCALE * cosT) / denom,
-    FIGURE8_MIDPOINT.y,
-    FIGURE8_MIDPOINT.z + (FIGURE8_SCALE * sinT * cosT) / denom
-  )
-}
-
-/**
- * Animates the ship's *virtual* pose along a figure-8 around the two test planets.
- * The visible ship model stays at SCENE_SHIP_POSITION.
- */
-export function TestShipAnimator(dt: number) {
-  // Step 1: advance the path parameter.
-  pathT += SPEED * dt
-
-  // Step 2: place the virtual ship on the lemniscate.
-  const position = lemniscatePosition(pathT)
-  shipVirtualPosition.x = position.x
-  shipVirtualPosition.y = position.y
-  shipVirtualPosition.z = position.z
-
-  // Step 3: face along the path tangent only (no bank — nearest-focus roll flips caused jumps).
-  const ahead = lemniscatePosition(pathT + 0.01)
-  const tangent = Vector3.normalize(Vector3.subtract(ahead, position))
-  const facing = Quaternion.lookRotation(tangent)
-  shipVirtualRotation.x = facing.x
-  shipVirtualRotation.y = facing.y
-  shipVirtualRotation.z = facing.z
-  shipVirtualRotation.w = facing.w
 }
 
