@@ -38,77 +38,30 @@ export const SHIP_ROUTE: ShipRoute = {
   accelDecel: 1,
   planets: [
     {
-      name: 'TestPlanet',
+      name: 'Planet_A',
       model: 'assets/scene/Models/TestPlanet.gltf',
-      x: 9913.81,
+      x: 0,
       y: 0,
-      z: 19.41,
-      radius: 3500
+      z: 0,
+      radius: 80
     },
     {
-      name: 'Planet_2',
-      model: 'assets/scene/Models/TestPlanet.gltf',
-      x: -10229.8,
+      name: 'Planet_B',
+      model: 'assets/scene/Models/TestMoon.gltf',
+      x: 420,
       y: 0,
-      z: 406.68,
-      radius: 3168.62
-    },
-    {
-      name: 'Planet_3',
-      model: 'assets/scene/Models/TestPlanet.gltf',
-      x: -28916.96,
-      y: 0,
-      z: 82.51,
-      radius: 3252.24
-    },
-    {
-      name: 'Planet_4',
-      model: 'assets/scene/Models/TestPlanet.gltf',
-      x: -48342.46,
-      y: 0,
-      z: -198.81,
-      radius: 3812.5
-    },
-    {
-      name: 'Planet_5',
-      model: 'assets/scene/Models/TestPlanet.gltf',
-      x: -65364.01,
-      y: 0,
-      z: 658.87,
-      radius: 3903.48
-    },
-    {
-      name: 'Planet_6',
-      model: 'assets/scene/Models/TestPlanet.gltf',
-      x: -83010.12,
-      y: 0,
-      z: 658.87,
-      radius: 3733.05
-    },
-    {
-      name: 'Planet_7',
-      model: 'assets/scene/Models/TestPlanet.gltf',
-      x: -111664.78,
-      y: 0,
-      z: 8686.88,
-      radius: 5494.45
+      z: 80,
+      radius: 28
     }
   ],
   legs: [
     {
       stopId: 'end',
       points: [
-        { x: 25018.66, z: 1440.69 },
-        { x: 18623.1, z: 6062.12 },
-        { x: 3663.14, z: 9658.27 },
-        { x: -11872.2, z: 10089.81 },
-        { x: -27551.39, z: 9802.11 },
-        { x: -43086.73, z: 9945.96 },
-        { x: -58478.23, z: 10952.88 },
-        { x: -69410.51, z: 10809.03 },
-        { x: -80486.63, z: 11384.42 },
-        { x: -95590.44, z: 13542.1 },
-        { x: -108392.71, z: 19727.47 }
+        { x: -140, z: 10 },
+        { x: 50, z: 130 },
+        { x: 260, z: 120 },
+        { x: 430, z: 130 }
       ]
     }
   ]

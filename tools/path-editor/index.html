@@ -99,22 +99,22 @@
         </div>
         <div class="row">
           <label>Hold (s)<input id="hold-seconds" type="number" min="0" step="0.5" value="1.5" /></label>
-          <label>Cruise<input id="cruise" type="number" min="1" step="100" value="2500" /></label>
+          <label>Cruise<input id="cruise" type="number" min="1" step="5" value="40" /></label>
         </div>
         <label>
           <span class="slider-head">Accel / decel <span id="accel-value">1.00</span></span>
           <input id="accel-decel" type="range" min="0" max="1" step="0.05" value="1" />
         </label>
         <p class="hint">0 = constant speed. 1 = longest ramp up from a stop and down into the next.</p>
-        <label>Clearance padding<input id="padding" type="number" min="0" step="50" value="200" /></label>
+        <label>Clearance padding<input id="padding" type="number" min="0" step="1" value="8" /></label>
       </fieldset>
       <fieldset id="inspector">
         <legend>Inspector</legend>
         <p class="hint" id="inspector-empty">Nothing selected.</p>
         <div id="insp-waypoint" hidden>
           <div class="row">
-            <label>X<input id="wp-x" type="number" step="10" /></label>
-            <label>Z<input id="wp-z" type="number" step="10" /></label>
+            <label>X<input id="wp-x" type="number" step="1" /></label>
+            <label>Z<input id="wp-z" type="number" step="1" /></label>
           </div>
           <label><span>Stop id</span><input id="wp-stop-id" type="text" /></label>
           <div class="row">
@@ -126,10 +126,10 @@
           <label>Name<input id="pl-name" type="text" /></label>
           <label>Model<input id="pl-model" type="text" /></label>
           <div class="row">
-            <label>X<input id="pl-x" type="number" step="10" /></label>
-            <label>Z<input id="pl-z" type="number" step="10" /></label>
+            <label>X<input id="pl-x" type="number" step="1" /></label>
+            <label>Z<input id="pl-z" type="number" step="1" /></label>
           </div>
-          <label>Radius<input id="pl-radius" type="number" min="1" step="50" /></label>
+          <label>Radius<input id="pl-radius" type="number" min="1" step="1" /></label>
           <button id="pl-delete" class="danger" type="button">Delete planet</button>
         </div>
       </fieldset>
@@ -151,31 +151,23 @@
     </div>
   </div>
   <script>
-    const STORAGE_KEY = 'virtualspace-path-editor-v2'
+    const STORAGE_KEY = 'virtualspace-path-editor-v3'
     const PLANET_COLORS = ['#58a6ff', '#d2a8ff', '#79c0ff', '#a5d6ff', '#ffa657']
     const LEG_COLORS = ['#7ee787', '#58a6ff', '#f0883e', '#d2a8ff', '#79c0ff', '#ffa198']
+    const MIN_PLANET_RADIUS = 1
+    const DEFAULT_PLANET_RADIUS = 40
+    const SAMPLE_SPACING = 4
+    const DEFAULT_CRUISE = 40
 
     const SEED_PLANETS = [
-      { name: 'TestPlanet', model: 'assets/scene/Models/TestPlanet.gltf', x: 0, y: 0, z: 0, radius: 3500 },
-      { name: 'TestMoon', model: 'assets/scene/Models/TestMoon.gltf', x: 20000, y: 0, z: 0, radius: 1000 }
+      { name: 'Planet_A', model: 'assets/scene/Models/TestPlanet.gltf', x: 0, y: 0, z: 0, radius: 80 },
+      { name: 'Planet_B', model: 'assets/scene/Models/TestMoon.gltf', x: 420, y: 0, z: 80, radius: 28 }
     ]
     const SEED_WAYPOINTS = [
-      { x: 25839, z: 0, isStop: false, stopId: '' },
-      { x: 22764, z: 4885, isStop: false, stopId: '' },
-      { x: 17467, z: 5280, isStop: false, stopId: '' },
-      { x: 13270, z: 3021, isStop: false, stopId: '' },
-      { x: 10000, z: 0, isStop: false, stopId: '' },
-      { x: 6730, z: -3021, isStop: false, stopId: '' },
-      { x: 2533, z: -5280, isStop: false, stopId: '' },
-      { x: -2764, z: -4885, isStop: false, stopId: '' },
-      { x: -5839, z: 0, isStop: true, stopId: 'encounter-a' },
-      { x: -2764, z: 4885, isStop: false, stopId: '' },
-      { x: 2533, z: 5280, isStop: false, stopId: '' },
-      { x: 6730, z: 3021, isStop: false, stopId: '' },
-      { x: 10000, z: 0, isStop: false, stopId: '' },
-      { x: 13270, z: -3021, isStop: false, stopId: '' },
-      { x: 17467, z: -5280, isStop: false, stopId: '' },
-      { x: 22764, z: -4885, isStop: true, stopId: 'encounter-b' }
+      { x: -140, z: 10, isStop: false, stopId: '' },
+      { x: 50, z: 130, isStop: false, stopId: '' },
+      { x: 260, z: 120, isStop: false, stopId: '' },
+      { x: 430, z: 130, isStop: true, stopId: 'end' }
     ]
 
     function cloneSeed() {
@@ -194,7 +186,7 @@
     let waypoints = []
     let selected = null
     let tool = 'select'
-    let camera = { x: 10000, z: 0, scale: 0.018 }
+    let camera = { x: 160, z: 50, scale: 1.2 }
     let dragging = null
     let panning = null
     let cursorWorld = { x: 0, z: 0 }
@@ -374,7 +366,7 @@
       const segs = legPoints.length - 1
       for (let seg = 0; seg < segs; seg++) {
         const { p0, p1, p2, p3 } = openHandles(allLegs, legIndex, seg)
-        const count = Math.min(200, Math.max(12, Math.ceil(distPt(p1, p2) / 40)))
+        const count = Math.min(200, Math.max(12, Math.ceil(distPt(p1, p2) / SAMPLE_SPACING)))
         for (let i = 1; i <= count; i++) {
           const pt = interpolatePoint(p0, p1, p2, p3, i / count)
           const step = distPt(prevPt, pt)
@@ -680,7 +672,7 @@
         x: Number(p.x) || 0,
         y: Number(p.y) || 0,
         z: Number(p.z) || 0,
-        radius: Math.max(50, Number(p.radius) || 2000)
+        radius: Math.max(MIN_PLANET_RADIUS, Number(p.radius) || DEFAULT_PLANET_RADIUS)
       }))
       waypoints = legsToWaypoints(data.legs)
       markStart()
@@ -921,7 +913,7 @@
       const legs = waypointsToLegs()
       if (!legs.length) return
       const holdSec = Number(document.getElementById('hold-seconds').value) || 0
-      const cruise = Number(document.getElementById('cruise').value) || 2500
+      const cruise = Number(document.getElementById('cruise').value) || DEFAULT_CRUISE
       if (playback.holding) {
         if (playback.finished) return
         playback.holdElapsed += dt
@@ -987,7 +979,7 @@
           x: world.x,
           y: 0,
           z: world.z,
-          radius: 2000
+          radius: DEFAULT_PLANET_RADIUS
         })
         selectPlanet(planets.length - 1)
         saveState()
@@ -1066,7 +1058,7 @@
         refreshInspector()
       } else if (dragging.kind === 'resize') {
         const p = planets[dragging.index]
-        p.radius = Math.max(50, Math.sqrt(dist2(world.x, world.z, p.x, p.z)))
+        p.radius = Math.max(MIN_PLANET_RADIUS, Math.sqrt(dist2(world.x, world.z, p.x, p.z)))
         refreshInspector()
       }
     })
@@ -1082,7 +1074,7 @@
       const pos = canvasPos(ev)
       const before = screenToWorld(pos.x, pos.y)
       const factor = ev.deltaY < 0 ? 1.12 : 1 / 1.12
-      camera.scale = Math.min(2, Math.max(0.001, camera.scale * factor))
+      camera.scale = Math.min(8, Math.max(0.05, camera.scale * factor))
       const after = screenToWorld(pos.x, pos.y)
       camera.x += before.x - after.x
       camera.z += before.z - after.z
@@ -1139,8 +1131,9 @@
       selected = null
       refreshInspector()
       resetPlayback()
+      frameMap()
       saveState()
-      toast('Restored figure-8 seed')
+      toast('Restored two-planet demo')
     }
     document.getElementById('delete-map').onclick = () => {
       planets = []
@@ -1209,7 +1202,7 @@
     })
     bindNum('pl-x', (v) => { if (selected && selected.type === 'planet') planets[selected.index].x = v })
     bindNum('pl-z', (v) => { if (selected && selected.type === 'planet') planets[selected.index].z = v })
-    bindNum('pl-radius', (v) => { if (selected && selected.type === 'planet') planets[selected.index].radius = Math.max(50, v) })
+    bindNum('pl-radius', (v) => { if (selected && selected.type === 'planet') planets[selected.index].radius = Math.max(MIN_PLANET_RADIUS, v) })
     document.getElementById('pl-delete').onclick = () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }))
     }
@@ -1227,6 +1220,7 @@
     loadState()
     syncAccelLabel()
     resize()
+    frameMap()
     refreshInspector()
     resetPlayback()
     requestAnimationFrame(frame)

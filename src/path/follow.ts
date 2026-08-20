@@ -3,7 +3,7 @@ import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { SHIP_ROUTE, type ShipRoute } from './route'
 
 /** World units per second at mid-leg (ease-in-out averages to this). */
-export const SHIP_CRUISE_SPEED = 2500
+export const SHIP_CRUISE_SPEED = 40
 
 /** Placeholder park time until an encounter calls `resumeFromStop()`. */
 export const HOLD_SECONDS = 4
@@ -13,13 +13,13 @@ export const HOLD_SECONDS = 4
  * (writePositionAt), not a live Catmull-Rom eval.
  *
  * SAMPLE_SPACING is the target gap in virtual units. A waypoint-to-waypoint chord longer
- * than MAX_SEGMENT_SAMPLES * SAMPLE_SPACING (8000) gets coarser samples, so tight bends
+ * than MAX_SEGMENT_SAMPLES * SAMPLE_SPACING (800) gets coarser samples, so tight bends
  * across a huge gap can look slightly faceted. Raise/remove the cap if that shows up.
  */
-const SAMPLE_SPACING = 40
+const SAMPLE_SPACING = 4
 const MIN_SEGMENT_SAMPLES = 12
 const MAX_SEGMENT_SAMPLES = 200
-const TANGENT_LOOKAHEAD = 150
+const TANGENT_LOOKAHEAD = 15
 const TANGENT_EPSILON = 1e-6
 const KNOT_EPSILON = 1e-4
 /**
@@ -175,7 +175,7 @@ function prepareLegs(route: ShipRoute): PreparedLeg[] {
       stopId: leg.stopId,
       length,
       duration: length > 1 ? length / SHIP_CRUISE_SPEED : 0,
-      lookAhead: Math.min(TANGENT_LOOKAHEAD, Math.max(20, length * 0.02)),
+      lookAhead: Math.min(TANGENT_LOOKAHEAD, Math.max(4, length * 0.02)),
       samples
     })
   }

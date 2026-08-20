@@ -30,7 +30,7 @@ export function createPlanet(modelPath: string, data: PlanetSpawnData): Entity {
 const STAR_MODEL = 'assets/scene/Models/Star.gltf'
 
 /** Tweak this to make all distant stars larger or smaller (virtual radius multiplier). */
-export const STAR_SIZE = 1000
+export const STAR_SIZE = 10
 
 /** Star.gltf baseColorFactor (RGB) — tint is applied relative to this. */
 const STAR_BASE_COLOR = { r: 0.8, g: 0.8, b: 0.8 }
@@ -73,7 +73,7 @@ export function spawnDistantStars(count: number = 20): void {
     // Deterministic "random" directions so the field is stable across reloads.
     const yaw = (i / count) * Math.PI * 2 + i * 0.37
     const pitch = -0.8 + ((i * 0.618) % 1) * 1.6
-    const distance = 80000 + ((i * 9973) % 420000)
+    const distance = 800 + ((i * 9973) % 4200)
 
     const cosPitch = Math.cos(pitch)
     const position = Vector3.create(
@@ -121,13 +121,13 @@ export function setupAsteroids(): void {
 
     const yaw = asteroidIndex * 2.4
     const position = Vector3.create(
-      centroid.x + Math.cos(yaw) * 2500,
-      centroid.y + ((asteroidIndex % 3) - 1) * 800,
-      centroid.z + Math.sin(yaw) * 2500
+      centroid.x + Math.cos(yaw) * 40,
+      centroid.y + ((asteroidIndex % 3) - 1) * 8,
+      centroid.z + Math.sin(yaw) * 40
     )
     AsteroidData.create(entity, {
       position,
-      radius: 180
+      radius: 4
     })
     asteroidIndex++
   }
