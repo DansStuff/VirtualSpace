@@ -100,44 +100,23 @@
             "parent": 0
           }
         },
-        "516": {
-          "json": {
-            "position": {
-              "x": 61.75,
-              "y": 63,
-              "z": 75.25
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0,
-              "w": 1
-            },
-            "parent": 0
-          }
-        },
         "518": {
           "json": {
             "position": {
-              "x": 58.12126922607422,
-              "y": 63.230716705322266,
-              "z": 54.73446273803711
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
+              "x": 69.75,
+              "y": 68.75,
+              "z": 73.25
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -145,20 +124,20 @@
         "519": {
           "json": {
             "position": {
-              "x": 69.62126922607422,
-              "y": 63.230716705322266,
-              "z": 54.73446273803711
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
+              "x": 58.25,
+              "y": 68.75,
+              "z": 73.25
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -187,13 +166,6 @@
             "visibleMeshesCollisionMask": 0,
             "invisibleMeshesCollisionMask": 3
           }
-        },
-        "516": {
-          "json": {
-            "src": "assets/scene/Models/Asteroid.gltf",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 3
-          }
         }
       }
     },
@@ -218,11 +190,6 @@
         "514": {
           "json": {
             "value": "Background.gltf"
-          }
-        },
-        "516": {
-          "json": {
-            "value": "Asteroid.gltf"
           }
         },
         "518": {
@@ -380,8 +347,7 @@
                   514,
                   518,
                   519,
-                  512,
-                  516
+                  512
                 ]
               },
               {
@@ -406,10 +372,6 @@
               },
               {
                 "entity": 512,
-                "children": []
-              },
-              {
-                "entity": 516,
                 "children": []
               }
             ]
@@ -438,9 +400,6 @@
           "json": {}
         },
         "514": {
-          "json": {}
-        },
-        "516": {
           "json": {}
         },
         "518": {
@@ -1370,10 +1329,47 @@
             "ageRating": "A",
             "categories": [],
             "author": "DanL",
-            "email": "",
-            "tags": [],
+            "tags": [
+              ""
+            ],
             "layout": {
+              "base": {
+                "x": 0,
+                "y": 0
+              },
               "parcels": [
+                {
+                  "x": 0,
+                  "y": 8
+                },
+                {
+                  "x": 1,
+                  "y": 8
+                },
+                {
+                  "x": 2,
+                  "y": 8
+                },
+                {
+                  "x": 3,
+                  "y": 8
+                },
+                {
+                  "x": 4,
+                  "y": 8
+                },
+                {
+                  "x": 5,
+                  "y": 8
+                },
+                {
+                  "x": 6,
+                  "y": 8
+                },
+                {
+                  "x": 7,
+                  "y": 8
+                },
                 {
                   "x": 0,
                   "y": 7
@@ -1630,14 +1626,8 @@
                   "x": 7,
                   "y": 0
                 }
-              ],
-              "base": {
-                "x": 0,
-                "y": 0
-              }
+              ]
             },
-            "silenceVoiceChat": false,
-            "disablePortableExperiences": false,
             "spawnPoints": [
               {
                 "name": "SpawnArea1",
@@ -1646,38 +1636,33 @@
                   "x": {
                     "$case": "range",
                     "value": [
-                      62.7599983215332,
-                      65.76000213623047
+                      62.9900016784668,
+                      65.98999786376953
                     ]
                   },
                   "y": {
-                    "$case": "range",
-                    "value": [
-                      59.86000061035156,
-                      59.86000061035156
-                    ]
+                    "$case": "single",
+                    "value": 65.61000061035156
                   },
                   "z": {
                     "$case": "range",
                     "value": [
-                      59.040000915527344,
-                      62.040000915527344
+                      67.20999908447266,
+                      70.20999908447266
                     ]
                   }
                 },
                 "cameraTarget": {
-                  "x": 63.880001068115234,
-                  "y": 61.93000030517578,
-                  "z": 75.2699966430664
+                  "x": 63.119998931884766,
+                  "y": 67.43000030517578,
+                  "z": 26.479999542236328
                 }
               }
             ],
             "skyboxConfig": {
               "fixedTime": 86340
             },
-            "creator": "",
-            "disableNearbyVoiceChat": false,
-            "hideLandscapeTerrain": false
+            "hideLandscapeTerrain": true
           }
         }
       }

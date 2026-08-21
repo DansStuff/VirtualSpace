@@ -39,6 +39,9 @@ const MAX_BANK_DEGREES = 55
 const BANK_GAIN = -400
 const ROLL_SMOOTH = 2
 
+/** Extra yaw so virtual forward matches a 180° Y flip of the ship GLTF. Applied after bank. */
+const MODEL_YAW = Quaternion.fromAngleAxis(180, Vector3.Up())
+
 const scratchPoint: RoutePoint = { x: 0, z: 0 }
 const scratchAhead: RoutePoint = { x: 0, z: 0 }
 const scratchNext: RoutePoint = { x: 0, z: 0 }
@@ -219,10 +222,11 @@ function applyLookAndBank(targetRoll: number, dt: number): void {
   }
   const facing = Quaternion.lookRotation(scratchForward)
   const banked = Quaternion.multiply(facing, Quaternion.fromAngleAxis(state.roll, scratchBankAxis))
-  shipVirtualRotation.x = banked.x
-  shipVirtualRotation.y = banked.y
-  shipVirtualRotation.z = banked.z
-  shipVirtualRotation.w = banked.w
+  const oriented = Quaternion.multiply(banked, MODEL_YAW)
+  shipVirtualRotation.x = oriented.x
+  shipVirtualRotation.y = oriented.y
+  shipVirtualRotation.z = oriented.z
+  shipVirtualRotation.w = oriented.w
 }
 
 /** Y of unit(current) × unit(next). Negative = left turn, positive = right. */

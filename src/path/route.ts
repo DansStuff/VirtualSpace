@@ -40,33 +40,40 @@ export const SHIP_ROUTE: ShipRoute = {
     {
       name: 'Planet_A',
       model: 'assets/scene/Models/TestPlanet.gltf',
-      x: 0,
+      x: -230.27,
       y: 0,
-      z: 0,
+      z: 115.69,
       radius: 80
     },
     {
       name: 'Planet_B',
       model: 'assets/scene/Models/TestMoon.gltf',
-      x: 420,
+      x: -619,
       y: 0,
-      z: 80,
+      z: 309.14,
       radius: 28
+    },
+    {
+      name: 'Sun',
+      model: 'assets/scene/Models/Sun.gltf',
+      x: 552.82,
+      y: 0,
+      z: 1596.48,
+      radius: 828
     }
   ],
   legs: [
     {
       stopId: 'end',
       points: [
-        { x: -140, z: 10 },
-        { x: 50, z: 130 },
-        { x: 260, z: 120 },
-        { x: 430, z: 130 }
+        { x: 41.6, z: 232.56 },
+        { x: -188.69, z: 262.08 },
+        { x: -465.85, z: 409.35 },
+        { x: -662.73, z: 640.31 }
       ]
     }
   ]
 }
-
 export function routePlanetCentroid(route: ShipRoute): { x: number; y: number; z: number } {
   if (route.planets.length === 0) {
     return { x: 0, y: route.y, z: 0 }
