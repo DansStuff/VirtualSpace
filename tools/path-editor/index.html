@@ -79,7 +79,7 @@
     <aside>
       <div>
         <h1>Path editor</h1>
-        <p class="hint">Top-down XZ map. Copy TypeScript into <code>src/path/route.ts</code>, or paste that same block below to reload a map.</p>
+        <p class="hint">Top-down XZ map. Save TypeScript overwrites <code>src/path/routedata.ts</code> (run <code>npm run path-editor</code>). Paste a route below to reload a map.</p>
       </div>
       <fieldset>
         <legend>Tool</legend>
@@ -137,7 +137,7 @@
         <legend>Map TypeScript</legend>
         <textarea id="route-ts" spellcheck="false" placeholder="Paste export const SHIP_ROUTE = { ... } here, then Load map."></textarea>
         <div class="row">
-          <button id="copy" class="primary" type="button">Copy TypeScript</button>
+          <button id="copy" class="primary" type="button">Save TypeScript</button>
           <button id="load-map" type="button">Load map</button>
           <button id="reset-seed" type="button">Reset seed</button>
           <button id="delete-map" class="danger" type="button">Delete map</button>
@@ -156,6 +156,8 @@
     const LEG_COLORS = ['#7ee787', '#58a6ff', '#f0883e', '#d2a8ff', '#79c0ff', '#ffa198']
     const MIN_PLANET_RADIUS = 1
     const DEFAULT_PLANET_RADIUS = 40
+    const PLANET_HANDLE_RADIUS_PX = 6
+    const PLANET_HANDLE_HIT_PX = 6
     const SAMPLE_SPACING = 4
     const DEFAULT_CRUISE = 40
 
@@ -442,9 +444,11 @@
     function hitPlanet(world) {
       for (let i = planets.length - 1; i >= 0; i--) {
         const p = planets[i]
+        const handleR = PLANET_HANDLE_HIT_PX / camera.scale
+        if (dist2(world.x, world.z, p.x + p.radius, p.z) <= handleR * handleR) {
+          return { index: i, resize: true }
+        }
         const d = Math.sqrt(dist2(world.x, world.z, p.x, p.z))
-        const handle = Math.abs(d - p.radius) <= 12 / camera.scale
-        if (handle) return { index: i, resize: true }
         if (d <= p.radius) return { index: i, resize: false }
       }
       return null
@@ -543,11 +547,20 @@
       return Object.is(r, -0) ? '0' : String(r)
     }
 
+    function editorApi(pathname) {
+      if (location.protocol === 'http:' || location.protocol === 'https:') return pathname
+      return 'http://127.0.0.1:4177' + pathname
+    }
+
     function exportTypeScript() {
       const legs = waypointsToLegs()
       const y = 0
       const lines = []
-      lines.push('export const SHIP_ROUTE: ShipRoute = {')
+      lines.push('/**')
+      lines.push(' * Authored map data. The path editor overwrites this file (Save TypeScript).')
+      lines.push(' */')
+      lines.push('')
+      lines.push('export const SHIP_ROUTE = {')
       lines.push('  y: ' + y + ',')
       lines.push('  accelDecel: ' + fmtNum(readAccelDecel()) + ',')
       lines.push('  planets: [')
@@ -784,7 +797,7 @@
         }
         const handle = worldToScreen(p.x + p.radius, p.z)
         ctx.beginPath()
-        ctx.arc(handle.x, handle.y, 6, 0, Math.PI * 2)
+        ctx.arc(handle.x, handle.y, PLANET_HANDLE_RADIUS_PX, 0, Math.PI * 2)
         ctx.fillStyle = '#e6edf3'
         ctx.fill()
         ctx.fillStyle = '#e6edf3'
@@ -1151,16 +1164,33 @@
       const text = exportTypeScript()
       document.getElementById('route-ts').value = text
       try {
-        await navigator.clipboard.writeText(text)
-        toast('Copied SHIP_ROUTE — paste into src/path/route.ts')
-      } catch {
-        toast('Copy failed — select the Map TypeScript box')
-        console.log(text)
+        const res = await fetch(editorApi('/api/save'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: text })
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Save failed')
+        toast('Wrote src/path/routedata.ts')
+      } catch (err) {
+        try {
+          await navigator.clipboard.writeText(text)
+          toast('Server not running — copied instead. Use npm run path-editor')
+        } catch {
+          toast(err && err.message ? err.message : 'Could not write routedata.ts')
+          console.log(text)
+        }
       }
     }
-    document.getElementById('load-map').onclick = () => {
+    document.getElementById('load-map').onclick = async () => {
       try {
-        const data = parseRouteTypeScript(document.getElementById('route-ts').value)
+        let text = document.getElementById('route-ts').value
+        if (!String(text || '').trim()) {
+          const res = await fetch(editorApi('/api/route'))
+          if (!res.ok) throw new Error('Could not read src/path/routedata.ts')
+          text = await res.text()
+          document.getElementById('route-ts').value = text
+        }
+        const data = parseRouteTypeScript(text)
         applyLoadedRoute(data)
         toast('Loaded map from TypeScript')
       } catch (err) {

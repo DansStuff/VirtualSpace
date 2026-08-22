@@ -1,3 +1,5 @@
+import { SHIP_ROUTE as authoredRoute } from './routedata'
+
 export type RoutePlanet = {
   name: string
   model: string
@@ -30,50 +32,12 @@ export type ShipRoute = {
 }
 
 /**
- * Authored in tools/path-editor/index.html (Copy TypeScript).
+ * Authored map lives in routedata.ts (path editor Save TypeScript overwrites that file).
  * Open path: first point of the first leg is Start; the ship does not loop.
  */
-export const SHIP_ROUTE: ShipRoute = {
-  y: 0,
-  accelDecel: 1,
-  planets: [
-    {
-      name: 'Planet_A',
-      model: 'assets/scene/Models/TestPlanet.gltf',
-      x: -230.27,
-      y: 0,
-      z: 115.69,
-      radius: 80
-    },
-    {
-      name: 'Planet_B',
-      model: 'assets/scene/Models/TestMoon.gltf',
-      x: -619,
-      y: 0,
-      z: 309.14,
-      radius: 28
-    },
-    {
-      name: 'Sun',
-      model: 'assets/scene/Models/Sun.gltf',
-      x: 552.82,
-      y: 0,
-      z: 1596.48,
-      radius: 828
-    }
-  ],
-  legs: [
-    {
-      stopId: 'end',
-      points: [
-        { x: 41.6, z: 232.56 },
-        { x: -188.69, z: 262.08 },
-        { x: -465.85, z: 409.35 },
-        { x: -662.73, z: 640.31 }
-      ]
-    }
-  ]
-}
+
+export const SHIP_ROUTE: ShipRoute = authoredRoute
+
 export function routePlanetCentroid(route: ShipRoute): { x: number; y: number; z: number } {
   if (route.planets.length === 0) {
     return { x: 0, y: route.y, z: 0 }

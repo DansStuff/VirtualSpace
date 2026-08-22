@@ -1,5 +1,5 @@
 import { engine } from '@dcl/sdk/ecs'
-import { spawnPlanetsFromRoute, spawnDistantStars, setupAsteroids } from './factory'
+import { spawnPlanetsFromRoute, spawnDistantStars/*, setupAsteroids*/ } from './factory'
 import { setupUi } from './ui'
 import { AsteroidSystem, PlanetSystem } from './systems'
 import { ShipPathSystem } from './path/follow'

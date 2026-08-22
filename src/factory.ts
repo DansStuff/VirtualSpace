@@ -111,6 +111,7 @@ export function spawnPlanetsFromRoute(): void {
  * Tags every scene-hierarchy entity named Asteroid.gltf with AsteroidData.
  * Assigns a virtual-space pose near the planet centroid so AsteroidSystem can project it.
  */
+/*
 export function setupAsteroids(): void {
   const centroid = routePlanetCentroid(SHIP_ROUTE)
   let asteroidIndex = 0
@@ -132,4 +133,5 @@ export function setupAsteroids(): void {
     asteroidIndex++
   }
 }
+  */
 

@@ -3,7 +3,7 @@ import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { SHIP_ROUTE, type ShipRoute } from './route'
 
 /** World units per second at mid-leg (ease-in-out averages to this). */
-export const SHIP_CRUISE_SPEED = 40
+export const SHIP_CRUISE_SPEED = 400
 
 /** Placeholder park time until an encounter calls `resumeFromStop()`. */
 export const HOLD_SECONDS = 4

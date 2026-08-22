@@ -1,5 +1,6 @@
 package-lock.json
 *.js
+!tools/path-editor/server.js
 node_modules
 bin/
 .DS_Store
