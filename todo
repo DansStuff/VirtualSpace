@@ -1,3 +1,31 @@
-asteroids should now be able to spawn around the ship
-need a stationary ship position to test it though
-maybe worth just creating the planet path system first, if asteroid spawning is bad fall back to stationary hazards
+code:
+initial game sync for late joiners
+room
+    requestMissionStart
+    notifyMissionStart
+    requestInitialState
+    notifyHazardSpawn
+    requestHazardTarget
+    notifyHazardShot
+
+ui:
+incoming hazards warning
+start mission button
+
+art:
+
+multiple planets with different features
+ringed planet
+planet with gas around it
+
+stars in background
+
+
+game loop:
+
+-someone presses start mission
+
+-hazards incoming warning
+-encounter happens
+-fly to next encounter (unless engines damaged)
+

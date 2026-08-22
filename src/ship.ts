@@ -2,8 +2,9 @@ import { engine, Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 /**
- * Radius of the fixed enclosing celestial sphere (scene meters).
- * Ship / sphere center sits at (R, R, R) so the shell fits a 2R cube from the origin.
+ * Projection-shell radius for planets/stars (scene meters).
+ * Does not place the ship — the center is always SCENE_SHIP_POSITION.
+ * Smaller values pull bodies onto a closer shell; apparent angular size is unchanged.
  */
 export const ENCLOSING_SPHERE_RADIUS = 40//64
 
