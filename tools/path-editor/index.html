@@ -103,9 +103,9 @@
         </div>
         <label>
           <span class="slider-head">Accel / decel <span id="accel-value">1.00</span></span>
-          <input id="accel-decel" type="range" min="0" max="1" step="0.05" value="1" />
+          <input id="accel-decel" type="range" min="0" max="4" step="0.05" value="1" />
         </label>
-        <p class="hint">0 = constant speed. 1 = longest ramp up from a stop and down into the next.</p>
+        <p class="hint">0 = constant speed. 1 = full ease in and out. Above 1 stays slower near stops.</p>
         <label>Clearance padding<input id="padding" type="number" min="0" step="1" value="8" /></label>
       </fieldset>
       <fieldset id="inspector">
@@ -407,7 +407,13 @@
     function accelDecelProgress(t, amount) {
       if (t <= 0) return 0
       if (t >= 1) return 1
-      const ramp = Math.min(1, Math.max(0, amount)) * 0.5
+      const a = Math.min(4, Math.max(0, amount))
+      if (a >= 1) {
+        const p = 1 + a
+        if (t < 0.5) return Math.pow(2 * t, p) / 2
+        return 1 - Math.pow(2 * (1 - t), p) / 2
+      }
+      const ramp = a * 0.5
       if (ramp < 1e-6) return t
       const peak = 1 / (1 - ramp)
       if (t < ramp) return (peak * t * t) / (2 * ramp)
@@ -690,7 +696,7 @@
       waypoints = legsToWaypoints(data.legs)
       markStart()
       const accel = Number(data.accelDecel)
-      document.getElementById('accel-decel').value = String(Number.isFinite(accel) ? Math.min(1, Math.max(0, accel)) : 1)
+      document.getElementById('accel-decel').value = String(Number.isFinite(accel) ? Math.min(4, Math.max(0, accel)) : 1)
       syncAccelLabel()
       selected = null
       refreshInspector()

@@ -5,7 +5,7 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
  * Radius of the fixed enclosing celestial sphere (scene meters).
  * Ship / sphere center sits at (R, R, R) so the shell fits a 2R cube from the origin.
  */
-export const ENCLOSING_SPHERE_RADIUS = 64
+export const ENCLOSING_SPHERE_RADIUS = 40//64
 
 /**
  * Smaller enclosing sphere for asteroids (closer shell than planets/stars).
@@ -15,9 +15,9 @@ export const ASTEROID_ENCLOSING_SPHERE_RADIUS = 20
 
 /** Fixed scene-space anchor for the visible ship model (center of the enclosing sphere). */
 export const SCENE_SHIP_POSITION = Vector3.create(
-  ENCLOSING_SPHERE_RADIUS,
-  ENCLOSING_SPHERE_RADIUS,
-  ENCLOSING_SPHERE_RADIUS
+  64,
+  64,
+  64
 )
 
 /** Pull celestial body centers inward from the shell along the view ray (meters). */

@@ -24,7 +24,8 @@ export type ShipRoute = {
   y: number
   /**
    * 0 = constant cruise (snappy start/stop).
-   * 1 = longest accel/decel ramps (no mid-leg cruise plateau).
+   * 1 = accel for the first half, decel for the second (no mid-leg cruise).
+   * 1–4 = slower holds at the ends and a sharper mid-leg.
    */
   accelDecel: number
   planets: RoutePlanet[]

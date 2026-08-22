@@ -3,10 +3,10 @@ import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { SHIP_ROUTE, type ShipRoute } from './route'
 
 /** World units per second at mid-leg (ease-in-out averages to this). */
-export const SHIP_CRUISE_SPEED = 400
+export const SHIP_CRUISE_SPEED = 800
 
 /** Placeholder park time until an encounter calls `resumeFromStop()`. */
-export const HOLD_SECONDS = 4
+export const HOLD_SECONDS = 2
 
 /**
  * Bake density for the runtime polyline. Follow is a linear lerp between these samples
@@ -105,12 +105,19 @@ function interpolatePoint(p0: RoutePoint, p1: RoutePoint, p2: RoutePoint, p3: Ro
 
 /**
  * Normalized distance along a leg for normalized time `t`.
- * `amount` 0 = constant speed; 1 = accel for the first half, decel for the second.
+ * 0 = constant speed; 1 = accel first half, decel second half; above 1 = softer
+ * holds at the ends and a sharper mid-leg (slider goes to 4).
  */
 function accelDecelProgress(t: number, amount: number): number {
   if (t <= 0) return 0
   if (t >= 1) return 1
-  const ramp = Math.min(1, Math.max(0, amount)) * 0.5
+  const a = Math.min(4, Math.max(0, amount))
+  if (a >= 1) {
+    const p = 1 + a
+    if (t < 0.5) return Math.pow(2 * t, p) / 2
+    return 1 - Math.pow(2 * (1 - t), p) / 2
+  }
+  const ramp = a * 0.5
   if (ramp < 1e-6) return t
   const peak = 1 / (1 - ramp)
   if (t < ramp) {
