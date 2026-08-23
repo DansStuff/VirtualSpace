@@ -23,8 +23,7 @@ stars in background
 
 game loop:
 
--someone presses start mission
-
+-someone presses start mission button
 -hazards incoming warning
 -encounter happens
 -fly to next encounter (unless engines damaged)

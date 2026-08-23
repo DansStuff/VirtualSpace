@@ -73,9 +73,16 @@ export const SHIP_ROUTE = {
   ],
   legs: [
     {
+      stopId: 'encounter-1',
+      points: [
+        { x: 647.73, z: -396.86 },
+        { x: -44, z: 184.42 }
+      ]
+    },
+    {
       stopId: 'encounter-2',
       points: [
-        { x: 38.33, z: 106.7 },
+        { x: -44, z: 184.42 },
         { x: -1256.83, z: 1672.51 },
         { x: -1386.28, z: 4441.27 }
       ]

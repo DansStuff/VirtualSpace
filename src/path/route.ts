@@ -35,7 +35,9 @@ export type ShipRoute = {
 /**
  * Authored map lives in routedata.ts (path editor Save TypeScript overwrites that file).
  * Open path: first point of the first leg is Start; the ship does not loop.
+ * Start is not an authored encounter — the ship waits there until the mission starts.
  */
+export const START_STOP_ID = 'start'
 
 export const SHIP_ROUTE: ShipRoute = authoredRoute
 

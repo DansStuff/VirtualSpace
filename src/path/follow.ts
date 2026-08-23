@@ -1,6 +1,6 @@
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
-import { SHIP_ROUTE, type ShipRoute } from './route'
+import { SHIP_ROUTE, START_STOP_ID, type ShipRoute } from './route'
 
 /** World units per second at mid-leg (ease-in-out averages to this). */
 export const SHIP_CRUISE_SPEED = 800
@@ -298,7 +298,7 @@ const state: PathState = {
   holding: true,
   holdElapsed: 0,
   finished: false,
-  currentStopId: preparedLegs.length > 0 ? 'start' : null,
+  currentStopId: preparedLegs.length > 0 ? START_STOP_ID : null,
   roll: 0
 }
 
@@ -308,6 +308,9 @@ let skipHold = false
   const startLeg = preparedLegs[0]
   if (startLeg && startLeg.samples.length > 0) {
     applySampledPose(startLeg, 0, true, 0)
+  }
+  if (state.holding) {
+    console.log(`[CLIENT] Ship holding at stop ${state.currentStopId}`)
   }
 }
 
@@ -338,7 +341,11 @@ export function ShipPathSystem(dt: number): void {
   if (state.holding) {
     applyLookAndBank(0, step)
     if (state.finished) return
-    state.holdElapsed += step
+    const waitingAtStart = state.currentStopId === START_STOP_ID
+    if (waitingAtStart && !skipHold) return
+    if (!waitingAtStart) {
+      state.holdElapsed += step
+    }
     if (skipHold || state.holdElapsed >= HOLD_SECONDS) {
       skipHold = false
       state.holding = false
@@ -379,6 +386,7 @@ function enterHold(stopId: string | null, leg: PreparedLeg | undefined): void {
   state.holdElapsed = 0
   state.currentStopId = stopId
   state.elapsed = 0
+  console.log(`[CLIENT] Ship holding at stop ${stopId}`)
   if (!leg) return
   writePositionAt(leg, leg.length, scratchPoint)
   shipVirtualPosition.x = scratchPoint.x
