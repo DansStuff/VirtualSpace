@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "advanced-rendering": {
+      "source": "decentraland/sdk-skills",
+      "sourceType": "github",
+      "skillPath": "advanced-rendering/SKILL.md",
+      "computedHash": "72e8ae1ef867ea8539c9350cdef2dd07b527d33706338479939d6b6f8fbf91d9"
+    },
+    "authoritative-server": {
+      "source": "decentraland/sdk-skills",
+      "sourceType": "github",
+      "skillPath": "authoritative-server/SKILL.md",
+      "computedHash": "bb2d7f34b19e45333e3303ce55458e244aa82a3aeb26dd1a65f9a5aaef542bbf"
+    }
+  }
+}
