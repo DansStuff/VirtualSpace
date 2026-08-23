@@ -1,4 +1,6 @@
 {
+  "authoritativeMultiplayer": true,
+  "logsPermissions": ["0x327f74101F930c76653FD11aC7C8BA3C8694678f", "0x359fcB90727AF4A71d8BF3B399B77678f5EE34b7"],
   "ecs7": true,
   "runtimeVersion": "7",
   "display": {
