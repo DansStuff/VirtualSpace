@@ -5,10 +5,19 @@ export const Messages = {
 
   
   // Client → Server
-  requestMissionStart: Schemas.Map({}),
-  requestInitialState: Schemas.Map({}),
+  // Empty Map payloads can be dropped by the transport (seen on server→client).
+  // Keep a timestamp so these always have a body.
+  requestMissionStart: Schemas.Map({
+    requestedAt: Schemas.Int64
+  }),
+  requestInitialState: Schemas.Map({
+    requestedAt: Schemas.Int64
+  }),
   requestHazardTarget: Schemas.Map({
     hazardId: Schemas.Int
+  }),
+  requestNewMission: Schemas.Map({
+    requestedAt: Schemas.Int64
   }),
 
   // Server → Client
@@ -19,7 +28,8 @@ export const Messages = {
   notifyHazardSpawn: Schemas.Map({
     hazardId: Schemas.Int,
     encounterId: Schemas.String,
-    position: Schemas.Vector3
+    position: Schemas.Vector3,
+    flightTime: Schemas.Float
   }),
   notifyHazardShot: Schemas.Map({
     hazardId: Schemas.Int,
@@ -32,6 +42,9 @@ export const Messages = {
   }),
   notifyEncounterEnd: Schemas.Map({
     encounterId: Schemas.String
+  }),
+  notifyNewMission: Schemas.Map({
+    resetAt: Schemas.Int64
   })
 }
 

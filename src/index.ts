@@ -1,14 +1,14 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 import { spawnPlanetsFromRoute /*, spawnDistantStars, setupAsteroids*/ } from './factory'
-import { markMissionStarted, setupUi } from './ui'
+import { markMissionReset, markMissionStarted, setupUi } from './ui'
 import { AsteroidSystem, PlanetSystem } from './systems'
-import { currentStopId, resumeFromStop, ShipPathSystem } from './path/follow'
+import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
 import { setupDebugTeleportToShip } from './utilities'
 import { room } from './shared/messages'
 import { START_STOP_ID } from './path/route'
-import { replayEncounterState, setupServerEncounters } from './server/encounters'
-import { setupClientHazards } from './client/hazards'
+import { replayEncounterState, resetEncounterState, setupServerEncounters } from './server/encounters'
+import { despawnAllHazards, setupClientHazards } from './client/hazards'
 
 type MissionState = {
   encounterId: string
@@ -19,7 +19,7 @@ function setupServerRoom() {
   let mission: MissionState | null = null
 
   function sendInitialState(playerAddress: string) {
-    if (mission) {
+    if (mission && !isPathFinished()) {
       room.send('notifyMissionStart', mission, { to: [playerAddress] })
     }
     replayEncounterState(playerAddress)
@@ -47,6 +47,17 @@ function setupServerRoom() {
     console.log(`[SERVER] Initial state requested by ${context.from}`)
     sendInitialState(context.from)
   })
+
+  room.onMessage('requestNewMission', (_data, context) => {
+    if (!context) return
+    if (!isPathFinished()) return
+
+    console.log(`[SERVER] Mission reset by ${context.from}`)
+    mission = null
+    resetEncounterState()
+    resetPathToStart()
+    room.send('notifyNewMission', { resetAt: Date.now() })
+  })
 }
 
 function setupClientRoom() {
@@ -58,13 +69,20 @@ function setupClientRoom() {
     }
   })
 
+  room.onMessage('notifyNewMission', (data) => {
+    console.log(`[CLIENT] Mission reset (${data.resetAt})`)
+    resetPathToStart()
+    despawnAllHazards()
+    markMissionReset()
+  })
+
   setupClientHazards()
 
   let requestedInitialState = false
   const requestInitialState = () => {
     if (requestedInitialState) return
     requestedInitialState = true
-    room.send('requestInitialState', {})
+    room.send('requestInitialState', { requestedAt: Date.now() })
   }
 
   const unsubscribe = room.onReady((ready) => {

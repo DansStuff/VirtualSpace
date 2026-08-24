@@ -34,7 +34,7 @@ export function replayEncounterState(playerAddress: string) {
     room.send('notifyEncounterEnd', { encounterId }, { to: [playerAddress] })
   }
   for (const hazard of liveHazards) {
-    room.send('notifyHazardSpawn', hazard, { to: [playerAddress] })
+    room.send('notifyHazardSpawn', hazardSpawnMessage(hazard), { to: [playerAddress] })
   }
 }
 
@@ -63,8 +63,17 @@ function spawnNextHazard(encounterId: string) {
   }
   liveHazards.push(hazard)
   spawnedThisEncounter += 1
-  room.send('notifyHazardSpawn', hazard)
+  room.send('notifyHazardSpawn', hazardSpawnMessage(hazard))
   console.log(`[SERVER] Encounter ${encounterId} spawned hazard ${hazard.hazardId} (${spawnedThisEncounter}/${encounterHazardCount})`)
+}
+
+function hazardSpawnMessage(hazard: LiveHazard) {
+  return {
+    hazardId: hazard.hazardId,
+    encounterId: hazard.encounterId,
+    position: hazard.position,
+    flightTime: Math.max(0, hazard.flightTime - hazard.flightElapsed)
+  }
 }
 
 /** Remove a live hazard and tell clients to despawn it. `hitShip` true = collided with the ship; false = shot. */
@@ -147,4 +156,15 @@ function EncounterSystem(dt: number) {
 
 export function setupServerEncounters() {
   engine.addSystem(EncounterSystem)
+}
+
+export function resetEncounterState(): void {
+  completedEncounterIds.length = 0
+  liveHazards = []
+  nextHazardId = 1
+  activeEncounterId = null
+  encounterElapsed = 0
+  encounterHazardCount = 0
+  encounterFlightTime = 0
+  spawnedThisEncounter = 0
 }

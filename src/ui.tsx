@@ -4,9 +4,20 @@ import ReactEcs, { Button, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs
 import { room } from './shared/messages'
 
 let missionStarted = false
+let showRestart = false
 
 export function markMissionStarted() {
   missionStarted = true
+  showRestart = false
+}
+
+export function markMissionComplete() {
+  showRestart = true
+}
+
+export function markMissionReset() {
+  missionStarted = false
+  showRestart = false
 }
 
 export function setupUi() {
@@ -15,7 +26,12 @@ export function setupUi() {
 
 function requestMissionStart() {
   if (missionStarted || !isStateSyncronized()) return
-  room.send('requestMissionStart', {})
+  room.send('requestMissionStart', { requestedAt: Date.now() })
+}
+
+function requestNewMission() {
+  if (!showRestart || !isStateSyncronized()) return
+  room.send('requestNewMission', { requestedAt: Date.now() })
 }
 
 export const uiMenu = () => (
@@ -23,7 +39,7 @@ export const uiMenu = () => (
     uiTransform={{
       width: '100%',
       height: '100%',
-      display: missionStarted ? 'none' : 'flex',
+      display: missionStarted && !showRestart ? 'none' : 'flex',
       justifyContent: 'center',
       alignItems: 'flex-end'
     }}
@@ -33,8 +49,26 @@ export const uiMenu = () => (
       variant="primary"
       fontSize={22}
       color={Color4.White()}
-      uiTransform={{ width: 280, height: 64, margin: { bottom: 80 } }}
+      uiTransform={{
+        width: 280,
+        height: 64,
+        margin: { bottom: 80 },
+        display: missionStarted || showRestart ? 'none' : 'flex'
+      }}
       onMouseDown={requestMissionStart}
+    />
+    <Button
+      value="Restart"
+      variant="primary"
+      fontSize={22}
+      color={Color4.White()}
+      uiTransform={{
+        width: 280,
+        height: 64,
+        margin: { bottom: 80 },
+        display: showRestart ? 'flex' : 'none'
+      }}
+      onMouseDown={requestNewMission}
     />
   </UiEntity>
 )

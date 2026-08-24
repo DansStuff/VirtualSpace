@@ -98,13 +98,13 @@ export function spawnDistantStars(count: number = 20): void {
 
 const ASTEROID_MODEL = 'assets/scene/Models/Asteroid.gltf'
 
-/** Client-only visual for a hazard. `position` is virtual-space; AsteroidSystem projects it. */
-export function spawnHazard(position: Vector3, radius: number): Entity {
+/** Client-only incoming asteroid. AsteroidSystem projects `AsteroidData.position`. */
+export function spawnHazard(virtualPosition: Vector3, radius: number): Entity {
   const entity = engine.addEntity()
   GltfContainer.create(entity, { src: ASTEROID_MODEL })
-  Transform.create(entity, { position: Vector3.clone(position) })
+  Transform.create(entity, { position: Vector3.clone(virtualPosition) })
   AsteroidData.create(entity, {
-    position: Vector3.clone(position),
+    position: Vector3.clone(virtualPosition),
     radius
   })
   return entity

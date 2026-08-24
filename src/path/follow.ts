@@ -385,6 +385,28 @@ export function isPathFinished(): boolean {
   return state.finished
 }
 
+export function lastStopId(): string | null {
+  if (preparedLegs.length === 0) return null
+  return preparedLegs[preparedLegs.length - 1].stopId
+}
+
+/** Hold at the origin again. Clears completed stops so the next mission can run. */
+export function resetPathToStart(): void {
+  skipHold = false
+  completedStops.clear()
+  state.legIndex = 0
+  state.elapsed = 0
+  state.holding = true
+  state.finished = false
+  state.currentStopId = preparedLegs.length > 0 ? START_STOP_ID : null
+  state.roll = 0
+  const startLeg = preparedLegs[0]
+  if (startLeg && startLeg.samples.length > 0) {
+    applySampledPose(startLeg, 0, true, 0)
+  }
+  console.log(`${holdLogPrefix()} Ship reset to start`)
+}
+
 /**
  * Advances the ship's virtual pose along authored legs: ease in/out, then hold at each stop.
  * The visible ship Transform stays fixed; only shipVirtualPosition / Rotation change.
