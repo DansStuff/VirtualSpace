@@ -1,12 +1,56 @@
+/**
+ * Client path-follow: each frame this module writes the ship's *virtual* pose
+ * (`shipVirtualPosition` / `shipVirtualRotation`). The visible ship Transform
+ * stays fixed; other systems offset the world around that virtual pose.
+ *
+ * Authored data is `SHIP_ROUTE.legs` (open path, no loop). Each leg is a
+ * waypoint polyline whose `stopId` is the encounter at the *end* of the leg.
+ * There is no authored start encounter — the first point of the first leg is
+ * the origin, identified at runtime as `START_STOP_ID`.
+ *
+ * Startup
+ *   `prepareLegs` bakes each Catmull-Rom segment into an arc-length sample
+ *   list. Follow never re-evaluates the spline: `writePositionAt` lerps those
+ *   samples. State begins `holding` at start; the first sample of leg 0 is
+ *   applied once so the ship is posed before the first tick.
+ *
+ * Per-frame driver: `ShipPathSystem`
+ *   Two modes, gated by `state.holding`.
+ *
+ *   Holding (paused)
+ *     Level the bank (`applyLookAndBank(0)`). Do not advance along the path.
+ *     Every stop waits forever until `resumeFromStop()` sets `skipHold`.
+ *     Start is released by mission start; authored stops are released by
+ *     `notifyEncounterEnd` from the server. The last stop also sets `finished`,
+ *     so the hold never releases. If the server already completed a stop
+ *     (`markEncounterComplete`), `enterHold` sets `skipHold` so a slow client
+ *     does not stall. Leaving a hold clears `currentStopId` and `elapsed`; the
+ *     next tick transits `preparedLegs[state.legIndex]`.
+ *
+ *   Transiting (a leg is running)
+ *     `elapsed` maps through `accelDecelProgress` onto arc length, then
+ *     `applySampledPose` → `writePositionAt` (position) + lookahead tangent
+ *     (`headingCrossY` / `bankFromHeadings`) → `applyLookAndBank` (yaw + roll).
+ *     When `elapsed` reaches the leg's duration, `enterHold(leg.stopId)` parks
+ *     at the end sample and `finishOrAdvance` either increments `legIndex`
+ *     (so the next departure runs the following leg) or sets `finished`.
+ *
+ * Leg start / pause
+ *   Start: holding at origin, `legIndex` already 0. Mission resume drops the
+ *   hold and the next tick runs leg 0.
+ *   Encounter: arriving calls `enterHold` then `finishOrAdvance`, so the ship
+ *   is paused at this stop while `legIndex` already points at the *next* leg.
+ *   `resumeFromStop` ends the pause and that next leg starts. It is a no-op
+ *   while transiting or after `finished`.
+ */
+
+import { isServer } from '@dcl/sdk/network'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { SHIP_ROUTE, START_STOP_ID, type ShipRoute } from './route'
 
 /** World units per second at mid-leg (ease-in-out averages to this). */
 export const SHIP_CRUISE_SPEED = 800
-
-/** Placeholder park time until an encounter calls `resumeFromStop()`. */
-export const HOLD_SECONDS = 2
 
 /**
  * Bake density for the runtime polyline. Follow is a linear lerp between these samples
@@ -68,7 +112,6 @@ type PathState = {
   legIndex: number
   elapsed: number
   holding: boolean
-  holdElapsed: number
   finished: boolean
   /** Stop id while holding; 'start' before the first leg; null while transiting. */
   currentStopId: string | null
@@ -296,13 +339,17 @@ const state: PathState = {
   legIndex: 0,
   elapsed: 0,
   holding: true,
-  holdElapsed: 0,
   finished: false,
   currentStopId: preparedLegs.length > 0 ? START_STOP_ID : null,
   roll: 0
 }
 
 let skipHold = false
+const completedStops = new Set<string>()
+
+function holdLogPrefix(): string {
+  return isServer() ? '[SERVER]' : '[CLIENT]'
+}
 
 {
   const startLeg = preparedLegs[0]
@@ -310,7 +357,7 @@ let skipHold = false
     applySampledPose(startLeg, 0, true, 0)
   }
   if (state.holding) {
-    console.log(`[CLIENT] Ship holding at stop ${state.currentStopId}`)
+    console.log(`${holdLogPrefix()} Ship holding at stop ${state.currentStopId}`)
   }
 }
 
@@ -329,6 +376,15 @@ export function currentStopId(): string | null {
   return state.currentStopId
 }
 
+/** Remember that the server already finished this stop so a late hold is skipped. */
+export function markEncounterComplete(stopId: string): void {
+  completedStops.add(stopId)
+}
+
+export function isPathFinished(): boolean {
+  return state.finished
+}
+
 /**
  * Advances the ship's virtual pose along authored legs: ease in/out, then hold at each stop.
  * The visible ship Transform stays fixed; only shipVirtualPosition / Rotation change.
@@ -341,18 +397,11 @@ export function ShipPathSystem(dt: number): void {
   if (state.holding) {
     applyLookAndBank(0, step)
     if (state.finished) return
-    const waitingAtStart = state.currentStopId === START_STOP_ID
-    if (waitingAtStart && !skipHold) return
-    if (!waitingAtStart) {
-      state.holdElapsed += step
-    }
-    if (skipHold || state.holdElapsed >= HOLD_SECONDS) {
-      skipHold = false
-      state.holding = false
-      state.holdElapsed = 0
-      state.currentStopId = null
-      state.elapsed = 0
-    }
+    if (!skipHold) return
+    skipHold = false
+    state.holding = false
+    state.currentStopId = null
+    state.elapsed = 0
     return
   }
 
@@ -383,10 +432,12 @@ function finishOrAdvance(): void {
 
 function enterHold(stopId: string | null, leg: PreparedLeg | undefined): void {
   state.holding = true
-  state.holdElapsed = 0
   state.currentStopId = stopId
   state.elapsed = 0
-  console.log(`[CLIENT] Ship holding at stop ${stopId}`)
+  if (stopId && completedStops.has(stopId)) {
+    skipHold = true
+  }
+  console.log(`${holdLogPrefix()} Ship holding at stop ${stopId}`)
   if (!leg) return
   writePositionAt(leg, leg.length, scratchPoint)
   shipVirtualPosition.x = scratchPoint.x

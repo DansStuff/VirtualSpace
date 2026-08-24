@@ -1,12 +1,14 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
-import { spawnPlanetsFromRoute, spawnDistantStars/*, setupAsteroids*/ } from './factory'
+import { spawnPlanetsFromRoute /*, spawnDistantStars, setupAsteroids*/ } from './factory'
 import { markMissionStarted, setupUi } from './ui'
 import { AsteroidSystem, PlanetSystem } from './systems'
 import { currentStopId, resumeFromStop, ShipPathSystem } from './path/follow'
 import { setupDebugTeleportToShip } from './utilities'
 import { room } from './shared/messages'
 import { START_STOP_ID } from './path/route'
+import { replayEncounterState, setupServerEncounters } from './server/encounters'
+import { setupClientHazards } from './client/hazards'
 
 type MissionState = {
   encounterId: string
@@ -20,6 +22,7 @@ function setupServerRoom() {
     if (mission) {
       room.send('notifyMissionStart', mission, { to: [playerAddress] })
     }
+    replayEncounterState(playerAddress)
   }
 
   room.onMessage('requestMissionStart', (_data, context) => {
@@ -32,6 +35,7 @@ function setupServerRoom() {
       }
       console.log(`[SERVER] Mission started (${mission.encounterId}) by ${context.from}`)
       room.send('notifyMissionStart', mission)
+      resumeFromStop()
       return
     }
 
@@ -53,6 +57,8 @@ function setupClientRoom() {
       resumeFromStop()
     }
   })
+
+  setupClientHazards()
 
   let requestedInitialState = false
   const requestInitialState = () => {
@@ -77,6 +83,8 @@ export function main() {
   if (isServer()) {
     console.log(`[SERVER] Init server`)
     setupServerRoom()
+    setupServerEncounters()
+    engine.addSystem(ShipPathSystem)
     return
   }
 
@@ -90,6 +98,6 @@ export function main() {
 
   engine.addSystem(PlanetSystem)
   engine.addSystem(ShipPathSystem)
-  //engine.addSystem(AsteroidSystem)
+  engine.addSystem(AsteroidSystem)
   setupDebugTeleportToShip()
 }

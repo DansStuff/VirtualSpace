@@ -1,5 +1,5 @@
-import { engine, Entity, Transform } from '@dcl/sdk/ecs'
-import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { engine, Transform } from '@dcl/sdk/ecs'
+import { Vector3 } from '@dcl/sdk/math'
 import { AsteroidData, PlanetData } from './components'
 import {
   ASTEROID_ENCLOSING_SPHERE_RADIUS,
@@ -49,25 +49,10 @@ export function PlanetSystem(_dt: number) {
   }
 }
 
-/** Degrees per second — slow tumble, not a fast spin. */
-const ASTEROID_SPIN_SPEED = 12
-
-type AsteroidSpinState = { axis: Vector3; angle: number }
-const asteroidSpinState = new Map<Entity, AsteroidSpinState>()
-
-/** Uniform random unit vector so each asteroid tumbles on its own axis. */
-function randomUnitAxis(): Vector3 {
-  const theta = Math.random() * Math.PI * 2
-  const z = Math.random() * 2 - 1
-  const radius = Math.sqrt(1 - z * z)
-  return Vector3.create(radius * Math.cos(theta), radius * Math.sin(theta), z)
-}
-
 /**
- * Each frame, reproject asteroids like planets onto a smaller enclosing sphere,
- * then apply a slow local tumble on top of the celestial orientation.
+ * Each frame, reproject asteroids like planets onto a smaller enclosing sphere.
  */
-export function AsteroidSystem(dt: number) {
+export function AsteroidSystem(_dt: number) {
   const virtualPosition = shipVirtualPosition
   const virtualRotation = shipVirtualRotation
 
@@ -89,16 +74,8 @@ export function AsteroidSystem(dt: number) {
       asteroid.radius
     )
 
-    let spin = asteroidSpinState.get(entity)
-    if (!spin) {
-      spin = { axis: randomUnitAxis(), angle: 0 }
-      asteroidSpinState.set(entity, spin)
-    }
-    spin.angle += dt * ASTEROID_SPIN_SPEED
-    const tumble = Quaternion.fromAngleAxis(spin.angle, spin.axis)
-
     transform.position = projection.position
-    transform.rotation = Quaternion.multiply(projection.rotation, tumble)
+    transform.rotation = projection.rotation
     transform.scale = Vector3.create(projection.scale, projection.scale, projection.scale)
   }
 }

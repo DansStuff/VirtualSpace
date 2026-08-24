@@ -96,6 +96,20 @@ export function spawnDistantStars(count: number = 20): void {
   }
 }
 
+const ASTEROID_MODEL = 'assets/scene/Models/Asteroid.gltf'
+
+/** Client-only visual for a hazard. `position` is virtual-space; AsteroidSystem projects it. */
+export function spawnHazard(position: Vector3, radius: number): Entity {
+  const entity = engine.addEntity()
+  GltfContainer.create(entity, { src: ASTEROID_MODEL })
+  Transform.create(entity, { position: Vector3.clone(position) })
+  AsteroidData.create(entity, {
+    position: Vector3.clone(position),
+    radius
+  })
+  return entity
+}
+
 /** Spawns authored planets from the path-editor route table. */
 export function spawnPlanetsFromRoute(): void {
   for (const planet of SHIP_ROUTE.planets) {
