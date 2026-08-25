@@ -1,4 +1,14 @@
-import { engine, Entity } from '@dcl/sdk/ecs'
+import {
+  ColliderLayer,
+  engine,
+  Entity,
+  InputAction,
+  inputSystem,
+  PointerEventType,
+  PrimaryPointerInfo,
+  RaycastQueryType,
+  raycastSystem
+} from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 import { AsteroidData } from '../components'
 import { spawnHazard } from '../factory'
@@ -40,7 +50,7 @@ function despawnHazard(hazardId: number) {
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].hazardId !== hazardId) continue
     forgetAsteroidSpin(spawned[i].entity)
-    engine.removeEntity(spawned[i].entity)
+    engine.removeEntityWithChildren(spawned[i].entity)
     spawned.splice(i, 1)
     return
   }
@@ -50,7 +60,7 @@ function despawnEncounter(encounterId: string) {
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].encounterId !== encounterId) continue
     forgetAsteroidSpin(spawned[i].entity)
-    engine.removeEntity(spawned[i].entity)
+    engine.removeEntityWithChildren(spawned[i].entity)
     spawned.splice(i, 1)
   }
 }
@@ -58,7 +68,7 @@ function despawnEncounter(encounterId: string) {
 export function despawnAllHazards() {
   for (const hazard of spawned) {
     forgetAsteroidSpin(hazard.entity)
-    engine.removeEntity(hazard.entity)
+    engine.removeEntityWithChildren(hazard.entity)
   }
   spawned.length = 0
 }
@@ -71,8 +81,57 @@ function HazardFlightSystem(dt: number) {
   }
 }
 
+const HAZARD_RAYCAST_MAX_DISTANCE = 40
+const TARGET_COOLDOWN_SECONDS = 0.5
+
+let targetCooldownRemaining = 0
+
+function hazardIdForEntity(entity: Entity): number | undefined {
+  for (const hazard of spawned) {
+    if (hazard.entity === entity) return hazard.hazardId
+  }
+  return undefined
+}
+
+function HazardTargetSystem(dt: number) {
+  if (targetCooldownRemaining > 0) {
+    targetCooldownRemaining = Math.max(0, targetCooldownRemaining - dt)
+  }
+
+  if (!inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)) return
+  if (targetCooldownRemaining > 0) return
+
+  const pointerInfo = PrimaryPointerInfo.getOrCreateMutable(engine.RootEntity)
+  const direction = pointerInfo.worldRayDirection
+  if (!direction) return
+
+  targetCooldownRemaining = TARGET_COOLDOWN_SECONDS
+
+  raycastSystem.registerGlobalDirectionRaycast(
+    {
+      entity: engine.CameraEntity,
+      opts: {
+        direction: Vector3.clone(direction),
+        maxDistance: HAZARD_RAYCAST_MAX_DISTANCE,
+        queryType: RaycastQueryType.RQT_HIT_FIRST,
+        collisionMask: ColliderLayer.CL_CUSTOM1,
+        continuous: false
+      }
+    },
+    (result) => {
+      const hitEntity = result.hits[0]?.entityId as Entity | undefined
+      if (hitEntity === undefined) return
+      const hazardId = hazardIdForEntity(hitEntity)
+      if (hazardId === undefined) return
+      room.send('requestHazardTarget', { hazardId })
+      console.log(`[CLIENT] Requested target on hazard ${hazardId}`)
+    }
+  )
+}
+
 export function setupClientHazards() {
   engine.addSystem(HazardFlightSystem)
+  engine.addSystem(HazardTargetSystem)
 
   room.onMessage('notifyHazardSpawn', (data) => {
     if (spawned.some((h) => h.hazardId === data.hazardId)) return
@@ -96,6 +155,10 @@ export function setupClientHazards() {
     const cause = data.hitShip ? 'hit ship' : 'shot'
     console.log(`[CLIENT] Hazard ${data.hazardId} destroyed (${cause})`)
     despawnHazard(data.hazardId)
+  })
+
+  room.onMessage('notifyHazardTargeted', (data) => {
+    console.log(`[CLIENT] Hazard ${data.hazardId} targeted by ${data.playerAddress}`)
   })
 
   room.onMessage('notifyEncounterEnd', (data) => {

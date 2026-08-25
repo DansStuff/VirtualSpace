@@ -31,7 +31,7 @@ export const Messages = {
     position: Schemas.Vector3,
     flightTime: Schemas.Float
   }),
-  notifyHazardShot: Schemas.Map({
+  notifyHazardTargeted: Schemas.Map({
     hazardId: Schemas.Int,
     playerAddress: Schemas.String
   }),

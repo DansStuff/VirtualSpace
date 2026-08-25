@@ -156,6 +156,16 @@ function EncounterSystem(dt: number) {
 
 export function setupServerEncounters() {
   engine.addSystem(EncounterSystem)
+
+  room.onMessage('requestHazardTarget', (data, context) => {
+    if (!context?.from) return
+    if (!liveHazards.some((h) => h.hazardId === data.hazardId)) return
+    room.send('notifyHazardTargeted', {
+      hazardId: data.hazardId,
+      playerAddress: context.from
+    })
+    console.log(`[SERVER] Hazard ${data.hazardId} targeted by ${context.from}`)
+  })
 }
 
 export function resetEncounterState(): void {

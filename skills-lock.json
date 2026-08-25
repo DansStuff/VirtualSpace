@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "advanced-input": {
+      "source": "decentraland/sdk-skills",
+      "sourceType": "github",
+      "skillPath": "advanced-input/SKILL.md",
+      "computedHash": "d51fca2346e157fa45684b7c04b2f23188c95af9f8879672e553ad11196dc14c"
+    },
     "advanced-rendering": {
       "source": "decentraland/sdk-skills",
       "sourceType": "github",

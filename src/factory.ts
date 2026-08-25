@@ -1,4 +1,17 @@
-import { engine, Entity, GltfContainer, GltfNodeModifiers, Name, Transform } from '@dcl/sdk/ecs'
+import {
+  Billboard,
+  BillboardMode,
+  ColliderLayer,
+  engine,
+  Entity,
+  GltfContainer,
+  GltfNodeModifiers,
+  Material,
+  MaterialTransparencyMode,
+  MeshRenderer,
+  Name,
+  Transform
+} from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { EntityNames } from '../assets/scene/entity-names'
 import { AsteroidData, PlanetData } from './components'
@@ -97,16 +110,39 @@ export function spawnDistantStars(count: number = 20): void {
 }
 
 const ASTEROID_MODEL = 'assets/scene/Models/Asteroid.gltf'
+const CROSSHAIR_TEXTURE = 'assets/scene/Images/crosshair1.png'
 
 /** Client-only incoming asteroid. AsteroidSystem projects `AsteroidData.position`. */
 export function spawnHazard(virtualPosition: Vector3, radius: number): Entity {
   const entity = engine.addEntity()
-  GltfContainer.create(entity, { src: ASTEROID_MODEL })
+  GltfContainer.create(entity, {
+    src: ASTEROID_MODEL,
+    visibleMeshesCollisionMask: ColliderLayer.CL_CUSTOM1,
+    invisibleMeshesCollisionMask: ColliderLayer.CL_NONE
+  })
   Transform.create(entity, { position: Vector3.clone(virtualPosition) })
   AsteroidData.create(entity, {
     position: Vector3.clone(virtualPosition),
     radius
   })
+
+  // Default plane is 1×1; asteroid mesh extends ~1.35 from origin (~2.7 across).
+  const targetingIndicator = engine.addEntity()
+  Transform.create(targetingIndicator, {
+    parent: entity,
+    scale: Vector3.create(4, 4, 4)
+  })
+  MeshRenderer.setPlane(targetingIndicator)
+  Billboard.create(targetingIndicator, { billboardMode: BillboardMode.BM_ALL })
+  Material.setPbrMaterial(targetingIndicator, {
+    texture: Material.Texture.Common({ src: CROSSHAIR_TEXTURE }),
+    emissiveColor: Color3.Red(),
+    emissiveIntensity: 1,
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
+    alphaTest: 0.5,
+    castShadows: false
+  })
+
   return entity
 }
 
