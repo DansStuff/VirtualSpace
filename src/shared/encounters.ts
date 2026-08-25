@@ -13,19 +13,22 @@ export const HAZARD_IMPACT_DISTANCE = 8
 export const HAZARD_CONE_HORIZONTAL_DEGREES = 120
 export const HAZARD_CONE_VERTICAL_DEGREES = 20
 
+/** Seconds between damage ticks on a locked asteroid. First hit waits one full interval. */
+export const HAZARD_DAMAGE_INTERVAL = 1
+
 export type EncounterParams = {
   hazardCount: number
   /** Seconds each asteroid exists before it hits the ship (unless shot). */
   flightTime: number
-  // later: asteroidHp, etc.
+  asteroidHp: number
 }
 
 export const encounterParams: Record<string, EncounterParams> = {
-  'encounter-1': { hazardCount: 4, flightTime: 4 },
-  'encounter-2': { hazardCount: 4, flightTime: 4 },
-  'encounter-3': { hazardCount: 4, flightTime: 4 },
-  'encounter-4': { hazardCount: 4, flightTime: 4 },
-  'encounter-5': { hazardCount: 4, flightTime: 4 },
-  'encounter-6': { hazardCount: 4, flightTime: 4 },
-  'encounter-7': { hazardCount: 4, flightTime: 4 }
+  'encounter-1': { hazardCount: 4, flightTime: 4, asteroidHp: 1 },
+  'encounter-2': { hazardCount: 4, flightTime: 4, asteroidHp: 1 },
+  'encounter-3': { hazardCount: 4, flightTime: 4, asteroidHp: 1 },
+  'encounter-4': { hazardCount: 4, flightTime: 4, asteroidHp: 1 },
+  'encounter-5': { hazardCount: 4, flightTime: 4, asteroidHp: 1 },
+  'encounter-6': { hazardCount: 4, flightTime: 4, asteroidHp: 1 },
+  'encounter-7': { hazardCount: 4, flightTime: 4, asteroidHp: 1 }
 }
