@@ -7,7 +7,8 @@ import {
   PointerEventType,
   PrimaryPointerInfo,
   RaycastQueryType,
-  raycastSystem
+  raycastSystem,
+  VisibilityComponent
 } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 import { AsteroidData } from '../components'
@@ -24,6 +25,7 @@ type SpawnedHazard = {
   hazardId: number
   encounterId: string
   entity: Entity
+  targetingIndicator: Entity
   start: Vector3
   end: Vector3
   flightTime: number
@@ -136,11 +138,12 @@ export function setupClientHazards() {
   room.onMessage('notifyHazardSpawn', (data) => {
     if (spawned.some((h) => h.hazardId === data.hazardId)) return
     const path = virtualFlightPath(data.position)
-    const entity = spawnHazard(path.start, HAZARD_RADIUS)
+    const visuals = spawnHazard(path.start, HAZARD_RADIUS)
     const hazard: SpawnedHazard = {
       hazardId: data.hazardId,
       encounterId: data.encounterId,
-      entity,
+      entity: visuals.entity,
+      targetingIndicator: visuals.targetingIndicator,
       start: path.start,
       end: path.end,
       flightTime: data.flightTime,
@@ -158,7 +161,14 @@ export function setupClientHazards() {
   })
 
   room.onMessage('notifyHazardTargeted', (data) => {
-    console.log(`[CLIENT] Hazard ${data.hazardId} targeted by ${data.playerAddress}`)
+    console.log(
+      `[CLIENT] Hazard ${data.hazardId} targeted by ${data.playerAddress} (count ${data.targetCount})`
+    )
+    for (const hazard of spawned) {
+      if (hazard.hazardId !== data.hazardId) continue
+      VisibilityComponent.getMutable(hazard.targetingIndicator).visible = data.targetCount > 0
+      return
+    }
   })
 
   room.onMessage('notifyEncounterEnd', (data) => {

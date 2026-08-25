@@ -18,10 +18,12 @@ type LiveHazard = {
   position: Vector3
   flightElapsed: number
   flightTime: number
+  targetedBy: Set<string>
 }
 
 const completedEncounterIds: string[] = []
 let liveHazards: LiveHazard[] = []
+const playerTarget = new Map<string, number>()
 let nextHazardId = 1
 let activeEncounterId: string | null = null
 let encounterElapsed = 0
@@ -35,6 +37,17 @@ export function replayEncounterState(playerAddress: string) {
   }
   for (const hazard of liveHazards) {
     room.send('notifyHazardSpawn', hazardSpawnMessage(hazard), { to: [playerAddress] })
+    if (hazard.targetedBy.size > 0) {
+      room.send(
+        'notifyHazardTargeted',
+        {
+          hazardId: hazard.hazardId,
+          playerAddress: '',
+          targetCount: hazard.targetedBy.size
+        },
+        { to: [playerAddress] }
+      )
+    }
   }
 }
 
@@ -59,7 +72,8 @@ function spawnNextHazard(encounterId: string) {
     encounterId,
     position,
     flightElapsed: 0,
-    flightTime: encounterFlightTime
+    flightTime: encounterFlightTime,
+    targetedBy: new Set()
   }
   liveHazards.push(hazard)
   spawnedThisEncounter += 1
@@ -76,10 +90,56 @@ function hazardSpawnMessage(hazard: LiveHazard) {
   }
 }
 
+function clearTargeting() {
+  playerTarget.clear()
+}
+
+function broadcastHazardTargeted(hazard: LiveHazard, playerAddress: string) {
+  room.send('notifyHazardTargeted', {
+    hazardId: hazard.hazardId,
+    playerAddress,
+    targetCount: hazard.targetedBy.size
+  })
+}
+
+function clearHazardLockers(hazard: LiveHazard) {
+  for (const address of hazard.targetedBy) {
+    if (playerTarget.get(address) === hazard.hazardId) {
+      playerTarget.delete(address)
+    }
+  }
+  hazard.targetedBy.clear()
+}
+
+function setPlayerTarget(playerAddress: string, hazardId: number) {
+  const hazard = liveHazards.find((h) => h.hazardId === hazardId)
+  if (!hazard) return
+
+  const previousId = playerTarget.get(playerAddress)
+  if (previousId === hazardId) return
+
+  if (previousId !== undefined) {
+    const previous = liveHazards.find((h) => h.hazardId === previousId)
+    if (previous) {
+      previous.targetedBy.delete(playerAddress)
+      broadcastHazardTargeted(previous, playerAddress)
+    }
+  }
+
+  hazard.targetedBy.add(playerAddress)
+  playerTarget.set(playerAddress, hazardId)
+  broadcastHazardTargeted(hazard, playerAddress)
+  console.log(
+    `[SERVER] Hazard ${hazardId} targeted by ${playerAddress} (count ${hazard.targetedBy.size})`
+  )
+}
+
 /** Remove a live hazard and tell clients to despawn it. `hitShip` true = collided with the ship; false = shot. */
 export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   const index = liveHazards.findIndex((h) => h.hazardId === hazardId)
   if (index < 0) return false
+  const hazard = liveHazards[index]
+  clearHazardLockers(hazard)
   liveHazards.splice(index, 1)
   room.send('notifyHazardDestroyed', { hazardId, hitShip })
   console.log(`[SERVER] Hazard ${hazardId} destroyed (${hitShip ? 'hit ship' : 'shot'})`)
@@ -99,6 +159,7 @@ function beginEncounter(stopId: string) {
   encounterFlightTime = params.flightTime
   spawnedThisEncounter = 0
   liveHazards = []
+  clearTargeting()
 }
 
 function endEncounter() {
@@ -106,6 +167,7 @@ function endEncounter() {
   const encounterId = activeEncounterId
   completedEncounterIds.push(encounterId)
   liveHazards = []
+  clearTargeting()
   activeEncounterId = null
   encounterElapsed = 0
   encounterHazardCount = 0
@@ -159,18 +221,14 @@ export function setupServerEncounters() {
 
   room.onMessage('requestHazardTarget', (data, context) => {
     if (!context?.from) return
-    if (!liveHazards.some((h) => h.hazardId === data.hazardId)) return
-    room.send('notifyHazardTargeted', {
-      hazardId: data.hazardId,
-      playerAddress: context.from
-    })
-    console.log(`[SERVER] Hazard ${data.hazardId} targeted by ${context.from}`)
+    setPlayerTarget(context.from, data.hazardId)
   })
 }
 
 export function resetEncounterState(): void {
   completedEncounterIds.length = 0
   liveHazards = []
+  clearTargeting()
   nextHazardId = 1
   activeEncounterId = null
   encounterElapsed = 0

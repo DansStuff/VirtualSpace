@@ -10,7 +10,8 @@ import {
   MaterialTransparencyMode,
   MeshRenderer,
   Name,
-  Transform
+  Transform,
+  VisibilityComponent
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { EntityNames } from '../assets/scene/entity-names'
@@ -112,8 +113,13 @@ export function spawnDistantStars(count: number = 20): void {
 const ASTEROID_MODEL = 'assets/scene/Models/Asteroid.gltf'
 const CROSSHAIR_TEXTURE = 'assets/scene/Images/crosshair1.png'
 
+export type HazardVisuals = {
+  entity: Entity
+  targetingIndicator: Entity
+}
+
 /** Client-only incoming asteroid. AsteroidSystem projects `AsteroidData.position`. */
-export function spawnHazard(virtualPosition: Vector3, radius: number): Entity {
+export function spawnHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
   const entity = engine.addEntity()
   GltfContainer.create(entity, {
     src: ASTEROID_MODEL,
@@ -142,8 +148,9 @@ export function spawnHazard(virtualPosition: Vector3, radius: number): Entity {
     alphaTest: 0.5,
     castShadows: false
   })
+  VisibilityComponent.create(targetingIndicator, { visible: false })
 
-  return entity
+  return { entity, targetingIndicator }
 }
 
 /** Spawns authored planets from the path-editor route table. */

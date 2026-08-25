@@ -33,7 +33,8 @@ export const Messages = {
   }),
   notifyHazardTargeted: Schemas.Map({
     hazardId: Schemas.Int,
-    playerAddress: Schemas.String
+    playerAddress: Schemas.String,
+    targetCount: Schemas.Int
   }),
   notifyHazardDestroyed: Schemas.Map({
     hazardId: Schemas.Int,
