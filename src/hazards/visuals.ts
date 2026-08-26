@@ -18,6 +18,7 @@ import {
   VisibilityComponent
 } from '@dcl/sdk/ecs'
 import { Color3, Vector3 } from '@dcl/sdk/math'
+import { isMobile } from '@dcl/sdk/platform'
 import {
   HAZARD_ASTEROID_MODEL_PATH,
   HAZARD_IMPACT_DISTANCE,
@@ -156,6 +157,15 @@ function hazardIdForEntity(entity: Entity): number | undefined {
   return undefined
 }
 
+/** Desktop: cursor ray. Mobile: camera forward (crosshair / interaction button). */
+function targetingRayDirection(): Vector3 | undefined {
+  if (isMobile()) {
+    if (!Transform.has(engine.CameraEntity)) return undefined
+    return Vector3.rotate(Vector3.Forward(), Transform.get(engine.CameraEntity).rotation)
+  }
+  return PrimaryPointerInfo.getOrCreateMutable(engine.RootEntity).worldRayDirection
+}
+
 function HazardTargetSystem(dt: number) {
   if (targetCooldownRemaining > 0) {
     targetCooldownRemaining = Math.max(0, targetCooldownRemaining - dt)
@@ -164,8 +174,7 @@ function HazardTargetSystem(dt: number) {
   if (!inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)) return
   if (targetCooldownRemaining > 0) return
 
-  const pointerInfo = PrimaryPointerInfo.getOrCreateMutable(engine.RootEntity)
-  const direction = pointerInfo.worldRayDirection
+  const direction = targetingRayDirection()
   if (!direction) return
 
   targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS

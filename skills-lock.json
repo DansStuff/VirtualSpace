@@ -18,6 +18,18 @@
       "sourceType": "github",
       "skillPath": "authoritative-server/SKILL.md",
       "computedHash": "bb2d7f34b19e45333e3303ce55458e244aa82a3aeb26dd1a65f9a5aaef542bbf"
+    },
+    "deploy-scene": {
+      "source": "decentraland/sdk-skills",
+      "sourceType": "github",
+      "skillPath": "deploy-scene/SKILL.md",
+      "computedHash": "e4eee21e33f6fe42c0e70b4d04bc18ed759782b388cd893b50493921823ffa75"
+    },
+    "deploy-worlds": {
+      "source": "decentraland/sdk-skills",
+      "sourceType": "github",
+      "skillPath": "deploy-worlds/SKILL.md",
+      "computedHash": "9f2217321df4162ff5b095c9f0803f84b6608b1399fe4a3e194a9e885dc3f03f"
     }
   }
 }
