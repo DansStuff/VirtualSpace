@@ -8,10 +8,18 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
+import {
+  PLANET_ENCLOSING_SPHERE_RADIUS,
+  SCENE_SHIP_POSITION,
+  STAR_BASE_COLOR,
+  STAR_MODEL_PATH,
+  STAR_SPAWN_COUNT_DEFAULT,
+  STAR_VIRTUAL_RADIUS
+} from '../constants'
 import { SHIP_ROUTE } from '../path/route'
-import { SCENE_SHIP_POSITION, shipVirtualPosition, shipVirtualRotation } from '../ship'
+import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { AsteroidSystem } from './asteroids'
-import { ENCLOSING_SPHERE_RADIUS, projectVirtualBodyToSceneSphere } from './projection'
+import { projectVirtualBodyToSceneSphere } from './projection'
 
 export const PlanetData = engine.defineComponent('PlanetData', {
   position: Schemas.Vector3,
@@ -42,14 +50,6 @@ export function createPlanet(modelPath: string, data: PlanetSpawnData): Entity {
 
   return entity
 }
-
-const STAR_MODEL = 'assets/scene/Models/Star.gltf'
-
-/** Tweak this to make all distant stars larger or smaller (virtual radius multiplier). */
-export const STAR_SIZE = 10
-
-/** Star.gltf baseColorFactor (RGB) — tint is applied relative to this. */
-const STAR_BASE_COLOR = { r: 0.8, g: 0.8, b: 0.8 }
 
 /**
  * Override the star GLTF PBR colors with a slight orange tint.
@@ -84,7 +84,7 @@ function applyStarOrangeTint(entity: Entity, tintStrength: number): void {
  * Spawns distant background stars at varied directions and distances.
  * Uses PlanetData so PlanetSystem projects them onto the enclosing sphere.
  */
-export function spawnDistantStars(count: number = 20): void {
+export function spawnDistantStars(count: number = STAR_SPAWN_COUNT_DEFAULT): void {
   for (let i = 0; i < count; i++) {
     // Deterministic "random" directions so the field is stable across reloads.
     const yaw = (i / count) * Math.PI * 2 + i * 0.37
@@ -98,12 +98,10 @@ export function spawnDistantStars(count: number = 20): void {
       Math.sin(yaw) * cosPitch * distance
     )
 
-    const radius = STAR_SIZE
-
-    const entity = createPlanet(STAR_MODEL, {
+    const entity = createPlanet(STAR_MODEL_PATH, {
       name: `Star_${i}`,
       position,
-      radius
+      radius: STAR_VIRTUAL_RADIUS
     })
 
     // Slight per-star orange tint (0.15–0.45), stable across reloads.
@@ -151,7 +149,7 @@ export function PlanetSystem(_dt: number) {
       virtualRotation,
       SCENE_SHIP_POSITION,
       rayOrigin,
-      ENCLOSING_SPHERE_RADIUS,
+      PLANET_ENCLOSING_SPHERE_RADIUS,
       planet.radius
     )
 

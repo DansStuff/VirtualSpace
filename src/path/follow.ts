@@ -6,7 +6,7 @@
  * Authored data is `SHIP_ROUTE.legs` (open path, no loop). Each leg is a
  * waypoint polyline whose `stopId` is the encounter at the *end* of the leg.
  * There is no authored start encounter — the first point of the first leg is
- * the origin, identified at runtime as `START_STOP_ID`.
+ * the origin, identified at runtime as `PATH_START_STOP_ID`.
  *
  * Startup
  *   `prepareLegs` bakes each Catmull-Rom segment into an arc-length sample
@@ -46,45 +46,27 @@
 
 import { isServer } from '@dcl/sdk/network'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import {
+  PATH_CATMULL_ROM_KNOT_EPSILON,
+  PATH_MAX_SEGMENT_SAMPLES,
+  PATH_MIN_SEGMENT_SAMPLES,
+  PATH_SAMPLE_SPACING,
+  PATH_START_STOP_ID,
+  PATH_TANGENT_EPSILON,
+  PATH_TANGENT_LOOKAHEAD,
+  PATH_TANGENT_LOOKAHEAD_LENGTH_FRACTION,
+  PATH_TANGENT_LOOKAHEAD_MIN,
+  SHIP_BANK_GAIN,
+  SHIP_CRUISE_SPEED,
+  SHIP_MAX_BANK_DEGREES,
+  SHIP_MODEL_YAW_DEGREES,
+  SHIP_ROLL_SMOOTH,
+  SIMULATION_MAX_DELTA_SECONDS
+} from '../constants'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
-import { SHIP_ROUTE, START_STOP_ID, type ShipRoute } from './route'
+import { SHIP_ROUTE, type ShipRoute } from './route'
 
-/** World units per second at mid-leg (ease-in-out averages to this). */
-export const SHIP_CRUISE_SPEED = 800
-
-/**
- * Bake density for the runtime polyline. Follow is a linear lerp between these samples
- * (writePositionAt), not a live Catmull-Rom eval.
- *
- * SAMPLE_SPACING is the target gap in virtual units. A waypoint-to-waypoint chord longer
- * than MAX_SEGMENT_SAMPLES * SAMPLE_SPACING (800) gets coarser samples, so tight bends
- * across a huge gap can look slightly faceted. Raise/remove the cap if that shows up.
- */
-const SAMPLE_SPACING = 4
-const MIN_SEGMENT_SAMPLES = 12
-const MAX_SEGMENT_SAMPLES = 200
-const TANGENT_LOOKAHEAD = 15
-const TANGENT_EPSILON = 1e-6
-const KNOT_EPSILON = 1e-4
-/**
- * Bank from the Y of currentHeading × nextHeading (unit vectors on XZ).
- * Cross Y > 0 is a right turn, < 0 is a left turn.
- *
- * BANK_GAIN is degrees of roll per unit of that cross Y (which is sin of the heading change).
- * A gentle turn might be ~0.1, so 70 → about 7°. Raise it to lean harder on the same curve;
- * MAX_BANK_DEGREES still clamps the result.
- *
- * If the ship banks the wrong way, negate BANK_GAIN (70 → -70). That flips left/right
- * without changing how strong the lean is.
- *
- * ROLL_SMOOTH is how fast roll eases toward the target (higher = snappier).
- */
-const MAX_BANK_DEGREES = 55
-const BANK_GAIN = -400
-const ROLL_SMOOTH = 2
-
-/** Extra yaw so virtual forward matches a 180° Y flip of the ship GLTF. Applied after bank. */
-const MODEL_YAW = Quaternion.fromAngleAxis(180, Vector3.Up())
+const SHIP_MODEL_YAW = Quaternion.fromAngleAxis(SHIP_MODEL_YAW_DEGREES, Vector3.Up())
 
 const scratchPoint: RoutePoint = { x: 0, z: 0 }
 const scratchAhead: RoutePoint = { x: 0, z: 0 }
@@ -134,9 +116,9 @@ function lerpPoint(a: RoutePoint, b: RoutePoint, ta: number, tb: number, t: numb
 /** Centripetal Catmull-Rom (α = 0.5) from p1 to p2, t in [0, 1]. Avoids cusps on uneven points. */
 function interpolatePoint(p0: RoutePoint, p1: RoutePoint, p2: RoutePoint, p3: RoutePoint, t: number): RoutePoint {
   const t0 = 0
-  const t1 = t0 + Math.pow(Math.max(dist(p0, p1), KNOT_EPSILON), 0.5)
-  const t2 = t1 + Math.pow(Math.max(dist(p1, p2), KNOT_EPSILON), 0.5)
-  const t3 = t2 + Math.pow(Math.max(dist(p2, p3), KNOT_EPSILON), 0.5)
+  const t1 = t0 + Math.pow(Math.max(dist(p0, p1), PATH_CATMULL_ROM_KNOT_EPSILON), 0.5)
+  const t2 = t1 + Math.pow(Math.max(dist(p1, p2), PATH_CATMULL_ROM_KNOT_EPSILON), 0.5)
+  const t3 = t2 + Math.pow(Math.max(dist(p2, p3), PATH_CATMULL_ROM_KNOT_EPSILON), 0.5)
   const tVal = t1 + (t2 - t1) * t
   const a1 = lerpPoint(p0, p1, t0, t1, tVal)
   const a2 = lerpPoint(p1, p2, t1, t2, tVal)
@@ -211,8 +193,8 @@ function prepareLegs(route: ShipRoute): PreparedLeg[] {
       for (let seg = 0; seg < segments; seg++) {
         const { p0, p1, p2, p3 } = segmentHandles(route.legs, legIndex, seg)
         const count = Math.min(
-          MAX_SEGMENT_SAMPLES,
-          Math.max(MIN_SEGMENT_SAMPLES, Math.ceil(dist(p1, p2) / SAMPLE_SPACING))
+          PATH_MAX_SEGMENT_SAMPLES,
+          Math.max(PATH_MIN_SEGMENT_SAMPLES, Math.ceil(dist(p1, p2) / PATH_SAMPLE_SPACING))
         )
         for (let i = 1; i <= count; i++) {
           const point = interpolatePoint(p0, p1, p2, p3, i / count)
@@ -228,7 +210,10 @@ function prepareLegs(route: ShipRoute): PreparedLeg[] {
       stopId: leg.stopId,
       length,
       duration: length > 1 ? length / SHIP_CRUISE_SPEED : 0,
-      lookAhead: Math.min(TANGENT_LOOKAHEAD, Math.max(4, length * 0.02)),
+      lookAhead: Math.min(
+        PATH_TANGENT_LOOKAHEAD,
+        Math.max(PATH_TANGENT_LOOKAHEAD_MIN, length * PATH_TANGENT_LOOKAHEAD_LENGTH_FRACTION)
+      ),
       samples
     })
   }
@@ -268,11 +253,11 @@ function applyLookAndBank(targetRoll: number, dt: number): void {
   if (dt <= 0) {
     state.roll = targetRoll
   } else {
-    state.roll += (targetRoll - state.roll) * Math.min(1, dt * ROLL_SMOOTH)
+    state.roll += (targetRoll - state.roll) * Math.min(1, dt * SHIP_ROLL_SMOOTH)
   }
   const facing = Quaternion.lookRotation(scratchForward)
   const banked = Quaternion.multiply(facing, Quaternion.fromAngleAxis(state.roll, scratchBankAxis))
-  const oriented = Quaternion.multiply(banked, MODEL_YAW)
+  const oriented = Quaternion.multiply(banked, SHIP_MODEL_YAW)
   shipVirtualRotation.x = oriented.x
   shipVirtualRotation.y = oriented.y
   shipVirtualRotation.z = oriented.z
@@ -289,9 +274,9 @@ function headingCrossY(ax: number, az: number, bx: number, bz: number): number {
 
 function bankFromHeadings(ax: number, az: number, bx: number, bz: number): number {
   const crossY = headingCrossY(ax, az, bx, bz)
-  const roll = crossY * BANK_GAIN
-  if (roll > MAX_BANK_DEGREES) return MAX_BANK_DEGREES
-  if (roll < -MAX_BANK_DEGREES) return -MAX_BANK_DEGREES
+  const roll = crossY * SHIP_BANK_GAIN
+  if (roll > SHIP_MAX_BANK_DEGREES) return SHIP_MAX_BANK_DEGREES
+  if (roll < -SHIP_MAX_BANK_DEGREES) return -SHIP_MAX_BANK_DEGREES
   return roll
 }
 
@@ -308,14 +293,14 @@ function applySampledPose(leg: PreparedLeg, s: number, updateHeading: boolean, d
     let tx = scratchAhead.x - scratchPoint.x
     let tz = scratchAhead.z - scratchPoint.z
     let haveNext = true
-    if (tx * tx + tz * tz < TANGENT_EPSILON) {
+    if (tx * tx + tz * tz < PATH_TANGENT_EPSILON) {
       writePositionAt(leg, s - look, scratchAhead)
       tx = scratchPoint.x - scratchAhead.x
       tz = scratchPoint.z - scratchAhead.z
       haveNext = false
     }
     const lenSq = tx * tx + tz * tz
-    if (lenSq < TANGENT_EPSILON) {
+    if (lenSq < PATH_TANGENT_EPSILON) {
       applyLookAndBank(0, dt)
       return
     }
@@ -340,7 +325,7 @@ const state: PathState = {
   elapsed: 0,
   holding: true,
   finished: false,
-  currentStopId: preparedLegs.length > 0 ? START_STOP_ID : null,
+  currentStopId: preparedLegs.length > 0 ? PATH_START_STOP_ID : null,
   roll: 0
 }
 
@@ -398,7 +383,7 @@ export function resetPathToStart(): void {
   state.elapsed = 0
   state.holding = true
   state.finished = false
-  state.currentStopId = preparedLegs.length > 0 ? START_STOP_ID : null
+  state.currentStopId = preparedLegs.length > 0 ? PATH_START_STOP_ID : null
   state.roll = 0
   const startLeg = preparedLegs[0]
   if (startLeg && startLeg.samples.length > 0) {
@@ -414,7 +399,7 @@ export function resetPathToStart(): void {
 export function ShipPathSystem(dt: number): void {
   if (preparedLegs.length === 0) return
 
-  const step = Math.min(dt, 0.1)
+  const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
 
   if (state.holding) {
     applyLookAndBank(0, step)

@@ -18,14 +18,20 @@ import {
   VisibilityComponent
 } from '@dcl/sdk/ecs'
 import { Color3, Vector3 } from '@dcl/sdk/math'
+import {
+  HAZARD_ASTEROID_MODEL_PATH,
+  HAZARD_IMPACT_DISTANCE,
+  HAZARD_RADIUS,
+  HAZARD_RAYCAST_MAX_DISTANCE,
+  HAZARD_TARGET_COOLDOWN_SECONDS,
+  HAZARD_TARGETING_CROSSHAIR_TEXTURE_PATH,
+  HAZARD_TARGETING_INDICATOR_SCALE,
+  SIMULATION_MAX_DELTA_SECONDS
+} from '../constants'
 import { room } from '../networking/messages'
 import { shipVirtualPosition } from '../ship'
 import { AsteroidData, forgetAsteroidSpin } from '../spaceobjects/asteroids'
 import { directionFromTo } from '../utilities'
-import { HAZARD_IMPACT_DISTANCE, HAZARD_RADIUS } from './constants'
-
-const ASTEROID_MODEL = 'assets/scene/Models/Asteroid.gltf'
-const CROSSHAIR_TEXTURE = 'assets/scene/Images/crosshair1.png'
 
 type HazardVisuals = {
   entity: Entity
@@ -36,7 +42,7 @@ type HazardVisuals = {
 function spawnHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
   const entity = engine.addEntity()
   GltfContainer.create(entity, {
-    src: ASTEROID_MODEL,
+    src: HAZARD_ASTEROID_MODEL_PATH,
     visibleMeshesCollisionMask: ColliderLayer.CL_CUSTOM1,
     invisibleMeshesCollisionMask: ColliderLayer.CL_NONE
   })
@@ -50,12 +56,16 @@ function spawnHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
   const targetingIndicator = engine.addEntity()
   Transform.create(targetingIndicator, {
     parent: entity,
-    scale: Vector3.create(4, 4, 4)
+    scale: Vector3.create(
+      HAZARD_TARGETING_INDICATOR_SCALE,
+      HAZARD_TARGETING_INDICATOR_SCALE,
+      HAZARD_TARGETING_INDICATOR_SCALE
+    )
   })
   MeshRenderer.setPlane(targetingIndicator)
   Billboard.create(targetingIndicator, { billboardMode: BillboardMode.BM_ALL })
   Material.setPbrMaterial(targetingIndicator, {
-    texture: Material.Texture.Common({ src: CROSSHAIR_TEXTURE }),
+    texture: Material.Texture.Common({ src: HAZARD_TARGETING_CROSSHAIR_TEXTURE_PATH }),
     emissiveColor: Color3.Red(),
     emissiveIntensity: 1,
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
@@ -122,15 +132,12 @@ export function despawnAllHazards() {
 }
 
 function HazardFlightSystem(dt: number) {
-  const step = Math.min(dt, 0.1)
+  const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
   for (const hazard of spawned) {
     hazard.elapsed += step
     applyVirtualPosition(hazard)
   }
 }
-
-const HAZARD_RAYCAST_MAX_DISTANCE = 40
-const TARGET_COOLDOWN_SECONDS = 0.5
 
 let targetCooldownRemaining = 0
 
@@ -153,7 +160,7 @@ function HazardTargetSystem(dt: number) {
   const direction = pointerInfo.worldRayDirection
   if (!direction) return
 
-  targetCooldownRemaining = TARGET_COOLDOWN_SECONDS
+  targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
 
   raycastSystem.registerGlobalDirectionRaycast(
     {

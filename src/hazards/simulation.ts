@@ -1,13 +1,13 @@
 import { Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
-import { room } from '../networking/messages'
-import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import {
   HAZARD_CONE_HORIZONTAL_DEGREES,
   HAZARD_CONE_VERTICAL_DEGREES,
   HAZARD_DAMAGE_INTERVAL,
   HAZARD_SPAWN_DISTANCE
-} from './constants'
+} from '../constants'
+import { room } from '../networking/messages'
+import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { setupHazardVisuals } from './visuals'
 
 type LiveHazard = {

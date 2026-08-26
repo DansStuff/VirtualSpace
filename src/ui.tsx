@@ -1,6 +1,14 @@
 import { Color4 } from '@dcl/sdk/math'
 import { isStateSyncronized } from '@dcl/sdk/network'
 import ReactEcs, { Button, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
+import {
+  UI_MISSION_BUTTON_FONT_SIZE,
+  UI_MISSION_BUTTON_HEIGHT,
+  UI_MISSION_BUTTON_MARGIN_BOTTOM,
+  UI_MISSION_BUTTON_WIDTH,
+  UI_VIRTUAL_HEIGHT,
+  UI_VIRTUAL_WIDTH
+} from './constants'
 import { room } from './networking/messages'
 
 let missionStarted = false
@@ -21,7 +29,7 @@ export function markMissionReset() {
 }
 
 export function setupUi() {
-  ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: 1920, virtualHeight: 1080 })
+  ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: UI_VIRTUAL_WIDTH, virtualHeight: UI_VIRTUAL_HEIGHT })
 }
 
 function requestMissionStart() {
@@ -47,12 +55,12 @@ export const uiMenu = () => (
     <Button
       value="Start Mission"
       variant="primary"
-      fontSize={22}
+      fontSize={UI_MISSION_BUTTON_FONT_SIZE}
       color={Color4.White()}
       uiTransform={{
-        width: 280,
-        height: 64,
-        margin: { bottom: 80 },
+        width: UI_MISSION_BUTTON_WIDTH,
+        height: UI_MISSION_BUTTON_HEIGHT,
+        margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
         display: missionStarted || showRestart ? 'none' : 'flex'
       }}
       onMouseDown={requestMissionStart}
@@ -60,12 +68,12 @@ export const uiMenu = () => (
     <Button
       value="Restart"
       variant="primary"
-      fontSize={22}
+      fontSize={UI_MISSION_BUTTON_FONT_SIZE}
       color={Color4.White()}
       uiTransform={{
-        width: 280,
-        height: 64,
-        margin: { bottom: 80 },
+        width: UI_MISSION_BUTTON_WIDTH,
+        height: UI_MISSION_BUTTON_HEIGHT,
+        margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
         display: showRestart ? 'flex' : 'none'
       }}
       onMouseDown={requestNewMission}

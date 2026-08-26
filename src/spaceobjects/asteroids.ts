@@ -1,7 +1,12 @@
 import { engine, Entity, Schemas, Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-import { SCENE_SHIP_POSITION, shipVirtualPosition, shipVirtualRotation } from '../ship'
-import { ASTEROID_ENCLOSING_SPHERE_RADIUS, projectVirtualBodyToSceneSphere } from './projection'
+import {
+  ASTEROID_ENCLOSING_SPHERE_RADIUS,
+  HAZARD_SPIN_DEGREES_PER_SECOND,
+  SCENE_SHIP_POSITION
+} from '../constants'
+import { shipVirtualPosition, shipVirtualRotation } from '../ship'
+import { projectVirtualBodyToSceneSphere } from './projection'
 
 /**
  * Virtual-space asteroid body. Projected like planets, but onto ASTEROID_ENCLOSING_SPHERE_RADIUS.
@@ -11,8 +16,6 @@ export const AsteroidData = engine.defineComponent('AsteroidData', {
   position: Schemas.Vector3,
   radius: Schemas.Float
 })
-
-const HAZARD_SPIN_DEGREES_PER_SECOND = 60
 
 type AsteroidSpinState = { axis: Vector3; angle: number }
 const asteroidSpinState = new Map<Entity, AsteroidSpinState>()

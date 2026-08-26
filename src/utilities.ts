@@ -1,7 +1,7 @@
 import { engine, InputAction, inputSystem, PointerEventType } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { movePlayerTo } from '~system/RestrictedActions'
-import { SCENE_SHIP_POSITION } from './ship'
+import { SCENE_SHIP_POSITION } from './constants'
 
 /**
  * Returns the conjugate of a quaternion (-x, -y, -z, w).

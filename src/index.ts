@@ -1,11 +1,11 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
+import { PATH_START_STOP_ID } from './constants'
 import { replayEncounterState, resetEncounterState, setupEncounters } from './encounters/lifecycle'
 import { setupHazards } from './hazards/simulation'
 import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
 import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
-import { START_STOP_ID } from './path/route'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { markMissionReset, markMissionStarted, setupUi } from './ui'
 import { setupDebugTeleportToShip } from './utilities'
@@ -30,7 +30,7 @@ function setupServerRoom() {
 
     if (!mission) {
       mission = {
-        encounterId: START_STOP_ID,
+        encounterId: PATH_START_STOP_ID,
         startedAt: Date.now()
       }
       console.log(`[SERVER] Mission started (${mission.encounterId}) by ${context.from}`)
@@ -64,7 +64,7 @@ function setupClientRoom() {
   room.onMessage('notifyMissionStart', (data) => {
     console.log(`[CLIENT] Mission started: ${data.encounterId}`)
     markMissionStarted()
-    if (currentStopId() === START_STOP_ID) {
+    if (currentStopId() === PATH_START_STOP_ID) {
       resumeFromStop()
     }
   })

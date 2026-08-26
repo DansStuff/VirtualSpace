@@ -1,6 +1,11 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
-import { HAZARD_SPAWN_INTERVAL } from '../hazards/constants'
+import {
+  ENCOUNTER_PARAMS,
+  HAZARD_SPAWN_INTERVAL,
+  PATH_START_STOP_ID,
+  SIMULATION_MAX_DELTA_SECONDS
+} from '../constants'
 import {
   clearLive,
   hasLive,
@@ -12,9 +17,7 @@ import {
 import { despawnEncounter } from '../hazards/visuals'
 import { room } from '../networking/messages'
 import { currentStopId, isPathFinished, isShipStopped, lastStopId, markEncounterComplete, resumeFromStop } from '../path/follow'
-import { START_STOP_ID } from '../path/route'
 import { markMissionComplete } from '../ui'
-import { encounterParams } from './params'
 
 const completedEncounterIds: string[] = []
 let activeEncounterId: string | null = null
@@ -32,7 +35,7 @@ export function replayEncounterState(playerAddress: string) {
 }
 
 function beginEncounter(stopId: string) {
-  const params = encounterParams[stopId]
+  const params = ENCOUNTER_PARAMS[stopId]
   if (params === undefined) {
     if (!isPathFinished()) resumeFromStop()
     return
@@ -68,7 +71,7 @@ function endEncounter() {
 function EncounterSystem(dt: number) {
   if (!isShipStopped()) return
   const stopId = currentStopId()
-  if (!stopId || stopId === START_STOP_ID) return
+  if (!stopId || stopId === PATH_START_STOP_ID) return
   if (completedEncounterIds.indexOf(stopId) !== -1) return
 
   if (activeEncounterId !== stopId) {
@@ -76,7 +79,7 @@ function EncounterSystem(dt: number) {
   }
   if (!activeEncounterId) return
 
-  const step = Math.min(dt, 0.1)
+  const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
   encounterElapsed += step
   while (
     spawnedThisEncounter < encounterHazardCount &&

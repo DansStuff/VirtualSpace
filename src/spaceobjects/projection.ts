@@ -1,24 +1,10 @@
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import {
+  CELESTIAL_SPHERE_INSET,
+  PLANET_ENCLOSING_SPHERE_RADIUS,
+  PROJECTED_BODY_MIN_SCALE
+} from '../constants'
 import { conjugateQuaternion, directionFromTo, rotateByInverse } from '../utilities'
-
-/**
- * Projection-shell radius for planets/stars (scene meters).
- * Does not place the ship — the center is always SCENE_SHIP_POSITION.
- * Smaller values pull bodies onto a closer shell; apparent angular size is unchanged.
- */
-export const ENCLOSING_SPHERE_RADIUS = 40//64
-
-/**
- * Smaller enclosing sphere for asteroids (closer shell than planets/stars).
- * Center remains SCENE_SHIP_POSITION; only the projection radius differs.
- */
-export const ASTEROID_ENCLOSING_SPHERE_RADIUS = 20
-
-/** Pull celestial body centers inward from the shell along the view ray (meters). */
-export const CELESTIAL_SPHERE_INSET = 0.75
-
-/** Assumed player camera vertical FOV (degrees). Angular matching is FOV-independent. */
-export const STANDARD_PLAYER_FOV_DEGREES = 50
 
 /**
  * Angular radius (radians) of a virtual body as seen from the ship.
@@ -45,8 +31,8 @@ export function virtualAngularRadius(virtualRadius: number, virtualDistance: num
 export function scaleForAngularRadiusAtDistance(
   angularRadius: number,
   distanceFromViewer: number,
-  minScale: number = 0.01,
-  maxScale: number = ENCLOSING_SPHERE_RADIUS
+  minScale: number = PROJECTED_BODY_MIN_SCALE,
+  maxScale: number = PLANET_ENCLOSING_SPHERE_RADIUS
 ): number {
   if (distanceFromViewer < 1e-8) {
     return maxScale
@@ -89,7 +75,7 @@ export function raySphereForwardDistance(
   const discriminant = b * b - c
   if (discriminant <= 0) {
     // Numerical fallback if the player is slightly outside / grazing.
-    return Math.max(0.01, -b + sphereRadius)
+    return Math.max(PROJECTED_BODY_MIN_SCALE, -b + sphereRadius)
   }
   return -b + Math.sqrt(discriminant)
 }
@@ -127,14 +113,14 @@ export function projectVirtualBodyToSceneSphere(
     sphereCenter,
     sphereRadius
   )
-  const centerDistance = Math.max(0.01, hitDistance - CELESTIAL_SPHERE_INSET)
+  const centerDistance = Math.max(PROJECTED_BODY_MIN_SCALE, hitDistance - CELESTIAL_SPHERE_INSET)
   const position = Vector3.add(rayOrigin, Vector3.scale(localDirection, centerDistance))
   // Step 7: scale the radius-1 model so it keeps that angular size at the *actual*
   //         player→body distance (shrinks when you walk closer, grows when farther).
   const scale = scaleForAngularRadiusAtDistance(
     angularRadius,
     centerDistance,
-    0.01,
+    PROJECTED_BODY_MIN_SCALE,
     sphereRadius
   )
   // Step 8: orient the mesh for a non-spinning body under the ship's viewpoint.

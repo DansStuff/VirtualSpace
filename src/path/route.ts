@@ -35,10 +35,9 @@ export type ShipRoute = {
 /**
  * Authored map lives in routedata.ts (path editor Save TypeScript overwrites that file).
  * Open path: first point of the first leg is Start; the ship does not loop.
- * Start is not an authored encounter — the ship waits there until the mission starts.
+ * Start is not an authored encounter — the ship waits there until the mission starts
+ * (`PATH_START_STOP_ID` in constants.ts).
  */
-export const START_STOP_ID = 'start'
-
 export const SHIP_ROUTE: ShipRoute = authoredRoute
 
 export function routePlanetCentroid(route: ShipRoute): { x: number; y: number; z: number } {

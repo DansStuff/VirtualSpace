@@ -1,12 +1,6 @@
 import { engine, Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-
-/** Fixed scene-space anchor for the visible ship model (center of the enclosing sphere). */
-export const SCENE_SHIP_POSITION = Vector3.create(
-  64,
-  64,
-  64
-)
+import { SCENE_SHIP_POSITION } from './constants'
 
 // NOTE: the ship should be synced once multiplayer is implemented
 export const ship = engine.addEntity()
