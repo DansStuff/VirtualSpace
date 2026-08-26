@@ -1,17 +1,14 @@
-import { engine } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
-import { currentStopId, isPathFinished, isShipStopped, resumeFromStop } from '../path/follow'
-import { START_STOP_ID } from '../path/route'
+import { isServer } from '@dcl/sdk/network'
+import { room } from '../networking/messages'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import {
   HAZARD_CONE_HORIZONTAL_DEGREES,
   HAZARD_CONE_VERTICAL_DEGREES,
   HAZARD_DAMAGE_INTERVAL,
-  HAZARD_SPAWN_DISTANCE,
-  HAZARD_SPAWN_INTERVAL,
-  encounterParams
-} from '../shared/encounters'
-import { room } from '../shared/messages'
+  HAZARD_SPAWN_DISTANCE
+} from './constants'
+import { setupHazardVisuals } from './visuals'
 
 type LiveHazard = {
   hazardId: number
@@ -24,36 +21,9 @@ type LiveHazard = {
   targetedBy: Set<string>
 }
 
-const completedEncounterIds: string[] = []
 let liveHazards: LiveHazard[] = []
 const playerTarget = new Map<string, number>()
 let nextHazardId = 1
-let activeEncounterId: string | null = null
-let encounterElapsed = 0
-let encounterHazardCount = 0
-let encounterFlightTime = 0
-let encounterAsteroidHp = 0
-let spawnedThisEncounter = 0
-
-export function replayEncounterState(playerAddress: string) {
-  for (const encounterId of completedEncounterIds) {
-    room.send('notifyEncounterEnd', { encounterId }, { to: [playerAddress] })
-  }
-  for (const hazard of liveHazards) {
-    room.send('notifyHazardSpawn', hazardSpawnMessage(hazard), { to: [playerAddress] })
-    if (hazard.targetedBy.size > 0) {
-      room.send(
-        'notifyHazardTargeted',
-        {
-          hazardId: hazard.hazardId,
-          playerAddress: '',
-          targetCount: hazard.targetedBy.size
-        },
-        { to: [playerAddress] }
-      )
-    }
-  }
-}
 
 function randomConeAhead(): Vector3 {
   const yaw = (Math.random() - 0.5) * HAZARD_CONE_HORIZONTAL_DEGREES * (Math.PI / 180)
@@ -67,24 +37,6 @@ function randomConeAhead(): Vector3 {
   )
   const modelLocal = Vector3.create(-travelLocal.x, travelLocal.y, -travelLocal.z)
   return Vector3.rotate(modelLocal, shipVirtualRotation)
-}
-
-function spawnNextHazard(encounterId: string) {
-  const position = Vector3.add(shipVirtualPosition, Vector3.scale(randomConeAhead(), HAZARD_SPAWN_DISTANCE))
-  const hazard: LiveHazard = {
-    hazardId: nextHazardId++,
-    encounterId,
-    position,
-    flightElapsed: 0,
-    flightTime: encounterFlightTime,
-    hp: encounterAsteroidHp,
-    damageElapsed: 0,
-    targetedBy: new Set()
-  }
-  liveHazards.push(hazard)
-  spawnedThisEncounter += 1
-  room.send('notifyHazardSpawn', hazardSpawnMessage(hazard))
-  console.log(`[SERVER] Encounter ${encounterId} spawned hazard ${hazard.hazardId} (${spawnedThisEncounter}/${encounterHazardCount})`)
 }
 
 function hazardSpawnMessage(hazard: LiveHazard) {
@@ -163,65 +115,27 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   return true
 }
 
-function beginEncounter(stopId: string) {
-  const params = encounterParams[stopId]
-  if (params === undefined) {
-    if (!isPathFinished()) resumeFromStop()
-    return
+export function spawn(encounterId: string, opts: { flightTime: number; hp: number }): number {
+  const position = Vector3.add(shipVirtualPosition, Vector3.scale(randomConeAhead(), HAZARD_SPAWN_DISTANCE))
+  const hazard: LiveHazard = {
+    hazardId: nextHazardId++,
+    encounterId,
+    position,
+    flightElapsed: 0,
+    flightTime: opts.flightTime,
+    hp: opts.hp,
+    damageElapsed: 0,
+    targetedBy: new Set()
   }
-
-  activeEncounterId = stopId
-  encounterElapsed = 0
-  encounterHazardCount = params.hazardCount
-  encounterFlightTime = params.flightTime
-  encounterAsteroidHp = params.asteroidHp
-  spawnedThisEncounter = 0
-  liveHazards = []
-  clearTargeting()
+  liveHazards.push(hazard)
+  room.send('notifyHazardSpawn', hazardSpawnMessage(hazard))
+  return hazard.hazardId
 }
 
-function endEncounter() {
-  if (!activeEncounterId) return
-  const encounterId = activeEncounterId
-  completedEncounterIds.push(encounterId)
-  liveHazards = []
-  clearTargeting()
-  activeEncounterId = null
-  encounterElapsed = 0
-  encounterHazardCount = 0
-  encounterFlightTime = 0
-  encounterAsteroidHp = 0
-  spawnedThisEncounter = 0
-  console.log(`[SERVER] Encounter ${encounterId} ended`)
-  room.send('notifyEncounterEnd', { encounterId })
-  if (!isPathFinished()) {
-    resumeFromStop()
-  }
-}
-
-function EncounterSystem(dt: number) {
-  if (!isShipStopped()) return
-  const stopId = currentStopId()
-  if (!stopId || stopId === START_STOP_ID) return
-  if (completedEncounterIds.indexOf(stopId) !== -1) return
-
-  if (activeEncounterId !== stopId) {
-    beginEncounter(stopId)
-  }
-  if (!activeEncounterId) return
-
-  const step = Math.min(dt, 0.1)
-  encounterElapsed += step
-  while (
-    spawnedThisEncounter < encounterHazardCount &&
-    encounterElapsed >= spawnedThisEncounter * HAZARD_SPAWN_INTERVAL
-  ) {
-    spawnNextHazard(activeEncounterId)
-  }
-
+export function tick(dt: number): void {
   const expiredIds: number[] = []
   for (const hazard of liveHazards) {
-    hazard.flightElapsed += step
+    hazard.flightElapsed += dt
     if (hazard.flightElapsed >= hazard.flightTime) {
       expiredIds.push(hazard.hazardId)
     }
@@ -233,7 +147,7 @@ function EncounterSystem(dt: number) {
   const lockedIds: number[] = []
   for (const hazard of liveHazards) {
     if (hazard.targetedBy.size > 0) {
-      hazard.damageElapsed += step
+      hazard.damageElapsed += dt
       lockedIds.push(hazard.hazardId)
     } else {
       hazard.damageElapsed = 0
@@ -247,30 +161,48 @@ function EncounterSystem(dt: number) {
       if (!damageHazard(hazardId, 1)) break
     }
   }
+}
 
-  if (spawnedThisEncounter >= encounterHazardCount && liveHazards.length === 0) {
-    endEncounter()
+export function hasLive(): boolean {
+  return liveHazards.length > 0
+}
+
+/** Clear live hazards and targeting locks. Hazard ids keep incrementing. */
+export function clearLive(): void {
+  liveHazards = []
+  clearTargeting()
+}
+
+/** Clear live hazards and reset hazard ids for a new mission. */
+export function resetLive(): void {
+  clearLive()
+  nextHazardId = 1
+}
+
+export function replayLive(playerAddress: string): void {
+  for (const hazard of liveHazards) {
+    room.send('notifyHazardSpawn', hazardSpawnMessage(hazard), { to: [playerAddress] })
+    if (hazard.targetedBy.size > 0) {
+      room.send(
+        'notifyHazardTargeted',
+        {
+          hazardId: hazard.hazardId,
+          playerAddress: '',
+          targetCount: hazard.targetedBy.size
+        },
+        { to: [playerAddress] }
+      )
+    }
   }
 }
 
-export function setupServerEncounters() {
-  engine.addSystem(EncounterSystem)
-
-  room.onMessage('requestHazardTarget', (data, context) => {
-    if (!context?.from) return
-    setPlayerTarget(context.from, data.hazardId)
-  })
-}
-
-export function resetEncounterState(): void {
-  completedEncounterIds.length = 0
-  liveHazards = []
-  clearTargeting()
-  nextHazardId = 1
-  activeEncounterId = null
-  encounterElapsed = 0
-  encounterHazardCount = 0
-  encounterFlightTime = 0
-  encounterAsteroidHp = 0
-  spawnedThisEncounter = 0
+export function setupHazards() {
+  if (isServer()) {
+    room.onMessage('requestHazardTarget', (data, context) => {
+      if (!context?.from) return
+      setPlayerTarget(context.from, data.hazardId)
+    })
+    return
+  }
+  setupHazardVisuals()
 }

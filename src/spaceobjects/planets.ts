@@ -1,22 +1,24 @@
 import {
-  Billboard,
-  BillboardMode,
-  ColliderLayer,
   engine,
   Entity,
   GltfContainer,
   GltfNodeModifiers,
-  Material,
-  MaterialTransparencyMode,
-  MeshRenderer,
-  Name,
-  Transform,
-  VisibilityComponent
+  Schemas,
+  Transform
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
-import { EntityNames } from '../assets/scene/entity-names'
-import { AsteroidData, PlanetData } from './components'
-import { SHIP_ROUTE, routePlanetCentroid } from './path/route'
+import { isServer } from '@dcl/sdk/network'
+import { SHIP_ROUTE } from '../path/route'
+import { SCENE_SHIP_POSITION, shipVirtualPosition, shipVirtualRotation } from '../ship'
+import { AsteroidSystem } from './asteroids'
+import { ENCLOSING_SPHERE_RADIUS, projectVirtualBodyToSceneSphere } from './projection'
+
+export const PlanetData = engine.defineComponent('PlanetData', {
+  position: Schemas.Vector3,
+  name: Schemas.String,
+  /** Virtual-space radius. Imported models are authored at radius 1; this drives apparent size. */
+  radius: Schemas.Float
+})
 
 export type PlanetSpawnData = {
   name: string
@@ -110,49 +112,6 @@ export function spawnDistantStars(count: number = 20): void {
   }
 }
 
-const ASTEROID_MODEL = 'assets/scene/Models/Asteroid.gltf'
-const CROSSHAIR_TEXTURE = 'assets/scene/Images/crosshair1.png'
-
-export type HazardVisuals = {
-  entity: Entity
-  targetingIndicator: Entity
-}
-
-/** Client-only incoming asteroid. AsteroidSystem projects `AsteroidData.position`. */
-export function spawnHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
-  const entity = engine.addEntity()
-  GltfContainer.create(entity, {
-    src: ASTEROID_MODEL,
-    visibleMeshesCollisionMask: ColliderLayer.CL_CUSTOM1,
-    invisibleMeshesCollisionMask: ColliderLayer.CL_NONE
-  })
-  Transform.create(entity, { position: Vector3.clone(virtualPosition) })
-  AsteroidData.create(entity, {
-    position: Vector3.clone(virtualPosition),
-    radius
-  })
-
-  // Default plane is 1×1; asteroid mesh extends ~1.35 from origin (~2.7 across).
-  const targetingIndicator = engine.addEntity()
-  Transform.create(targetingIndicator, {
-    parent: entity,
-    scale: Vector3.create(4, 4, 4)
-  })
-  MeshRenderer.setPlane(targetingIndicator)
-  Billboard.create(targetingIndicator, { billboardMode: BillboardMode.BM_ALL })
-  Material.setPbrMaterial(targetingIndicator, {
-    texture: Material.Texture.Common({ src: CROSSHAIR_TEXTURE }),
-    emissiveColor: Color3.Red(),
-    emissiveIntensity: 1,
-    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
-    alphaTest: 0.5,
-    castShadows: false
-  })
-  VisibilityComponent.create(targetingIndicator, { visible: false })
-
-  return { entity, targetingIndicator }
-}
-
 /** Spawns authored planets from the path-editor route table. */
 export function spawnPlanetsFromRoute(): void {
   for (const planet of SHIP_ROUTE.planets) {
@@ -165,30 +124,49 @@ export function spawnPlanetsFromRoute(): void {
 }
 
 /**
- * Tags every scene-hierarchy entity named Asteroid.gltf with AsteroidData.
- * Assigns a virtual-space pose near the planet centroid so AsteroidSystem can project it.
+ * Each frame, reproject every planet onto the fixed enclosing sphere at scene center.
+ * Rays start at the local player (inside the sphere) and travel in the virtual
+ * celestial direction until they hit the shell.
  */
-/*
-export function setupAsteroids(): void {
-  const centroid = routePlanetCentroid(SHIP_ROUTE)
-  let asteroidIndex = 0
-  for (const [entity, name] of engine.getEntitiesWith(Name, Transform)) {
-    if (name.value !== EntityNames.Asteroid_gltf || AsteroidData.has(entity)) {
-      continue
-    }
+export function PlanetSystem(_dt: number) {
+  // Step 1: read the ship's virtual pose (not the fixed scene Transform).
+  const virtualPosition = shipVirtualPosition
+  const virtualRotation = shipVirtualRotation
 
-    const yaw = asteroidIndex * 2.4
-    const position = Vector3.create(
-      centroid.x + Math.cos(yaw) * 40,
-      centroid.y + ((asteroidIndex % 3) - 1) * 8,
-      centroid.z + Math.sin(yaw) * 40
+  // Step 2: ray origin is the player; sphere stays fixed at the ship / scene anchor.
+  let rayOrigin = SCENE_SHIP_POSITION
+  if (Transform.has(engine.PlayerEntity)) {
+    rayOrigin = Transform.get(engine.PlayerEntity).position
+  }
+
+  // Step 3: visit every planet that has both simulation data and a scene Transform.
+  for (const [entity, planet] of engine.getEntitiesWith(PlanetData, Transform)) {
+    // Step 4: get a writable Transform so we can move/scale the visible planet model.
+    const transform = Transform.getMutable(entity)
+
+    // Step 5: player → celestial direction → intersection with the fixed sphere.
+    const projection = projectVirtualBodyToSceneSphere(
+      planet.position,
+      virtualPosition,
+      virtualRotation,
+      SCENE_SHIP_POSITION,
+      rayOrigin,
+      ENCLOSING_SPHERE_RADIUS,
+      planet.radius
     )
-    AsteroidData.create(entity, {
-      position,
-      radius: 4
-    })
-    asteroidIndex++
+
+    // Step 6: apply projected pose (center on the fixed enclosing sphere).
+    transform.position = projection.position
+    transform.rotation = projection.rotation
+    transform.scale = Vector3.create(projection.scale, projection.scale, projection.scale)
   }
 }
-  */
 
+export function setupSpaceObjects() {
+  if (isServer()) return
+  spawnPlanetsFromRoute()
+  // spawnDistantStars(40)
+  // setupAsteroids()
+  engine.addSystem(PlanetSystem)
+  engine.addSystem(AsteroidSystem)
+}

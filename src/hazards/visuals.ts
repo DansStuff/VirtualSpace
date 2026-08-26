@@ -1,25 +1,71 @@
 import {
+  Billboard,
+  BillboardMode,
   ColliderLayer,
   engine,
   Entity,
+  GltfContainer,
   InputAction,
   inputSystem,
+  Material,
+  MaterialTransparencyMode,
+  MeshRenderer,
   PointerEventType,
   PrimaryPointerInfo,
   RaycastQueryType,
   raycastSystem,
+  Transform,
   VisibilityComponent
 } from '@dcl/sdk/ecs'
-import { Vector3 } from '@dcl/sdk/math'
-import { AsteroidData } from '../components'
-import { spawnHazard } from '../factory'
-import { currentStopId, lastStopId, markEncounterComplete, resumeFromStop } from '../path/follow'
-import { HAZARD_IMPACT_DISTANCE, HAZARD_RADIUS } from '../shared/encounters'
-import { room } from '../shared/messages'
+import { Color3, Vector3 } from '@dcl/sdk/math'
+import { room } from '../networking/messages'
 import { shipVirtualPosition } from '../ship'
-import { forgetAsteroidSpin } from '../systems'
+import { AsteroidData, forgetAsteroidSpin } from '../spaceobjects/asteroids'
 import { directionFromTo } from '../utilities'
-import { markMissionComplete } from '../ui'
+import { HAZARD_IMPACT_DISTANCE, HAZARD_RADIUS } from './constants'
+
+const ASTEROID_MODEL = 'assets/scene/Models/Asteroid.gltf'
+const CROSSHAIR_TEXTURE = 'assets/scene/Images/crosshair1.png'
+
+type HazardVisuals = {
+  entity: Entity
+  targetingIndicator: Entity
+}
+
+/** Client-only incoming asteroid. AsteroidSystem projects `AsteroidData.position`. */
+function spawnHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
+  const entity = engine.addEntity()
+  GltfContainer.create(entity, {
+    src: ASTEROID_MODEL,
+    visibleMeshesCollisionMask: ColliderLayer.CL_CUSTOM1,
+    invisibleMeshesCollisionMask: ColliderLayer.CL_NONE
+  })
+  Transform.create(entity, { position: Vector3.clone(virtualPosition) })
+  AsteroidData.create(entity, {
+    position: Vector3.clone(virtualPosition),
+    radius
+  })
+
+  // Default plane is 1×1; asteroid mesh extends ~1.35 from origin (~2.7 across).
+  const targetingIndicator = engine.addEntity()
+  Transform.create(targetingIndicator, {
+    parent: entity,
+    scale: Vector3.create(4, 4, 4)
+  })
+  MeshRenderer.setPlane(targetingIndicator)
+  Billboard.create(targetingIndicator, { billboardMode: BillboardMode.BM_ALL })
+  Material.setPbrMaterial(targetingIndicator, {
+    texture: Material.Texture.Common({ src: CROSSHAIR_TEXTURE }),
+    emissiveColor: Color3.Red(),
+    emissiveIntensity: 1,
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
+    alphaTest: 0.5,
+    castShadows: false
+  })
+  VisibilityComponent.create(targetingIndicator, { visible: false })
+
+  return { entity, targetingIndicator }
+}
 
 type SpawnedHazard = {
   hazardId: number
@@ -58,7 +104,7 @@ function despawnHazard(hazardId: number) {
   }
 }
 
-function despawnEncounter(encounterId: string) {
+export function despawnEncounter(encounterId: string) {
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].encounterId !== encounterId) continue
     forgetAsteroidSpin(spawned[i].entity)
@@ -131,7 +177,7 @@ function HazardTargetSystem(dt: number) {
   )
 }
 
-export function setupClientHazards() {
+export function setupHazardVisuals() {
   engine.addSystem(HazardFlightSystem)
   engine.addSystem(HazardTargetSystem)
 
@@ -168,18 +214,6 @@ export function setupClientHazards() {
       if (hazard.hazardId !== data.hazardId) continue
       VisibilityComponent.getMutable(hazard.targetingIndicator).visible = data.targetCount > 0
       return
-    }
-  })
-
-  room.onMessage('notifyEncounterEnd', (data) => {
-    console.log(`[CLIENT] Encounter ended: ${data.encounterId}`)
-    markEncounterComplete(data.encounterId)
-    despawnEncounter(data.encounterId)
-    if (data.encounterId === lastStopId()) {
-      markMissionComplete()
-    }
-    if (currentStopId() === data.encounterId) {
-      resumeFromStop()
     }
   })
 }

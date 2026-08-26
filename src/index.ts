@@ -1,14 +1,14 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
-import { spawnPlanetsFromRoute /*, spawnDistantStars, setupAsteroids*/ } from './factory'
-import { markMissionReset, markMissionStarted, setupUi } from './ui'
-import { AsteroidSystem, PlanetSystem } from './systems'
+import { replayEncounterState, resetEncounterState, setupEncounters } from './encounters/lifecycle'
+import { setupHazards } from './hazards/simulation'
+import { despawnAllHazards } from './hazards/visuals'
+import { room } from './networking/messages'
 import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
-import { setupDebugTeleportToShip } from './utilities'
-import { room } from './shared/messages'
 import { START_STOP_ID } from './path/route'
-import { replayEncounterState, resetEncounterState, setupServerEncounters } from './server/encounters'
-import { despawnAllHazards, setupClientHazards } from './client/hazards'
+import { setupSpaceObjects } from './spaceobjects/planets'
+import { markMissionReset, markMissionStarted, setupUi } from './ui'
+import { setupDebugTeleportToShip } from './utilities'
 
 type MissionState = {
   encounterId: string
@@ -76,8 +76,6 @@ function setupClientRoom() {
     markMissionReset()
   })
 
-  setupClientHazards()
-
   let requestedInitialState = false
   const requestInitialState = () => {
     if (requestedInitialState) return
@@ -98,24 +96,18 @@ function setupClientRoom() {
 }
 
 export function main() {
+  setupEncounters()
+  setupHazards()
+  setupSpaceObjects()
+  engine.addSystem(ShipPathSystem)
+
   if (isServer()) {
     console.log(`[SERVER] Init server`)
     setupServerRoom()
-    setupServerEncounters()
-    engine.addSystem(ShipPathSystem)
     return
   }
 
   setupClientRoom()
-
   setupUi()
-
-  spawnPlanetsFromRoute()
-  //spawnDistantStars(40)
-  //setupAsteroids()
-
-  engine.addSystem(PlanetSystem)
-  engine.addSystem(ShipPathSystem)
-  engine.addSystem(AsteroidSystem)
   setupDebugTeleportToShip()
 }

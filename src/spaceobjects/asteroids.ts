@@ -1,53 +1,16 @@
-import { engine, Entity, Transform } from '@dcl/sdk/ecs'
+import { engine, Entity, Schemas, Transform } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-import { AsteroidData, PlanetData } from './components'
-import {
-  ASTEROID_ENCLOSING_SPHERE_RADIUS,
-  ENCLOSING_SPHERE_RADIUS,
-  SCENE_SHIP_POSITION,
-  shipVirtualPosition,
-  shipVirtualRotation
-} from './ship'
-import { projectVirtualBodyToSceneSphere } from './utilities'
+import { SCENE_SHIP_POSITION, shipVirtualPosition, shipVirtualRotation } from '../ship'
+import { ASTEROID_ENCLOSING_SPHERE_RADIUS, projectVirtualBodyToSceneSphere } from './projection'
 
 /**
- * Each frame, reproject every planet onto the fixed enclosing sphere at scene center.
- * Rays start at the local player (inside the sphere) and travel in the virtual
- * celestial direction until they hit the shell.
+ * Virtual-space asteroid body. Projected like planets, but onto ASTEROID_ENCLOSING_SPHERE_RADIUS.
+ * Models are authored at radius 1; `radius` is the virtual size for apparent scale.
  */
-export function PlanetSystem(_dt: number) {
-  // Step 1: read the ship's virtual pose (not the fixed scene Transform).
-  const virtualPosition = shipVirtualPosition
-  const virtualRotation = shipVirtualRotation
-
-  // Step 2: ray origin is the player; sphere stays fixed at the ship / scene anchor.
-  let rayOrigin = SCENE_SHIP_POSITION
-  if (Transform.has(engine.PlayerEntity)) {
-    rayOrigin = Transform.get(engine.PlayerEntity).position
-  }
-
-  // Step 3: visit every planet that has both simulation data and a scene Transform.
-  for (const [entity, planet] of engine.getEntitiesWith(PlanetData, Transform)) {
-    // Step 4: get a writable Transform so we can move/scale the visible planet model.
-    const transform = Transform.getMutable(entity)
-
-    // Step 5: player → celestial direction → intersection with the fixed sphere.
-    const projection = projectVirtualBodyToSceneSphere(
-      planet.position,
-      virtualPosition,
-      virtualRotation,
-      SCENE_SHIP_POSITION,
-      rayOrigin,
-      ENCLOSING_SPHERE_RADIUS,
-      planet.radius
-    )
-
-    // Step 6: apply projected pose (center on the fixed enclosing sphere).
-    transform.position = projection.position
-    transform.rotation = projection.rotation
-    transform.scale = Vector3.create(projection.scale, projection.scale, projection.scale)
-  }
-}
+export const AsteroidData = engine.defineComponent('AsteroidData', {
+  position: Schemas.Vector3,
+  radius: Schemas.Float
+})
 
 const HAZARD_SPIN_DEGREES_PER_SECOND = 60
 
@@ -105,3 +68,30 @@ export function forgetAsteroidSpin(entity: Entity) {
   asteroidSpinState.delete(entity)
 }
 
+/**
+ * Tags every scene-hierarchy entity named Asteroid.gltf with AsteroidData.
+ * Assigns a virtual-space pose near the planet centroid so AsteroidSystem can project it.
+ */
+/*
+export function setupAsteroids(): void {
+  const centroid = routePlanetCentroid(SHIP_ROUTE)
+  let asteroidIndex = 0
+  for (const [entity, name] of engine.getEntitiesWith(Name, Transform)) {
+    if (name.value !== EntityNames.Asteroid_gltf || AsteroidData.has(entity)) {
+      continue
+    }
+
+    const yaw = asteroidIndex * 2.4
+    const position = Vector3.create(
+      centroid.x + Math.cos(yaw) * 40,
+      centroid.y + ((asteroidIndex % 3) - 1) * 8,
+      centroid.z + Math.sin(yaw) * 40
+    )
+    AsteroidData.create(entity, {
+      position,
+      radius: 4
+    })
+    asteroidIndex++
+  }
+}
+*/

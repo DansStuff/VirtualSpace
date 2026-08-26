@@ -1,7 +1,7 @@
 import { Color4 } from '@dcl/sdk/math'
 import { isStateSyncronized } from '@dcl/sdk/network'
 import ReactEcs, { Button, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
-import { room } from './shared/messages'
+import { room } from './networking/messages'
 
 let missionStarted = false
 let showRestart = false
