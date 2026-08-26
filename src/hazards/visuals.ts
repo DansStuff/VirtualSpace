@@ -82,6 +82,7 @@ type SpawnedHazard = {
   encounterId: string
   entity: Entity
   targetingIndicator: Entity
+  targetCount: number
   start: Vector3
   end: Vector3
   flightTime: number
@@ -89,6 +90,13 @@ type SpawnedHazard = {
 }
 
 const spawned: SpawnedHazard[] = []
+
+/** Visit every live client-side hazard. Used by ship lasers for fire rate and aim. */
+export function forEachLiveHazard(visitor: (entity: Entity, targetCount: number) => void): void {
+  for (const hazard of spawned) {
+    visitor(hazard.entity, hazard.targetCount)
+  }
+}
 
 function virtualFlightPath(spawnPosition: Vector3): { start: Vector3; end: Vector3 } {
   const dir = directionFromTo(shipVirtualPosition, spawnPosition)
@@ -197,6 +205,7 @@ export function setupHazardVisuals() {
       encounterId: data.encounterId,
       entity: visuals.entity,
       targetingIndicator: visuals.targetingIndicator,
+      targetCount: 0,
       start: path.start,
       end: path.end,
       flightTime: data.flightTime,
@@ -219,6 +228,7 @@ export function setupHazardVisuals() {
     )
     for (const hazard of spawned) {
       if (hazard.hazardId !== data.hazardId) continue
+      hazard.targetCount = data.targetCount
       VisibilityComponent.getMutable(hazard.targetingIndicator).visible = data.targetCount > 0
       return
     }

@@ -7,6 +7,7 @@ import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
 import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
 import { setupSpaceObjects } from './spaceobjects/planets'
+import { setupShipWeapons } from './shipweapons/lasers'
 import { markMissionReset, markMissionStarted, setupUi } from './ui'
 import { setupDebugTeleportToShip } from './utilities'
 
@@ -99,6 +100,7 @@ export function main() {
   setupEncounters()
   setupHazards()
   setupSpaceObjects()
+  setupShipWeapons()
   engine.addSystem(ShipPathSystem)
 
   if (isServer()) {

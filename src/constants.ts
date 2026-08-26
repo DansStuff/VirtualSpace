@@ -1,4 +1,4 @@
-import { Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 
 // MARK: Simulation
 
@@ -135,6 +135,30 @@ export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5
 
 /** Uniform scale of the billboard crosshair parented to a hazard. */
 export const HAZARD_TARGETING_INDICATOR_SCALE = 4
+
+// MARK: Ship Weapons
+
+/** How long a laser plane stays visible after each shot. */
+export const SHIP_LASER_LIFETIME_SECONDS = 0.15
+
+/** Scene-space width of the laser plane (local X). Length is the ship-to-asteroid distance. */
+export const SHIP_LASER_WIDTH = 0.25
+
+/** Offset from SCENE_SHIP_POSITION to the laser origin, slightly above the ship roof. */
+export const SHIP_LASER_ORIGIN_OFFSET = Vector3.create(0, 6, 0)
+
+/** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */
+export const SHIP_LASER_BASE_FIRE_RATE = 1.5
+
+/** Target-count clamp for shot frequency. 1 player = base rate; 5+ players = 5× base. */
+export const SHIP_LASER_MAX_TARGETERS = 5
+
+/** Pre-warmed laser plane entities. The pool grows if this is exhausted. */
+export const SHIP_LASER_POOL_SIZE = 16
+
+export const SHIP_LASER_ALBEDO_COLOR = Color4.create(0.45, 0.05, 0.85, 1)
+export const SHIP_LASER_EMISSIVE_COLOR = Color3.create(0.7, 0.15, 1)
+export const SHIP_LASER_EMISSIVE_INTENSITY = 4
 
 // MARK: Encounters
 
