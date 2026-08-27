@@ -185,7 +185,7 @@ export function PlanetSystem(_dt: number) {
  * Scene +Z is aft; uses virtual pose so walking the deck does not pop visibility.
  */
 export function PlanetCuller(_dt: number) {
-  for (const [entity, planet] of engine.getEntitiesWith(Cullable, PlanetData, VisibilityComponent)) {
+  for (const [entity, planet] of engine.getEntitiesWith(PlanetData, Cullable, VisibilityComponent)) {
     const worldDirection = directionFromTo(shipVirtualPosition, planet.position)
     const localDirection = rotateByInverse(worldDirection, shipVirtualRotation)
     const visible = localDirection.z < CULL_BEHIND_DOT
