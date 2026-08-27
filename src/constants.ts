@@ -88,6 +88,13 @@ export const STANDARD_PLAYER_FOV_DEGREES = 50
 /** Minimum Transform scale for a projected radius-1 mesh. */
 export const PROJECTED_BODY_MIN_SCALE = 0.01
 
+/**
+ * Half-angle of the rear planet-cull cone (degrees). Full sector is 90°.
+ * Scene +Z is the ship's stern (SHIP_MODEL_YAW_DEGREES = 180); bodies with
+ * localDir.z >= cos(this angle) sit behind the hull and are hidden.
+ */
+export const PLANET_CULL_BEHIND_HALF_ANGLE_DEGREES = 45
+
 // MARK: Stars
 
 export const STAR_MODEL_PATH = 'assets/scene/Models/Star.gltf'

@@ -4,11 +4,13 @@ import {
   GltfContainer,
   GltfNodeModifiers,
   Schemas,
-  Transform
+  Transform,
+  VisibilityComponent
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
+  PLANET_CULL_BEHIND_HALF_ANGLE_DEGREES,
   PLANET_ENCLOSING_SPHERE_RADIUS,
   SCENE_SHIP_POSITION,
   STAR_BASE_COLOR,
@@ -18,6 +20,7 @@ import {
 } from '../constants'
 import { SHIP_ROUTE } from '../path/route'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
+import { directionFromTo, rotateByInverse } from '../utilities'
 import { AsteroidSystem } from './asteroids'
 import { projectVirtualBodyToSceneSphere } from './projection'
 
@@ -28,6 +31,11 @@ export const PlanetData = engine.defineComponent('PlanetData', {
   radius: Schemas.Float
 })
 
+/** Tag for bodies hidden when they sit in the ship's rear cull cone. */
+export const Cullable = engine.defineComponent('Cullable', {})
+
+const CULL_BEHIND_DOT = Math.cos((PLANET_CULL_BEHIND_HALF_ANGLE_DEGREES * Math.PI) / 180)
+
 export type PlanetSpawnData = {
   name: string
   position: Vector3
@@ -35,7 +43,11 @@ export type PlanetSpawnData = {
   radius: number
 }
 
-export function createPlanet(modelPath: string, data: PlanetSpawnData): Entity {
+export function createPlanet(
+  modelPath: string,
+  data: PlanetSpawnData,
+  cullable: boolean = true
+): Entity {
   const entity = engine.addEntity()
 
   // Models must be origin-centered with radius 1. Baked glTF node translations get multiplied
@@ -47,6 +59,10 @@ export function createPlanet(modelPath: string, data: PlanetSpawnData): Entity {
     position: data.position,
     radius: data.radius
   })
+  if (cullable) {
+    Cullable.create(entity)
+    VisibilityComponent.create(entity, { visible: true })
+  }
 
   return entity
 }
@@ -98,11 +114,15 @@ export function spawnDistantStars(count: number = STAR_SPAWN_COUNT_DEFAULT): voi
       Math.sin(yaw) * cosPitch * distance
     )
 
-    const entity = createPlanet(STAR_MODEL_PATH, {
-      name: `Star_${i}`,
-      position,
-      radius: STAR_VIRTUAL_RADIUS
-    })
+    const entity = createPlanet(
+      STAR_MODEL_PATH,
+      {
+        name: `Star_${i}`,
+        position,
+        radius: STAR_VIRTUAL_RADIUS
+      },
+      false
+    )
 
     // Slight per-star orange tint (0.15–0.45), stable across reloads.
     const tintStrength = 0.6 + ((i * 0.618) % 1) * 1
@@ -160,11 +180,28 @@ export function PlanetSystem(_dt: number) {
   }
 }
 
+/**
+ * Hide Cullable planets that sit in a 90° cone behind the ship (45° either side of the stern).
+ * Scene +Z is aft; uses virtual pose so walking the deck does not pop visibility.
+ */
+export function PlanetCuller(_dt: number) {
+  for (const [entity, planet] of engine.getEntitiesWith(Cullable, PlanetData, VisibilityComponent)) {
+    const worldDirection = directionFromTo(shipVirtualPosition, planet.position)
+    const localDirection = rotateByInverse(worldDirection, shipVirtualRotation)
+    const visible = localDirection.z < CULL_BEHIND_DOT
+    const visibility = VisibilityComponent.getMutable(entity)
+    if (visibility.visible !== visible) {
+      visibility.visible = visible
+    }
+  }
+}
+
 export function setupSpaceObjects() {
   if (isServer()) return
   spawnPlanetsFromRoute()
   // spawnDistantStars(40)
   // setupAsteroids()
   engine.addSystem(PlanetSystem)
+  engine.addSystem(PlanetCuller)
   engine.addSystem(AsteroidSystem)
 }
