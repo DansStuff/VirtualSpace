@@ -93,7 +93,7 @@ export const PROJECTED_BODY_MIN_SCALE = 0.01
  * Scene +Z is the ship's stern (SHIP_MODEL_YAW_DEGREES = 180); bodies with
  * localDir.z >= cos(this angle) sit behind the hull and are hidden.
  */
-export const PLANET_CULL_BEHIND_HALF_ANGLE_DEGREES = 45
+export const PLANET_CULL_BEHIND_HALF_ANGLE_DEGREES = 60
 
 // MARK: Stars
 
@@ -124,7 +124,7 @@ export const HAZARD_SPAWN_DISTANCE = 240
 /** Virtual-space distance from the ship at the end of an asteroid's flight. */
 export const HAZARD_IMPACT_DISTANCE = 8
 
-/** Random spawn cone in front of the ship (full width / height, degrees). */
+/** Random spawn cone in front of the ship (full width / height, degrees). Vertical is sampled upward only. */
 export const HAZARD_CONE_HORIZONTAL_DEGREES = 120
 export const HAZARD_CONE_VERTICAL_DEGREES = 20
 

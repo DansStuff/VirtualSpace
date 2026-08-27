@@ -27,7 +27,7 @@ let nextHazardId = 1
 
 function randomConeAhead(): Vector3 {
   const yaw = (Math.random() - 0.5) * HAZARD_CONE_HORIZONTAL_DEGREES * (Math.PI / 180)
-  const pitch = (Math.random() - 0.5) * HAZARD_CONE_VERTICAL_DEGREES * (Math.PI / 180)
+  const pitch = Math.random() * 0.5 * HAZARD_CONE_VERTICAL_DEGREES * (Math.PI / 180)
   const cosPitch = Math.cos(pitch)
   // +Z ahead in travel space. shipVirtualRotation includes a 180° model yaw, so travel +Z is virtual -Z.
   const travelLocal = Vector3.create(
