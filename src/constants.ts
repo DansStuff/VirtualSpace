@@ -137,7 +137,7 @@ export const HAZARD_SPIN_DEGREES_PER_SECOND = 60
 /** Max scene-space distance for the click-to-target raycast. */
 export const HAZARD_RAYCAST_MAX_DISTANCE = 40
 
-/** Minimum time between target-lock attempts. */
+/** Minimum time between successful target-lock requests. */
 export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5
 
 /** Uniform scale of the billboard crosshair parented to a hazard. */

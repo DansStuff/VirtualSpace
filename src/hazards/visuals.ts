@@ -177,8 +177,6 @@ function HazardTargetSystem(dt: number) {
   const direction = targetingRayDirection()
   if (!direction) return
 
-  targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
-
   raycastSystem.registerGlobalDirectionRaycast(
     {
       entity: engine.CameraEntity,
@@ -191,11 +189,13 @@ function HazardTargetSystem(dt: number) {
       }
     },
     (result) => {
+      if (targetCooldownRemaining > 0) return
       const hitEntity = result.hits[0]?.entityId as Entity | undefined
       if (hitEntity === undefined) return
       const hazardId = hazardIdForEntity(hitEntity)
       if (hazardId === undefined) return
       room.send('requestHazardTarget', { hazardId })
+      targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
       console.log(`[CLIENT] Requested target on hazard ${hazardId}`)
     }
   )
