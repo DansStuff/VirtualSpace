@@ -16,6 +16,7 @@ import {
   STAR_BASE_COLOR,
   STAR_MODEL_PATH,
   STAR_SPAWN_COUNT_DEFAULT,
+  STAR_SPAWN_DISTANCE,
   STAR_VIRTUAL_RADIUS
 } from '../constants'
 import { SHIP_ROUTE } from '../path/route'
@@ -97,7 +98,7 @@ function applyStarOrangeTint(entity: Entity, tintStrength: number): void {
 }
 
 /**
- * Spawns distant background stars at varied directions and distances.
+ * Spawns distant background stars at varied directions, all at STAR_SPAWN_DISTANCE.
  * Uses PlanetData so PlanetSystem projects them onto the enclosing sphere.
  */
 export function spawnDistantStars(count: number = STAR_SPAWN_COUNT_DEFAULT): void {
@@ -105,23 +106,25 @@ export function spawnDistantStars(count: number = STAR_SPAWN_COUNT_DEFAULT): voi
     // Deterministic "random" directions so the field is stable across reloads.
     const yaw = (i / count) * Math.PI * 2 + i * 0.37
     const pitch = -0.8 + ((i * 0.618) % 1) * 1.6
-    const distance = 800 + ((i * 9973) % 4200)
 
     const cosPitch = Math.cos(pitch)
     const position = Vector3.create(
-      Math.cos(yaw) * cosPitch * distance,
-      Math.sin(pitch) * distance,
-      Math.sin(yaw) * cosPitch * distance
+      Math.cos(yaw) * cosPitch * STAR_SPAWN_DISTANCE,
+      Math.sin(pitch) * STAR_SPAWN_DISTANCE,
+      Math.sin(yaw) * cosPitch * STAR_SPAWN_DISTANCE
     )
+
+    // ±25% of STAR_VIRTUAL_RADIUS, stable across reloads.
+    const radius = STAR_VIRTUAL_RADIUS * (0.75 + ((i * 0.431) % 1) * 0.5)
 
     const entity = createPlanet(
       STAR_MODEL_PATH,
       {
         name: `Star_${i}`,
         position,
-        radius: STAR_VIRTUAL_RADIUS
+        radius
       },
-      false
+      true
     )
 
     // Slight per-star orange tint (0.15–0.45), stable across reloads.
@@ -199,7 +202,7 @@ export function PlanetCuller(_dt: number) {
 export function setupSpaceObjects() {
   if (isServer()) return
   spawnPlanetsFromRoute()
-  // spawnDistantStars(40)
+  spawnDistantStars(40)
   // setupAsteroids()
   engine.addSystem(PlanetSystem)
   engine.addSystem(PlanetCuller)

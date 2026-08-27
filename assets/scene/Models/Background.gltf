@@ -18,13 +18,23 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Sphere"
+			"name":"Sphere",
+			"scale":[
+				1.024933099746704,
+				1.024933099746704,
+				1.024933099746704
+			]
 		},
 		{
 			"children":[
 				0
 			],
 			"name":"Empty",
+			"scale":[
+				0.9586342573165894,
+				0.9586342573165894,
+				0.9586342573165894
+			],
 			"translation":[
 				-64,
 				64,
@@ -77,7 +87,7 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":3840,
+			"count":3844,
 			"max":[
 				64,
 				64,
@@ -93,51 +103,51 @@
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":3840,
+			"count":3844,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":3840,
+			"count":3844,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5123,
-			"count":3840,
+			"count":3846,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":46080,
+			"byteLength":46128,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":46080,
-			"byteOffset":46080,
+			"byteLength":46128,
+			"byteOffset":46128,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":30720,
-			"byteOffset":92160,
+			"byteLength":30752,
+			"byteOffset":92256,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":7680,
-			"byteOffset":122880,
+			"byteLength":7692,
+			"byteOffset":123008,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":130560,
+			"byteLength":130700,
 			"uri":"Background.bin"
 		}
 	]

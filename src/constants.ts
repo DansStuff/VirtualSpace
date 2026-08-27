@@ -100,12 +100,18 @@ export const PLANET_CULL_BEHIND_HALF_ANGLE_DEGREES = 60
 export const STAR_MODEL_PATH = 'assets/scene/Models/Star.gltf'
 
 /** Virtual-space radius for distant background stars (models are authored at radius 1). */
-export const STAR_VIRTUAL_RADIUS = 10
+export const STAR_VIRTUAL_RADIUS = 85
 
 /** Star.gltf baseColorFactor (RGB) — tint is applied relative to this. */
 export const STAR_BASE_COLOR = { r: 0.8, g: 0.8, b: 0.8 }
 
 export const STAR_SPAWN_COUNT_DEFAULT = 20
+
+/**
+ * Virtual-space distance for background stars.
+ * 1.5× the farthest authored planet (Planet_8 at ~21029 from origin).
+ */
+export const STAR_SPAWN_DISTANCE = 31544
 
 // MARK: Hazards
 
