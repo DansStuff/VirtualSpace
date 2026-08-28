@@ -22,6 +22,7 @@ import { isMobile } from '@dcl/sdk/platform'
 import {
   HAZARD_ASTEROID_MODEL_PATH,
   HAZARD_IMPACT_DISTANCE,
+  HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_RADIUS,
   HAZARD_RAYCAST_MAX_DISTANCE,
   HAZARD_TARGET_COOLDOWN_SECONDS,
@@ -150,11 +151,59 @@ function HazardFlightSystem(dt: number) {
 
 let targetCooldownRemaining = 0
 
+const AIM_ANGLE_TIE_EPSILON = 1e-6
+
 function hazardIdForEntity(entity: Entity): number | undefined {
   for (const hazard of spawned) {
     if (hazard.entity === entity) return hazard.hazardId
   }
   return undefined
+}
+
+function requestHazardTarget(hazardId: number) {
+  room.send('requestHazardTarget', { hazardId })
+  targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
+  console.log(`[CLIENT] Requested target on hazard ${hazardId}`)
+}
+
+/**
+ * Among live hazards whose scene-space bounding sphere overlaps the aim cone,
+ * pick the center closest to the axis (then the nearer one).
+ */
+function pickHazardInAimCone(origin: Vector3, axis: Vector3): number | undefined {
+  const tanHalf = Math.tan(HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES * (Math.PI / 180))
+  let bestId: number | undefined
+  let bestCos = -Infinity
+  let bestAlong = Infinity
+
+  for (const hazard of spawned) {
+    if (!Transform.has(hazard.entity)) continue
+    const transform = Transform.get(hazard.entity)
+    const offset = Vector3.subtract(transform.position, origin)
+    const radius = transform.scale.x
+    const along = Vector3.dot(offset, axis)
+    if (along + radius < 0) continue
+    if (along - radius > HAZARD_RAYCAST_MAX_DISTANCE) continue
+
+    const distSq = Vector3.lengthSquared(offset)
+    const radialSq = Math.max(0, distSq - along * along)
+    const coneRadius = Math.max(0, along) * tanHalf
+    const allowed = coneRadius + radius
+    if (radialSq > allowed * allowed) continue
+
+    const dist = Math.sqrt(distSq)
+    const cosAngle = dist < 1e-6 ? 1 : along / dist
+    const closerOnAxis = along < bestAlong
+    const tighterAim = cosAngle > bestCos + AIM_ANGLE_TIE_EPSILON
+    const aimTie = Math.abs(cosAngle - bestCos) <= AIM_ANGLE_TIE_EPSILON
+    if (tighterAim || (aimTie && closerOnAxis)) {
+      bestCos = cosAngle
+      bestAlong = along
+      bestId = hazard.hazardId
+    }
+  }
+
+  return bestId
 }
 
 /** Desktop: cursor ray. Mobile: camera forward (crosshair / interaction button). */
@@ -177,6 +226,15 @@ function HazardTargetSystem(dt: number) {
   const direction = targetingRayDirection()
   if (!direction) return
 
+  if (isMobile()) {
+    if (!Transform.has(engine.CameraEntity)) return
+    const origin = Transform.get(engine.CameraEntity).position
+    const hazardId = pickHazardInAimCone(origin, direction)
+    if (hazardId === undefined) return
+    requestHazardTarget(hazardId)
+    return
+  }
+
   raycastSystem.registerGlobalDirectionRaycast(
     {
       entity: engine.CameraEntity,
@@ -194,9 +252,7 @@ function HazardTargetSystem(dt: number) {
       if (hitEntity === undefined) return
       const hazardId = hazardIdForEntity(hitEntity)
       if (hazardId === undefined) return
-      room.send('requestHazardTarget', { hazardId })
-      targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
-      console.log(`[CLIENT] Requested target on hazard ${hazardId}`)
+      requestHazardTarget(hazardId)
     }
   )
 }
