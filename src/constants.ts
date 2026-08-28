@@ -140,10 +140,13 @@ export const HAZARD_DAMAGE_INTERVAL = 1
 /** Local tumble rate applied on top of celestial orientation. */
 export const HAZARD_SPIN_DEGREES_PER_SECOND = 60
 
-/** Max scene-space distance for the click-to-target raycast (and the mobile aim cone). */
+/** Max scene-space distance for the click-to-target aim cone. */
 export const HAZARD_RAYCAST_MAX_DISTANCE = 40
 
-/** Mobile aim-assist cone half-angle (degrees). Desktop still uses a thin raycast. */
+/** Aim-assist cone half-angle (degrees) for desktop cursor clicks. */
+export const HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES = 6
+
+/** Aim-assist cone half-angle (degrees) for mobile camera-forward aim. */
 export const HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES = 12
 
 /** Minimum time between successful target-lock requests. */

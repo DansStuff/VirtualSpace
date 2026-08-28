@@ -25,7 +25,7 @@
 	],
 	"materials":[
 		{
-			"doubleSided":true,
+			"doubleSided":false,
 			"name":"AsteroidMaterial",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
@@ -38,7 +38,7 @@
 			}
 		},
 		{
-			"doubleSided":true,
+			"doubleSided":false,
 			"emissiveFactor":[
 				0.5,
 				0,

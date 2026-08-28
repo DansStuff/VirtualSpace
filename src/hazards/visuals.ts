@@ -12,8 +12,6 @@ import {
   MeshRenderer,
   PointerEventType,
   PrimaryPointerInfo,
-  RaycastQueryType,
-  raycastSystem,
   Transform,
   VisibilityComponent
 } from '@dcl/sdk/ecs'
@@ -21,6 +19,7 @@ import { Color3, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 import {
   HAZARD_ASTEROID_MODEL_PATH,
+  HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_IMPACT_DISTANCE,
   HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_RADIUS,
@@ -153,13 +152,6 @@ let targetCooldownRemaining = 0
 
 const AIM_ANGLE_TIE_EPSILON = 1e-6
 
-function hazardIdForEntity(entity: Entity): number | undefined {
-  for (const hazard of spawned) {
-    if (hazard.entity === entity) return hazard.hazardId
-  }
-  return undefined
-}
-
 function requestHazardTarget(hazardId: number) {
   room.send('requestHazardTarget', { hazardId })
   targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
@@ -170,8 +162,8 @@ function requestHazardTarget(hazardId: number) {
  * Among live hazards whose scene-space bounding sphere overlaps the aim cone,
  * pick the center closest to the axis (then the nearer one).
  */
-function pickHazardInAimCone(origin: Vector3, axis: Vector3): number | undefined {
-  const tanHalf = Math.tan(HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES * (Math.PI / 180))
+function pickHazardInAimCone(origin: Vector3, axis: Vector3, halfAngleDegrees: number): number | undefined {
+  const tanHalf = Math.tan(halfAngleDegrees * (Math.PI / 180))
   let bestId: number | undefined
   let bestCos = -Infinity
   let bestAlong = Infinity
@@ -206,13 +198,22 @@ function pickHazardInAimCone(origin: Vector3, axis: Vector3): number | undefined
   return bestId
 }
 
-/** Desktop: cursor ray. Mobile: camera forward (crosshair / interaction button). */
-function targetingRayDirection(): Vector3 | undefined {
+/** Desktop: camera origin + cursor world ray. Mobile: camera origin + camera forward. */
+function targetingAim(): { origin: Vector3; axis: Vector3 } | undefined {
+  if (!Transform.has(engine.CameraEntity)) return undefined
+  const camera = Transform.get(engine.CameraEntity)
+  const origin = camera.position
+
   if (isMobile()) {
-    if (!Transform.has(engine.CameraEntity)) return undefined
-    return Vector3.rotate(Vector3.Forward(), Transform.get(engine.CameraEntity).rotation)
+    return {
+      origin,
+      axis: Vector3.rotate(Vector3.Forward(), camera.rotation)
+    }
   }
-  return PrimaryPointerInfo.getOrCreateMutable(engine.RootEntity).worldRayDirection
+
+  const axis = PrimaryPointerInfo.getOrCreateMutable(engine.RootEntity).worldRayDirection
+  if (!axis) return undefined
+  return { origin, axis }
 }
 
 function HazardTargetSystem(dt: number) {
@@ -223,38 +224,15 @@ function HazardTargetSystem(dt: number) {
   if (!inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)) return
   if (targetCooldownRemaining > 0) return
 
-  const direction = targetingRayDirection()
-  if (!direction) return
+  const aim = targetingAim()
+  if (!aim) return
 
-  if (isMobile()) {
-    if (!Transform.has(engine.CameraEntity)) return
-    const origin = Transform.get(engine.CameraEntity).position
-    const hazardId = pickHazardInAimCone(origin, direction)
-    if (hazardId === undefined) return
-    requestHazardTarget(hazardId)
-    return
-  }
-
-  raycastSystem.registerGlobalDirectionRaycast(
-    {
-      entity: engine.CameraEntity,
-      opts: {
-        direction: Vector3.clone(direction),
-        maxDistance: HAZARD_RAYCAST_MAX_DISTANCE,
-        queryType: RaycastQueryType.RQT_HIT_FIRST,
-        collisionMask: ColliderLayer.CL_CUSTOM1,
-        continuous: false
-      }
-    },
-    (result) => {
-      if (targetCooldownRemaining > 0) return
-      const hitEntity = result.hits[0]?.entityId as Entity | undefined
-      if (hitEntity === undefined) return
-      const hazardId = hazardIdForEntity(hitEntity)
-      if (hazardId === undefined) return
-      requestHazardTarget(hazardId)
-    }
-  )
+  const halfAngle = isMobile()
+    ? HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES
+    : HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES
+  const hazardId = pickHazardInAimCone(aim.origin, aim.axis, halfAngle)
+  if (hazardId === undefined) return
+  requestHazardTarget(hazardId)
 }
 
 export function setupHazardVisuals() {
