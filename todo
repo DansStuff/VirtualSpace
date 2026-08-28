@@ -2,14 +2,11 @@ code:
 
 check late joiner behaviour, does ship teleport?
 
-stars and planets culling, cullable component and system with dot product to disable rendering if object behind Ship
+path baker tool
 
 playtest
 
 art:
-
-larger ship
-
 
 sound:
 
