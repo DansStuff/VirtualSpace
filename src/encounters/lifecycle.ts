@@ -27,6 +27,15 @@ let encounterFlightTime = 0
 let encounterAsteroidHp = 0
 let spawnedThisEncounter = 0
 
+/** Active encounter if a fight is running; otherwise the last completed stop. */
+export function catchUpStopId(): string | null {
+  if (activeEncounterId) return activeEncounterId
+  if (completedEncounterIds.length > 0) {
+    return completedEncounterIds[completedEncounterIds.length - 1]
+  }
+  return null
+}
+
 export function replayEncounterState(playerAddress: string) {
   for (const encounterId of completedEncounterIds) {
     room.send('notifyEncounterEnd', { encounterId }, { to: [playerAddress] })

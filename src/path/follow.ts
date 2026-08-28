@@ -24,8 +24,10 @@
  *     `notifyEncounterEnd` from the server. The last stop also sets `finished`,
  *     so the hold never releases. If the server already completed a stop
  *     (`markEncounterComplete`), `enterHold` sets `skipHold` so a slow client
- *     does not stall. Leaving a hold clears `currentStopId` and `elapsed`; the
- *     next tick transits `preparedLegs[state.legIndex]`.
+ *     does not stall. A late joiner uses `teleportToStop` to snap to the
+ *     current encounter instead of transiting every earlier leg. Leaving a
+ *     hold clears `currentStopId` and `elapsed`; the next tick transits
+ *     `preparedLegs[state.legIndex]`.
  *
  *   Transiting (a leg is running)
  *     `elapsed` maps through `accelDecelProgress` onto arc length, then
@@ -42,6 +44,14 @@
  *   is paused at this stop while `legIndex` already points at the *next* leg.
  *   `resumeFromStop` ends the pause and that next leg starts. It is a no-op
  *   while transiting or after `finished`.
+ *
+ * Late join
+ *   `teleportToStop` copies the holding state that arrival would have left:
+ *   posed at the stop's end sample, `legIndex` already on the next leg (or)
+ *   `finished` on the last stop). `PATH_START_STOP_ID` resets to origin.
+ *   Unknown ids are ignored. If the stop is already in `completedStops` and
+ *   is not the last, `skipHold` is set so replay can resume even when
+ *   encounter-end messages arrived first.
  */
 
 import { isServer } from '@dcl/sdk/network'
@@ -390,6 +400,41 @@ export function resetPathToStart(): void {
     applySampledPose(startLeg, 0, true, 0)
   }
   console.log(`${holdLogPrefix()} Ship reset to start`)
+}
+
+/**
+ * Snap holding state and pose to an authored stop. Used so a late joiner does
+ * not fly every earlier leg. `PATH_START_STOP_ID` resets to origin.
+ */
+export function teleportToStop(stopId: string): void {
+  if (stopId === PATH_START_STOP_ID) {
+    resetPathToStart()
+    return
+  }
+
+  let legIndex = -1
+  for (let i = 0; i < preparedLegs.length; i++) {
+    if (preparedLegs[i].stopId === stopId) {
+      legIndex = i
+      break
+    }
+  }
+  if (legIndex < 0) return
+
+  const leg = preparedLegs[legIndex]
+  const finished = legIndex >= preparedLegs.length - 1
+  skipHold = false
+  state.elapsed = 0
+  state.holding = true
+  state.finished = finished
+  state.currentStopId = stopId
+  state.legIndex = finished ? legIndex : legIndex + 1
+  state.roll = 0
+  applySampledPose(leg, leg.length, true, 0)
+  if (completedStops.has(stopId) && !finished) {
+    skipHold = true
+  }
+  console.log(`${holdLogPrefix()} Ship teleported to stop ${stopId}`)
 }
 
 /**

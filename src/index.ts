@@ -1,11 +1,11 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 import { PATH_START_STOP_ID } from './constants'
-import { replayEncounterState, resetEncounterState, setupEncounters } from './encounters/lifecycle'
+import { catchUpStopId, replayEncounterState, resetEncounterState, setupEncounters } from './encounters/lifecycle'
 import { setupHazards } from './hazards/simulation'
 import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
-import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
+import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem, teleportToStop } from './path/follow'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
 import { markMissionReset, markMissionStarted, setupUi } from './ui'
@@ -19,9 +19,16 @@ type MissionState = {
 function setupServerRoom() {
   let mission: MissionState | null = null
 
+  function missionStartPayload(startedAt: number) {
+    return {
+      encounterId: catchUpStopId() ?? PATH_START_STOP_ID,
+      startedAt
+    }
+  }
+
   function sendInitialState(playerAddress: string) {
-    if (mission && !isPathFinished()) {
-      room.send('notifyMissionStart', mission, { to: [playerAddress] })
+    if (mission) {
+      room.send('notifyMissionStart', missionStartPayload(mission.startedAt), { to: [playerAddress] })
     }
     replayEncounterState(playerAddress)
   }
@@ -40,7 +47,7 @@ function setupServerRoom() {
       return
     }
 
-    room.send('notifyMissionStart', mission, { to: [context.from] })
+    room.send('notifyMissionStart', missionStartPayload(mission.startedAt), { to: [context.from] })
   })
 
   room.onMessage('requestInitialState', (_data, context) => {
@@ -65,7 +72,9 @@ function setupClientRoom() {
   room.onMessage('notifyMissionStart', (data) => {
     console.log(`[CLIENT] Mission started: ${data.encounterId}`)
     markMissionStarted()
-    if (currentStopId() === PATH_START_STOP_ID) {
+    if (data.encounterId !== PATH_START_STOP_ID) {
+      teleportToStop(data.encounterId)
+    } else if (currentStopId() === PATH_START_STOP_ID) {
       resumeFromStop()
     }
   })
