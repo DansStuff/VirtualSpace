@@ -1,13 +1,21 @@
 code:
 
-check late joiner behaviour, does ship teleport?
 
-path baker tool
-
-playtest
 
 art:
 
 sound:
 
 ship laser
+
+optimization / cleanup:
+
+pool asteroids
+modularize timers
+organize follow.ts
+
+check hazard spawning for ecs patterns (did ai default to OO?)
+
+hazard picking algorithm is sus but fine because low hazard count
+
+
