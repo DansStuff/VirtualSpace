@@ -1,4 +1,4 @@
-import { engine, Entity, Schemas, Transform } from '@dcl/sdk/ecs'
+import { engine, Entity, Schemas, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   ASTEROID_ENCLOSING_SPHERE_RADIUS,
@@ -41,6 +41,8 @@ export function AsteroidSystem(dt: number) {
   }
 
   for (const [entity, asteroid] of engine.getEntitiesWith(AsteroidData, Transform)) {
+    if (VisibilityComponent.has(entity) && !VisibilityComponent.get(entity).visible) continue
+
     const transform = Transform.getMutable(entity)
 
     const projection = projectVirtualBodyToSceneSphere(
@@ -70,31 +72,3 @@ export function AsteroidSystem(dt: number) {
 export function forgetAsteroidSpin(entity: Entity) {
   asteroidSpinState.delete(entity)
 }
-
-/**
- * Tags every scene-hierarchy entity named Asteroid.gltf with AsteroidData.
- * Assigns a virtual-space pose near the planet centroid so AsteroidSystem can project it.
- */
-/*
-export function setupAsteroids(): void {
-  const centroid = routePlanetCentroid(SHIP_ROUTE)
-  let asteroidIndex = 0
-  for (const [entity, name] of engine.getEntitiesWith(Name, Transform)) {
-    if (name.value !== EntityNames.Asteroid_gltf || AsteroidData.has(entity)) {
-      continue
-    }
-
-    const yaw = asteroidIndex * 2.4
-    const position = Vector3.create(
-      centroid.x + Math.cos(yaw) * 40,
-      centroid.y + ((asteroidIndex % 3) - 1) * 8,
-      centroid.z + Math.sin(yaw) * 40
-    )
-    AsteroidData.create(entity, {
-      position,
-      radius: 4
-    })
-    asteroidIndex++
-  }
-}
-*/

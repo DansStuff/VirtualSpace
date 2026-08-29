@@ -12,19 +12,24 @@ import {
   MeshRenderer,
   PointerEventType,
   PrimaryPointerInfo,
+  TextAlignMode,
+  TextShape,
   Transform,
   VisibilityComponent
 } from '@dcl/sdk/ecs'
-import { Color3, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 import {
   HAZARD_ASTEROID_MODEL_PATH,
+  HAZARD_ASTEROID_POOL_SIZE,
   HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_IMPACT_DISTANCE,
   HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_RADIUS,
   HAZARD_RAYCAST_MAX_DISTANCE,
   HAZARD_TARGET_COOLDOWN_SECONDS,
+  HAZARD_TARGETING_COUNT_FONT_SIZE,
+  HAZARD_TARGETING_COUNT_OFFSET,
   HAZARD_TARGETING_CROSSHAIR_TEXTURE_PATH,
   HAZARD_TARGETING_INDICATOR_SCALE,
   SIMULATION_MAX_DELTA_SECONDS
@@ -37,21 +42,25 @@ import { directionFromTo } from '../utilities'
 type HazardVisuals = {
   entity: Entity
   targetingIndicator: Entity
+  targetingCountLabel: Entity
 }
 
+const free: HazardVisuals[] = []
+
 /** Client-only incoming asteroid. AsteroidSystem projects `AsteroidData.position`. */
-function spawnHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
+function createHazardVisuals(): HazardVisuals {
   const entity = engine.addEntity()
   GltfContainer.create(entity, {
     src: HAZARD_ASTEROID_MODEL_PATH,
     visibleMeshesCollisionMask: ColliderLayer.CL_CUSTOM1,
     invisibleMeshesCollisionMask: ColliderLayer.CL_NONE
   })
-  Transform.create(entity, { position: Vector3.clone(virtualPosition) })
+  Transform.create(entity, { position: Vector3.Zero() })
   AsteroidData.create(entity, {
-    position: Vector3.clone(virtualPosition),
-    radius
+    position: Vector3.Zero(),
+    radius: HAZARD_RADIUS
   })
+  VisibilityComponent.create(entity, { visible: false })
 
   // Default plane is 1×1; asteroid mesh extends ~1.35 from origin (~2.7 across).
   const targetingIndicator = engine.addEntity()
@@ -75,7 +84,43 @@ function spawnHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
   })
   VisibilityComponent.create(targetingIndicator, { visible: false })
 
-  return { entity, targetingIndicator }
+  const targetingCountLabel = engine.addEntity()
+  const labelScale = 1 / HAZARD_TARGETING_INDICATOR_SCALE
+  Transform.create(targetingCountLabel, {
+    parent: targetingIndicator,
+    position: Vector3.clone(HAZARD_TARGETING_COUNT_OFFSET),
+    scale: Vector3.create(labelScale, labelScale, labelScale)
+  })
+  TextShape.create(targetingCountLabel, {
+    text: '',
+    fontSize: HAZARD_TARGETING_COUNT_FONT_SIZE,
+    textColor: Color4.Green(),
+    outlineColor: Color4.Black(),
+    outlineWidth: 0.08,
+    textAlign: TextAlignMode.TAM_TOP_LEFT
+  })
+  VisibilityComponent.create(targetingCountLabel, { visible: false })
+
+  return { entity, targetingIndicator, targetingCountLabel }
+}
+
+function acquireHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
+  const visuals = free.pop() ?? createHazardVisuals()
+  const asteroid = AsteroidData.getMutable(visuals.entity)
+  asteroid.position = Vector3.clone(virtualPosition)
+  asteroid.radius = radius
+  Transform.getMutable(visuals.entity).position = Vector3.clone(virtualPosition)
+  VisibilityComponent.getMutable(visuals.entity).visible = true
+  return visuals
+}
+
+function releaseHazard(visuals: HazardVisuals) {
+  forgetAsteroidSpin(visuals.entity)
+  VisibilityComponent.getMutable(visuals.entity).visible = false
+  VisibilityComponent.getMutable(visuals.targetingIndicator).visible = false
+  VisibilityComponent.getMutable(visuals.targetingCountLabel).visible = false
+  TextShape.getMutable(visuals.targetingCountLabel).text = ''
+  free.push(visuals)
 }
 
 type SpawnedHazard = {
@@ -83,6 +128,7 @@ type SpawnedHazard = {
   encounterId: string
   entity: Entity
   targetingIndicator: Entity
+  targetingCountLabel: Entity
   targetCount: number
   start: Vector3
   end: Vector3
@@ -116,8 +162,7 @@ function applyVirtualPosition(hazard: SpawnedHazard) {
 function despawnHazard(hazardId: number) {
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].hazardId !== hazardId) continue
-    forgetAsteroidSpin(spawned[i].entity)
-    engine.removeEntityWithChildren(spawned[i].entity)
+    releaseHazard(spawned[i])
     spawned.splice(i, 1)
     return
   }
@@ -126,16 +171,14 @@ function despawnHazard(hazardId: number) {
 export function despawnEncounter(encounterId: string) {
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].encounterId !== encounterId) continue
-    forgetAsteroidSpin(spawned[i].entity)
-    engine.removeEntityWithChildren(spawned[i].entity)
+    releaseHazard(spawned[i])
     spawned.splice(i, 1)
   }
 }
 
 export function despawnAllHazards() {
   for (const hazard of spawned) {
-    forgetAsteroidSpin(hazard.entity)
-    engine.removeEntityWithChildren(hazard.entity)
+    releaseHazard(hazard)
   }
   spawned.length = 0
 }
@@ -236,18 +279,23 @@ function HazardTargetSystem(dt: number) {
 }
 
 export function setupHazardVisuals() {
+  for (let i = 0; i < HAZARD_ASTEROID_POOL_SIZE; i++) {
+    free.push(createHazardVisuals())
+  }
+
   engine.addSystem(HazardFlightSystem)
   engine.addSystem(HazardTargetSystem)
 
   room.onMessage('notifyHazardSpawn', (data) => {
     if (spawned.some((h) => h.hazardId === data.hazardId)) return
     const path = virtualFlightPath(data.position)
-    const visuals = spawnHazard(path.start, HAZARD_RADIUS)
+    const visuals = acquireHazard(path.start, HAZARD_RADIUS)
     const hazard: SpawnedHazard = {
       hazardId: data.hazardId,
       encounterId: data.encounterId,
       entity: visuals.entity,
       targetingIndicator: visuals.targetingIndicator,
+      targetingCountLabel: visuals.targetingCountLabel,
       targetCount: 0,
       start: path.start,
       end: path.end,
@@ -272,7 +320,10 @@ export function setupHazardVisuals() {
     for (const hazard of spawned) {
       if (hazard.hazardId !== data.hazardId) continue
       hazard.targetCount = data.targetCount
-      VisibilityComponent.getMutable(hazard.targetingIndicator).visible = data.targetCount > 0
+      const locked = data.targetCount > 0
+      TextShape.getMutable(hazard.targetingCountLabel).text = locked ? String(data.targetCount) : ''
+      VisibilityComponent.getMutable(hazard.targetingIndicator).visible = locked
+      VisibilityComponent.getMutable(hazard.targetingCountLabel).visible = locked
       return
     }
   })

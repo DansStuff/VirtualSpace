@@ -118,6 +118,9 @@ export const STAR_SPAWN_DISTANCE = 31544
 export const HAZARD_ASTEROID_MODEL_PATH = 'assets/scene/Models/Asteroid.gltf'
 export const HAZARD_TARGETING_CROSSHAIR_TEXTURE_PATH = 'assets/scene/Images/crosshair1.png'
 
+/** Pre-warmed incoming-asteroid entity trees. The pool grows if this is exhausted. */
+export const HAZARD_ASTEROID_POOL_SIZE = 10
+
 /** Virtual-space radius of an incoming asteroid (models are authored at radius 1). */
 export const HAZARD_RADIUS = 4
 
@@ -154,6 +157,12 @@ export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5
 
 /** Uniform scale of the billboard crosshair parented to a hazard. */
 export const HAZARD_TARGETING_INDICATOR_SCALE = 4
+
+/** Local offset of the target-count label from the reticule center (plane is 1×1). */
+export const HAZARD_TARGETING_COUNT_OFFSET = Vector3.create(0.3, -0.25, -0.1)
+
+/** TextShape fontSize for the target-count label. Inverse-scaled by the reticule parent. */
+export const HAZARD_TARGETING_COUNT_FONT_SIZE = 10
 
 // MARK: Ship Weapons
 
