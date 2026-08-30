@@ -203,13 +203,13 @@ export type EncounterParams = {
 }
 
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
-  'encounter-1': { hazardCount: 6, flightTime: 8, asteroidHp: 4 },
-  'encounter-2': { hazardCount: 6, flightTime: 8, asteroidHp: 4 },
-  'encounter-3': { hazardCount: 6, flightTime: 8, asteroidHp: 4 },
-  'encounter-4': { hazardCount: 6, flightTime: 8, asteroidHp: 4 },
-  'encounter-5': { hazardCount: 6, flightTime: 8, asteroidHp: 4 },
-  'encounter-6': { hazardCount: 6, flightTime: 8, asteroidHp: 4 },
-  'encounter-7': { hazardCount: 6, flightTime: 8, asteroidHp: 4 }
+  'encounter-1': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
+  'encounter-2': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
+  'encounter-3': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
+  'encounter-4': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
+  'encounter-5': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
+  'encounter-6': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
+  'encounter-7': { hazardCount: 6, flightTime: 8, asteroidHp: 5 }
 }
 
 // MARK: UI

@@ -620,14 +620,19 @@
         "0": {
           "json": {
             "name": "VirtualSpace",
-            "description": "Space movement sample",
+            "description": "Defend the ship!",
             "thumbnail": "assets/scene/Images/blender_6fR8uFrIzt.png",
             "ageRating": "A",
             "categories": [],
             "author": "DanL",
-            "email": "",
-            "tags": [],
+            "tags": [
+              ""
+            ],
             "layout": {
+              "base": {
+                "x": 0,
+                "y": 0
+              },
               "parcels": [
                 {
                   "x": 0,
@@ -917,14 +922,8 @@
                   "x": 7,
                   "y": 0
                 }
-              ],
-              "base": {
-                "x": 0,
-                "y": 0
-              }
+              ]
             },
-            "silenceVoiceChat": false,
-            "disablePortableExperiences": false,
             "spawnPoints": [
               {
                 "name": "SpawnArea1",
@@ -938,11 +937,8 @@
                     ]
                   },
                   "y": {
-                    "$case": "range",
-                    "value": [
-                      65.61000061035156,
-                      65.61000061035156
-                    ]
+                    "$case": "single",
+                    "value": 65.61000061035156
                   },
                   "z": {
                     "$case": "range",
@@ -962,8 +958,6 @@
             "skyboxConfig": {
               "fixedTime": 86340
             },
-            "creator": "",
-            "disableNearbyVoiceChat": false,
             "hideLandscapeTerrain": true
           }
         }

@@ -8,7 +8,7 @@
   "runtimeVersion": "7",
   "display": {
     "title": "VirtualSpace",
-    "description": "Space movement sample",
+    "description": "Defend the ship!",
     "favicon": "favicon_asset",
     "navmapThumbnail": "assets/scene/Images/blender_6fR8uFrIzt.png"
   },
