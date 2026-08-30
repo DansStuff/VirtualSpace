@@ -36,19 +36,15 @@ function setupServerRoom() {
 
   room.onMessage('requestMissionStart', (_data, context) => {
     if (!context) return
+    if (mission) return
 
-    if (!mission) {
-      mission = {
-        encounterId: PATH_START_STOP_ID,
-        startedAt: Date.now()
-      }
-      console.log(`[SERVER] Mission started (${mission.encounterId}) by ${context.from}`)
-      room.send('notifyMissionStart', mission)
-      resumeFromStop()
-      return
+    mission = {
+      encounterId: PATH_START_STOP_ID,
+      startedAt: Date.now()
     }
-
-    room.send('notifyMissionStart', missionStartPayload(mission.startedAt), { to: [context.from] })
+    console.log(`[SERVER] Mission started (${mission.encounterId}) by ${context.from}`)
+    room.send('notifyMissionStart', mission)
+    resumeFromStop()
   })
 
   room.onMessage('requestInitialState', (_data, context) => {
@@ -59,7 +55,7 @@ function setupServerRoom() {
 
   room.onMessage('requestNewMission', (_data, context) => {
     if (!context) return
-    if (!isPathFinished()) return
+    if (!mission || !isPathFinished()) return
 
     console.log(`[SERVER] Mission reset by ${context.from}`)
     mission = null
@@ -70,7 +66,12 @@ function setupServerRoom() {
 }
 
 function setupClientRoom() {
+  let appliedStartedAt = 0
+  let appliedResetAt = 0
+
   room.onMessage('notifyMissionStart', (data) => {
+    if (data.startedAt <= appliedStartedAt) return
+    appliedStartedAt = data.startedAt
     console.log(`[CLIENT] Mission started: ${data.encounterId}`)
     markMissionStarted()
     if (data.encounterId !== PATH_START_STOP_ID) {
@@ -81,6 +82,8 @@ function setupClientRoom() {
   })
 
   room.onMessage('notifyNewMission', (data) => {
+    if (data.resetAt <= appliedResetAt) return
+    appliedResetAt = data.resetAt
     console.log(`[CLIENT] Mission reset (${data.resetAt})`)
     resetPathToStart()
     despawnAllHazards()
