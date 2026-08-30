@@ -138,7 +138,7 @@ export const HAZARD_CONE_HORIZONTAL_DEGREES = 120
 export const HAZARD_CONE_VERTICAL_DEGREES = 20
 
 /** Seconds between damage ticks on a locked asteroid. First hit waits one full interval. */
-export const HAZARD_DAMAGE_INTERVAL = 1
+export const HAZARD_DAMAGE_INTERVAL = 0.5
 
 /** Local tumble rate applied on top of celestial orientation. */
 export const HAZARD_SPIN_DEGREES_PER_SECOND = 60

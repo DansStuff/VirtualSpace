@@ -7,6 +7,7 @@ import { setupHazards } from './hazards/simulation'
 import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
 import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem, teleportToStop } from './path/follow'
+import { onPlayerConnected, setupPlayers } from './players/stats'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
 import { markMissionReset, markMissionStarted, setupUi } from './ui'
@@ -50,6 +51,7 @@ function setupServerRoom() {
   room.onMessage('requestInitialState', (_data, context) => {
     if (!context) return
     console.log(`[SERVER] Initial state requested by ${context.from}`)
+    onPlayerConnected(context.from)
     sendInitialState(context.from)
   })
 
@@ -112,6 +114,7 @@ function setupClientRoom() {
 export function main() {
   setupEncounters()
   setupHazards()
+  setupPlayers()
   setupSpaceObjects()
   setupShipWeapons()
   engine.addSystem(ShipPathSystem)
