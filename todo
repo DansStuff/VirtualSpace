@@ -6,13 +6,10 @@ art:
 
 sound:
 
-ship laser
 
-asteroid impact
 
 optimization / cleanup:
 
-pool asteroids
 modularize timers
 organize follow.ts
 

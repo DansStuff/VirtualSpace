@@ -164,6 +164,9 @@ export const HAZARD_TARGETING_COUNT_OFFSET = Vector3.create(0.3, -0.25, -0.1)
 /** TextShape fontSize for the target-count label. Inverse-scaled by the reticule parent. */
 export const HAZARD_TARGETING_COUNT_FONT_SIZE = 10
 
+export const HAZARD_SELECT_SOUND_PATH = 'assets/scene/Sounds/select1.mp3'
+export const HAZARD_HIT_SHIP_SOUND_PATH = 'assets/scene/Sounds/boom1.mp3'
+
 // MARK: Ship Weapons
 
 /** How long a laser plane stays visible after each shot. */
@@ -173,7 +176,9 @@ export const SHIP_LASER_LIFETIME_SECONDS = 0.15
 export const SHIP_LASER_WIDTH = 0.25
 
 /** Offset from SCENE_SHIP_POSITION to the laser origin, slightly above the ship roof. */
-export const SHIP_LASER_ORIGIN_OFFSET = Vector3.create(0, 6, 0)
+export const SHIP_LASER_ORIGIN_OFFSET = Vector3.create(0, 7, -6)
+
+export const SHIP_LASER_SOUND_PATH = 'assets/scene/Sounds/laser1.mp3'
 
 /** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */
 export const SHIP_LASER_BASE_FIRE_RATE = 1.5

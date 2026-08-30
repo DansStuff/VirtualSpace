@@ -1,4 +1,4 @@
-import { engine, Entity, Material, MeshRenderer, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
+import { AudioSource, engine, Entity, Material, MeshRenderer, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
@@ -11,6 +11,7 @@ import {
   SHIP_LASER_MAX_TARGETERS,
   SHIP_LASER_ORIGIN_OFFSET,
   SHIP_LASER_POOL_SIZE,
+  SHIP_LASER_SOUND_PATH,
   SHIP_LASER_WIDTH,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
@@ -29,6 +30,8 @@ const worldDown = Vector3.Down()
 const free: Entity[] = []
 const active: ActiveLaser[] = []
 const fireElapsed = new Map<Entity, number>()
+
+let laserSoundEntity: Entity
 
 function createLaserEntity(): Entity {
   const entity = engine.addEntity()
@@ -54,6 +57,7 @@ function acquireLaser(target: Entity): void {
     applyLaserPose(entity, Transform.get(target).position)
   }
   active.push({ entity, target, remaining: SHIP_LASER_LIFETIME_SECONDS })
+  AudioSource.playSound(laserSoundEntity, SHIP_LASER_SOUND_PATH, true)
 }
 
 function releaseLaser(index: number): void {
@@ -131,9 +135,21 @@ function LaserSystem(dt: number): void {
   updateActive(step)
 }
 
+function createLaserSoundEntity(): Entity {
+  const entity = engine.addEntity()
+  Transform.create(entity, { position: Vector3.clone(laserOrigin) })
+  AudioSource.create(entity, {
+    audioClipUrl: SHIP_LASER_SOUND_PATH,
+    playing: false,
+    loop: false
+  })
+  return entity
+}
+
 export function setupShipWeapons() {
   if (isServer()) return
 
+  laserSoundEntity = createLaserSoundEntity()
   for (let i = 0; i < SHIP_LASER_POOL_SIZE; i++) {
     free.push(createLaserEntity())
   }

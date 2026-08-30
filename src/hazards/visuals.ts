@@ -23,10 +23,12 @@ import {
   HAZARD_ASTEROID_MODEL_PATH,
   HAZARD_ASTEROID_POOL_SIZE,
   HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES,
+  HAZARD_HIT_SHIP_SOUND_PATH,
   HAZARD_IMPACT_DISTANCE,
   HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_RADIUS,
   HAZARD_RAYCAST_MAX_DISTANCE,
+  HAZARD_SELECT_SOUND_PATH,
   HAZARD_TARGET_COOLDOWN_SECONDS,
   HAZARD_TARGETING_COUNT_FONT_SIZE,
   HAZARD_TARGETING_COUNT_OFFSET,
@@ -34,6 +36,7 @@ import {
   HAZARD_TARGETING_INDICATOR_SCALE,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
+import { playGlobalSound } from '../audio/global'
 import { room } from '../networking/messages'
 import { shipVirtualPosition } from '../ship'
 import { AsteroidData, forgetAsteroidSpin } from '../spaceobjects/asteroids'
@@ -198,6 +201,7 @@ const AIM_ANGLE_TIE_EPSILON = 1e-6
 function requestHazardTarget(hazardId: number) {
   room.send('requestHazardTarget', { hazardId })
   targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
+  playGlobalSound(HAZARD_SELECT_SOUND_PATH)
   console.log(`[CLIENT] Requested target on hazard ${hazardId}`)
 }
 
@@ -310,6 +314,9 @@ export function setupHazardVisuals() {
   room.onMessage('notifyHazardDestroyed', (data) => {
     const cause = data.hitShip ? 'hit ship' : 'shot'
     console.log(`[CLIENT] Hazard ${data.hazardId} destroyed (${cause})`)
+    if (data.hitShip) {
+      playGlobalSound(HAZARD_HIT_SHIP_SOUND_PATH)
+    }
     despawnHazard(data.hazardId)
   })
 
