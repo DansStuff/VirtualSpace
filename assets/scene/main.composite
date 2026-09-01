@@ -625,9 +625,7 @@
             "ageRating": "A",
             "categories": [],
             "author": "DanL",
-            "tags": [
-              ""
-            ],
+            "tags": [],
             "layout": {
               "base": {
                 "x": 0,
@@ -938,7 +936,7 @@
                   },
                   "y": {
                     "$case": "single",
-                    "value": 65.61000061035156
+                    "value": 64.61000061035156
                   },
                   "z": {
                     "$case": "range",
