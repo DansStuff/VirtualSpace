@@ -164,6 +164,12 @@ export const HAZARD_TARGETING_COUNT_OFFSET = Vector3.create(0.3, -0.25, -0.1)
 /** TextShape fontSize for the target-count label. Inverse-scaled by the reticule parent. */
 export const HAZARD_TARGETING_COUNT_FONT_SIZE = 10
 
+/** Local offset of the "Target Locked" label from the reticule center (plane is 1×1). */
+export const HAZARD_TARGETING_LOCKED_OFFSET = Vector3.create(0, 0.55, -0.1)
+
+/** TextShape fontSize for the local-player lock label. Inverse-scaled by the reticule parent. */
+export const HAZARD_TARGETING_LOCKED_FONT_SIZE = 8
+
 export const HAZARD_SELECT_SOUND_PATH = 'assets/scene/Sounds/select1.mp3'
 export const HAZARD_HIT_SHIP_SOUND_PATH = 'assets/scene/Sounds/boom1.mp3'
 
@@ -203,13 +209,13 @@ export type EncounterParams = {
 }
 
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
-  'encounter-1': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
-  'encounter-2': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
-  'encounter-3': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
-  'encounter-4': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
-  'encounter-5': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
-  'encounter-6': { hazardCount: 6, flightTime: 8, asteroidHp: 5 },
-  'encounter-7': { hazardCount: 6, flightTime: 8, asteroidHp: 5 }
+  'encounter-1': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
+  'encounter-2': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
+  'encounter-3': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
+  'encounter-4': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
+  'encounter-5': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
+  'encounter-6': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
+  'encounter-7': { hazardCount: 6, flightTime: 8, asteroidHp: 6 }
 }
 
 // MARK: UI

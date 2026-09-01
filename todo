@@ -1,6 +1,12 @@
 code:
 
+notifyHazardTargeted payload should contain an array of current targeters instead of most recent targeter and count
 
+notifyHazardTargeted: Schemas.Map({
+  hazardId: Schemas.Int,
+  playerAddress: Schemas.String,
+  targetCount: Schemas.Int
+}),
 
 art:
 

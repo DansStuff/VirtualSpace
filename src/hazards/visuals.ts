@@ -34,6 +34,8 @@ import {
   HAZARD_TARGETING_COUNT_OFFSET,
   HAZARD_TARGETING_CROSSHAIR_TEXTURE_PATH,
   HAZARD_TARGETING_INDICATOR_SCALE,
+  HAZARD_TARGETING_LOCKED_FONT_SIZE,
+  HAZARD_TARGETING_LOCKED_OFFSET,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
@@ -46,6 +48,7 @@ type HazardVisuals = {
   entity: Entity
   targetingIndicator: Entity
   targetingCountLabel: Entity
+  targetingLockedLabel: Entity
 }
 
 const free: HazardVisuals[] = []
@@ -99,12 +102,28 @@ function createHazardVisuals(): HazardVisuals {
     fontSize: HAZARD_TARGETING_COUNT_FONT_SIZE,
     textColor: Color4.Green(),
     outlineColor: Color4.Black(),
-    outlineWidth: 0.08,
+    outlineWidth: 0.4,
     textAlign: TextAlignMode.TAM_TOP_LEFT
   })
   VisibilityComponent.create(targetingCountLabel, { visible: false })
 
-  return { entity, targetingIndicator, targetingCountLabel }
+  const targetingLockedLabel = engine.addEntity()
+  Transform.create(targetingLockedLabel, {
+    parent: targetingIndicator,
+    position: Vector3.clone(HAZARD_TARGETING_LOCKED_OFFSET),
+    scale: Vector3.create(labelScale, labelScale, labelScale)
+  })
+  TextShape.create(targetingLockedLabel, {
+    text: 'Target Locked',
+    fontSize: HAZARD_TARGETING_LOCKED_FONT_SIZE,
+    textColor: Color4.Green(),
+    outlineColor: Color4.Black(),
+    outlineWidth: 0.4,
+    textAlign: TextAlignMode.TAM_BOTTOM_CENTER
+  })
+  VisibilityComponent.create(targetingLockedLabel, { visible: false })
+
+  return { entity, targetingIndicator, targetingCountLabel, targetingLockedLabel }
 }
 
 function acquireHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
@@ -122,6 +141,7 @@ function releaseHazard(visuals: HazardVisuals) {
   VisibilityComponent.getMutable(visuals.entity).visible = false
   VisibilityComponent.getMutable(visuals.targetingIndicator).visible = false
   VisibilityComponent.getMutable(visuals.targetingCountLabel).visible = false
+  VisibilityComponent.getMutable(visuals.targetingLockedLabel).visible = false
   TextShape.getMutable(visuals.targetingCountLabel).text = ''
   free.push(visuals)
 }
@@ -132,6 +152,7 @@ type SpawnedHazard = {
   entity: Entity
   targetingIndicator: Entity
   targetingCountLabel: Entity
+  targetingLockedLabel: Entity
   targetCount: number
   start: Vector3
   end: Vector3
@@ -141,11 +162,33 @@ type SpawnedHazard = {
 
 const spawned: SpawnedHazard[] = []
 
+let lastRequestedHazardId: number | undefined
+let targetCooldownRemaining = 0
+
 /** Visit every live client-side hazard. Used by ship lasers for fire rate and aim. */
 export function forEachLiveHazard(visitor: (entity: Entity, targetCount: number) => void): void {
   for (const hazard of spawned) {
     visitor(hazard.entity, hazard.targetCount)
   }
+}
+
+function findSpawnedHazard(hazardId: number): SpawnedHazard | undefined {
+  return spawned.find((hazard) => hazard.hazardId === hazardId)
+}
+
+function clearLastRequestedIf(hazardId: number) {
+  if (lastRequestedHazardId === hazardId) {
+    lastRequestedHazardId = undefined
+  }
+}
+
+function applyTargetingAppearance(hazard: SpawnedHazard) {
+  const isLocal = hazard.hazardId === lastRequestedHazardId
+  const locked = hazard.targetCount > 0 || isLocal
+  TextShape.getMutable(hazard.targetingCountLabel).text = hazard.targetCount > 0 ? String(hazard.targetCount) : ''
+  VisibilityComponent.getMutable(hazard.targetingIndicator).visible = locked
+  VisibilityComponent.getMutable(hazard.targetingCountLabel).visible = hazard.targetCount > 0
+  VisibilityComponent.getMutable(hazard.targetingLockedLabel).visible = isLocal
 }
 
 function virtualFlightPath(spawnPosition: Vector3): { start: Vector3; end: Vector3 } {
@@ -163,6 +206,7 @@ function applyVirtualPosition(hazard: SpawnedHazard) {
 }
 
 function despawnHazard(hazardId: number) {
+  clearLastRequestedIf(hazardId)
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].hazardId !== hazardId) continue
     releaseHazard(spawned[i])
@@ -174,12 +218,14 @@ function despawnHazard(hazardId: number) {
 export function despawnEncounter(encounterId: string) {
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].encounterId !== encounterId) continue
+    clearLastRequestedIf(spawned[i].hazardId)
     releaseHazard(spawned[i])
     spawned.splice(i, 1)
   }
 }
 
 export function despawnAllHazards() {
+  lastRequestedHazardId = undefined
   for (const hazard of spawned) {
     releaseHazard(hazard)
   }
@@ -194,15 +240,22 @@ function HazardFlightSystem(dt: number) {
   }
 }
 
-let targetCooldownRemaining = 0
-
 const AIM_ANGLE_TIE_EPSILON = 1e-6
 
 function requestHazardTarget(hazardId: number) {
+  if (hazardId === lastRequestedHazardId) return
+  const previousId = lastRequestedHazardId
+  lastRequestedHazardId = hazardId
   room.send('requestHazardTarget', { hazardId })
   targetCooldownRemaining = HAZARD_TARGET_COOLDOWN_SECONDS
   playGlobalSound(HAZARD_SELECT_SOUND_PATH)
   console.log(`[CLIENT] Requested target on hazard ${hazardId}`)
+  if (previousId !== undefined) {
+    const previous = findSpawnedHazard(previousId)
+    if (previous) applyTargetingAppearance(previous)
+  }
+  const next = findSpawnedHazard(hazardId)
+  if (next) applyTargetingAppearance(next)
 }
 
 /**
@@ -300,6 +353,7 @@ export function setupHazardVisuals() {
       entity: visuals.entity,
       targetingIndicator: visuals.targetingIndicator,
       targetingCountLabel: visuals.targetingCountLabel,
+      targetingLockedLabel: visuals.targetingLockedLabel,
       targetCount: 0,
       start: path.start,
       end: path.end,
@@ -308,6 +362,7 @@ export function setupHazardVisuals() {
     }
     spawned.push(hazard)
     applyVirtualPosition(hazard)
+    applyTargetingAppearance(hazard)
     console.log(`[CLIENT] Hazard ${data.hazardId} spawned for ${data.encounterId} (${data.flightTime}s)`)
   })
 
@@ -324,14 +379,9 @@ export function setupHazardVisuals() {
     console.log(
       `[CLIENT] Hazard ${data.hazardId} targeted by ${data.playerAddress} (count ${data.targetCount})`
     )
-    for (const hazard of spawned) {
-      if (hazard.hazardId !== data.hazardId) continue
-      hazard.targetCount = data.targetCount
-      const locked = data.targetCount > 0
-      TextShape.getMutable(hazard.targetingCountLabel).text = locked ? String(data.targetCount) : ''
-      VisibilityComponent.getMutable(hazard.targetingIndicator).visible = locked
-      VisibilityComponent.getMutable(hazard.targetingCountLabel).visible = locked
-      return
-    }
+    const hazard = findSpawnedHazard(data.hazardId)
+    if (!hazard) return
+    hazard.targetCount = data.targetCount
+    applyTargetingAppearance(hazard)
   })
 }
