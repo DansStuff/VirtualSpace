@@ -2,6 +2,7 @@ import { Color4 } from '@dcl/sdk/math'
 import { isStateSyncronized } from '@dcl/sdk/network'
 import ReactEcs, { Button, Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 import {
+  SHIP_BASE_HULL_HP,
   UI_HEALTH_BAR_FONT_SIZE,
   UI_HEALTH_BAR_HEIGHT,
   UI_HEALTH_BAR_MARGIN_TOP,
@@ -14,12 +15,11 @@ import {
   UI_VIRTUAL_HEIGHT,
   UI_VIRTUAL_WIDTH
 } from './constants'
+import { getGameState } from './gamestate'
 import { room } from './networking/messages'
+import { lastStopId } from './path/follow'
 
-let missionStarted = false
-let showRestart = false
 let turretOccupied = false
-let shipHealth = 100
 
 const MISSION_STATUS_COLOR = Color4.create(0.55, 0.55, 0.55, 1)
 const HEALTH_BAR_BACKGROUND = Color4.Red()
@@ -33,23 +33,13 @@ export function markTurretExited() {
   turretOccupied = false
 }
 
-export function markMissionStarted() {
-  missionStarted = true
-  showRestart = false
+function showRestart(): boolean {
+  const state = getGameState()
+  return state.missionStarted && !state.inEncounter && state.encounterId === lastStopId()
 }
 
-export function markMissionComplete() {
-  showRestart = true
-}
-
-export function markMissionReset() {
-  missionStarted = false
-  showRestart = false
-  turretOccupied = false
-}
-
-export function setShipHealth(percent: number) {
-  shipHealth = Math.max(0, Math.min(100, percent))
+function hullPercent(): number {
+  return (getGameState().hullHp / SHIP_BASE_HULL_HP) * 100
 }
 
 export function setupUi() {
@@ -57,12 +47,12 @@ export function setupUi() {
 }
 
 function requestMissionStart() {
-  if (missionStarted || !isStateSyncronized()) return
+  if (getGameState().missionStarted || !isStateSyncronized()) return
   room.send('requestMissionStart', { requestedAt: Date.now() })
 }
 
 function requestNewMission() {
-  if (!showRestart || !isStateSyncronized()) return
+  if (!showRestart() || !isStateSyncronized()) return
   room.send('requestNewMission', { requestedAt: Date.now() })
 }
 
@@ -71,7 +61,7 @@ function requestLeaveTurret() {
 }
 
 function inMissionHud() {
-  return missionStarted && !showRestart
+  return getGameState().missionStarted && !showRestart()
 }
 
 export const uiMenu = () => (
@@ -102,7 +92,7 @@ export const uiMenu = () => (
           uiBackground={{ color: HEALTH_BAR_BACKGROUND }}
         >
           <UiEntity
-            uiTransform={{ width: `${shipHealth}%`, height: '100%' }}
+            uiTransform={{ width: `${hullPercent()}%`, height: '100%' }}
             uiBackground={{ color: HEALTH_BAR_FOREGROUND }}
           />
         </UiEntity>
@@ -141,7 +131,7 @@ export const uiMenu = () => (
           width: UI_MISSION_BUTTON_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
           margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
-          display: missionStarted || showRestart ? 'none' : 'flex'
+          display: getGameState().missionStarted || showRestart() ? 'none' : 'flex'
         }}
         onMouseDown={requestMissionStart}
       />
@@ -179,7 +169,7 @@ export const uiMenu = () => (
           width: UI_MISSION_BUTTON_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
           margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
-          display: showRestart ? 'flex' : 'none'
+          display: showRestart() ? 'flex' : 'none'
         }}
         onMouseDown={requestNewMission}
       />

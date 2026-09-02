@@ -6,18 +6,17 @@ import {
   PATH_START_STOP_ID,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
+import { applyEncounterActive, applyEncounterEnded } from '../gamestate'
 import {
   clearLive,
   hasLive,
-  replayLive,
   resetLive,
   spawn,
   tick
 } from '../hazards/simulation'
 import { despawnEncounter } from '../hazards/visuals'
 import { room } from '../networking/messages'
-import { currentStopId, isPathFinished, isShipStopped, lastStopId, markEncounterComplete, resumeFromStop } from '../path/follow'
-import { markMissionComplete } from '../ui'
+import { currentStopId, isPathFinished, isShipStopped, markEncounterComplete, resumeFromStop } from '../path/follow'
 
 const completedEncounterIds: string[] = []
 let activeEncounterId: string | null = null
@@ -26,22 +25,6 @@ let encounterHazardCount = 0
 let encounterFlightTime = 0
 let encounterAsteroidHp = 0
 let spawnedThisEncounter = 0
-
-/** Active encounter if a fight is running; otherwise the last completed stop. */
-export function catchUpStopId(): string | null {
-  if (activeEncounterId) return activeEncounterId
-  if (completedEncounterIds.length > 0) {
-    return completedEncounterIds[completedEncounterIds.length - 1]
-  }
-  return null
-}
-
-export function replayEncounterState(playerAddress: string) {
-  for (const encounterId of completedEncounterIds) {
-    room.send('notifyEncounterEnd', { encounterId }, { to: [playerAddress] })
-  }
-  replayLive(playerAddress)
-}
 
 function beginEncounter(stopId: string) {
   const params = ENCOUNTER_PARAMS[stopId]
@@ -57,6 +40,7 @@ function beginEncounter(stopId: string) {
   encounterAsteroidHp = params.asteroidHp
   spawnedThisEncounter = 0
   clearLive()
+  applyEncounterActive(stopId)
 }
 
 function endEncounter() {
@@ -70,6 +54,7 @@ function endEncounter() {
   encounterFlightTime = 0
   encounterAsteroidHp = 0
   spawnedThisEncounter = 0
+  applyEncounterEnded(encounterId)
   console.log(`[SERVER] Encounter ${encounterId} ended`)
   room.send('notifyEncounterEnd', { encounterId })
   if (!isPathFinished()) {
@@ -132,9 +117,7 @@ export function setupEncounters() {
     console.log(`[CLIENT] Encounter ended: ${data.encounterId}`)
     markEncounterComplete(data.encounterId)
     despawnEncounter(data.encounterId)
-    if (data.encounterId === lastStopId()) {
-      markMissionComplete()
-    }
+    applyEncounterEnded(data.encounterId)
     if (currentStopId() === data.encounterId) {
       resumeFromStop()
     }

@@ -2,49 +2,30 @@ import { AssetLoad, engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 import { registerGlobalSounds } from './audio/global'
 import { HAZARD_HIT_SHIP_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, PATH_START_STOP_ID, SHIP_LASER_SOUND_PATH } from './constants'
-import { catchUpStopId, replayEncounterState, resetEncounterState, setupEncounters } from './encounters/lifecycle'
+import { resetEncounterState, setupEncounters } from './encounters/lifecycle'
+import { applyMissionStarted, getGameState, resetGameState, setupGameState, snapshotGameState } from './gamestate'
 import { setupHazards } from './hazards/simulation'
 import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
-import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem, teleportToStop } from './path/follow'
+import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
 import { onPlayerConnected, setupPlayers } from './players/stats'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
-import { markMissionReset, markMissionStarted, setupUi } from './ui'
+import { markTurretExited, setupUi } from './ui'
 import { setupDebugTeleportToShip } from './utilities'
 
-type MissionState = {
-  encounterId: string
-  startedAt: number
-}
-
 function setupServerRoom() {
-  let mission: MissionState | null = null
-
-  function missionStartPayload(startedAt: number) {
-    return {
-      encounterId: catchUpStopId() ?? PATH_START_STOP_ID,
-      startedAt
-    }
-  }
-
   function sendInitialState(playerAddress: string) {
-    if (mission) {
-      room.send('notifyMissionStart', missionStartPayload(mission.startedAt), { to: [playerAddress] })
-    }
-    replayEncounterState(playerAddress)
+    room.send('notifyGameState', snapshotGameState(), { to: [playerAddress] })
   }
 
   room.onMessage('requestMissionStart', (_data, context) => {
     if (!context) return
-    if (mission) return
+    if (getGameState().missionStarted) return
 
-    mission = {
-      encounterId: PATH_START_STOP_ID,
-      startedAt: Date.now()
-    }
-    console.log(`[SERVER] Mission started (${mission.encounterId}) by ${context.from}`)
-    room.send('notifyMissionStart', mission)
+    applyMissionStarted(PATH_START_STOP_ID)
+    console.log(`[SERVER] Mission started (${PATH_START_STOP_ID}) by ${context.from}`)
+    room.send('notifyMissionStart', { encounterId: PATH_START_STOP_ID, startedAt: Date.now() })
     resumeFromStop()
   })
 
@@ -57,10 +38,10 @@ function setupServerRoom() {
 
   room.onMessage('requestNewMission', (_data, context) => {
     if (!context) return
-    if (!mission || !isPathFinished()) return
+    if (!getGameState().missionStarted || !isPathFinished()) return
 
     console.log(`[SERVER] Mission reset by ${context.from}`)
-    mission = null
+    resetGameState()
     resetEncounterState()
     resetPathToStart()
     room.send('notifyNewMission', { resetAt: Date.now() })
@@ -75,10 +56,8 @@ function setupClientRoom() {
     if (data.startedAt <= appliedStartedAt) return
     appliedStartedAt = data.startedAt
     console.log(`[CLIENT] Mission started: ${data.encounterId}`)
-    markMissionStarted()
-    if (data.encounterId !== PATH_START_STOP_ID) {
-      teleportToStop(data.encounterId)
-    } else if (currentStopId() === PATH_START_STOP_ID) {
+    applyMissionStarted(data.encounterId)
+    if (currentStopId() === PATH_START_STOP_ID) {
       resumeFromStop()
     }
   })
@@ -89,7 +68,8 @@ function setupClientRoom() {
     console.log(`[CLIENT] Mission reset (${data.resetAt})`)
     resetPathToStart()
     despawnAllHazards()
-    markMissionReset()
+    resetGameState()
+    markTurretExited()
   })
 
   let requestedInitialState = false
@@ -112,6 +92,7 @@ function setupClientRoom() {
 }
 
 export function main() {
+  setupGameState()
   setupEncounters()
   setupHazards()
   setupPlayers()

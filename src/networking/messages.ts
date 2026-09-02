@@ -39,13 +39,20 @@ export const Messages = {
   notifyHazardDestroyed: Schemas.Map({
     hazardId: Schemas.Int,
     /** true = hit the ship; false = shot down */
-    hitShip: Schemas.Boolean
+    hitShip: Schemas.Boolean,
+    hullHp: Schemas.Int
   }),
   notifyEncounterEnd: Schemas.Map({
     encounterId: Schemas.String
   }),
   notifyNewMission: Schemas.Map({
     resetAt: Schemas.Int64
+  }),
+  notifyGameState: Schemas.Map({
+    encounterId: Schemas.String,
+    hullHp: Schemas.Int,
+    inEncounter: Schemas.Boolean,
+    missionStarted: Schemas.Boolean
   })
 }
 

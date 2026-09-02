@@ -33,6 +33,9 @@ export const SHIP_ROLL_SMOOTH = 2
 /** Extra yaw so virtual forward matches a Y flip of the ship GLTF. Applied after bank. */
 export const SHIP_MODEL_YAW_DEGREES = 180
 
+/** Starting hull hit points. The HUD bar is hullHp / this value. */
+export const SHIP_BASE_HULL_HP = 100
+
 // MARK: Path
 
 /**

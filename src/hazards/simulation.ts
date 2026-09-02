@@ -6,6 +6,7 @@ import {
   HAZARD_DAMAGE_INTERVAL,
   HAZARD_SPAWN_DISTANCE
 } from '../constants'
+import { damageShipHull, getGameState } from '../gamestate'
 import { room } from '../networking/messages'
 import { getPlayerDamage } from '../players/stats'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
@@ -111,7 +112,8 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   const hazard = liveHazards[index]
   clearHazardLockers(hazard)
   liveHazards.splice(index, 1)
-  room.send('notifyHazardDestroyed', { hazardId, hitShip })
+  const hullHp = hitShip ? damageShipHull(1) : getGameState().hullHp
+  room.send('notifyHazardDestroyed', { hazardId, hitShip, hullHp })
   console.log(`[SERVER] Hazard ${hazardId} destroyed (${hitShip ? 'hit ship' : 'shot'})`)
   return true
 }
@@ -180,23 +182,6 @@ export function clearLive(): void {
 export function resetLive(): void {
   clearLive()
   nextHazardId = 1
-}
-
-export function replayLive(playerAddress: string): void {
-  for (const hazard of liveHazards) {
-    room.send('notifyHazardSpawn', hazardSpawnMessage(hazard), { to: [playerAddress] })
-    if (hazard.targetedBy.size > 0) {
-      room.send(
-        'notifyHazardTargeted',
-        {
-          hazardId: hazard.hazardId,
-          playerAddress: '',
-          targetCount: hazard.targetedBy.size
-        },
-        { to: [playerAddress] }
-      )
-    }
-  }
 }
 
 export function setupHazards() {

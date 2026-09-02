@@ -39,6 +39,7 @@ import {
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
+import { applyHullHp } from '../gamestate'
 import { room } from '../networking/messages'
 import { shipVirtualPosition } from '../ship'
 import { AsteroidData, forgetAsteroidSpin } from '../spaceobjects/asteroids'
@@ -372,6 +373,7 @@ export function setupHazardVisuals() {
     if (data.hitShip) {
       playGlobalSound(HAZARD_HIT_SHIP_SOUND_PATH)
     }
+    applyHullHp(data.hullHp)
     despawnHazard(data.hazardId)
   })
 
