@@ -2,7 +2,8 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   CELESTIAL_SPHERE_INSET,
   PLANET_ENCLOSING_SPHERE_RADIUS,
-  PROJECTED_BODY_MIN_SCALE
+  PROJECTED_BODY_MIN_SCALE,
+  PROJECTION_EYE_OFFSET
 } from '../constants'
 import { conjugateQuaternion, directionFromTo, rotateByInverse } from '../utilities'
 
@@ -84,8 +85,8 @@ export function raySphereForwardDistance(
  * Projects a body from virtual space onto a *fixed* enclosing scene sphere.
  *
  * Direction comes from the virtual ship pose. The ray starts at the local player
- * (free to move inside the sphere) and hits the shell — so walking closer to one
- * side shortens that ray without moving the sphere itself.
+ * plus PROJECTION_EYE_OFFSET (free to move inside the sphere) and hits the shell —
+ * so walking closer to one side shortens that ray without moving the sphere itself.
  */
 export function projectVirtualBodyToSceneSphere(
   bodyVirtualPosition: Vector3,
@@ -96,6 +97,7 @@ export function projectVirtualBodyToSceneSphere(
   sphereRadius: number,
   virtualRadius: number
 ): SphereProjection {
+  const eye = Vector3.add(rayOrigin, PROJECTION_EYE_OFFSET)
   // Step 1: world-space offset from the ship to the body in virtual coordinates.
   const offset = Vector3.subtract(bodyVirtualPosition, shipVirtualPosition)
   // Step 2: true virtual distance (for apparent size).
@@ -106,15 +108,15 @@ export function projectVirtualBodyToSceneSphere(
   const localDirection = rotateByInverse(worldDirection, shipVirtualRotation)
   // Step 5: desired angular size from virtual radius + virtual distance (FOV-independent).
   const angularRadius = virtualAngularRadius(virtualRadius, distance)
-  // Step 6: cast from the player onto the fixed enclosing shell, then inset.
+  // Step 6: cast from the eye onto the fixed enclosing shell, then inset.
   const hitDistance = raySphereForwardDistance(
-    rayOrigin,
+    eye,
     localDirection,
     sphereCenter,
     sphereRadius
   )
   const centerDistance = Math.max(PROJECTED_BODY_MIN_SCALE, hitDistance - CELESTIAL_SPHERE_INSET)
-  const position = Vector3.add(rayOrigin, Vector3.scale(localDirection, centerDistance))
+  const position = Vector3.add(eye, Vector3.scale(localDirection, centerDistance))
   // Step 7: scale the radius-1 model so it keeps that angular size at the *actual*
   //         player→body distance (shrinks when you walk closer, grows when farther).
   const scale = scaleForAngularRadiusAtDistance(

@@ -82,6 +82,13 @@ export const ASTEROID_ENCLOSING_SPHERE_RADIUS = 20
 /** Pull celestial body centers inward from the shell along the view ray (meters). */
 export const CELESTIAL_SPHERE_INSET = 0.75
 
+/**
+ * Scene-space offset added to the player position used as the projection ray origin
+ * (the "eye" for parallax). (0,0,0) is current behavior (avatar root / feet).
+ * +Y raises the eye; try ~1.6 for typical avatar eye height. +X / +Z shift left-right / fore-aft.
+ */
+export const PROJECTION_EYE_OFFSET = Vector3.create(0, -4.5, 0)
+
 /** Assumed player camera vertical FOV (degrees). Angular matching is FOV-independent. */
 export const STANDARD_PLAYER_FOV_DEGREES = 50
 
@@ -226,3 +233,7 @@ export const UI_MISSION_BUTTON_FONT_SIZE = 22
 export const UI_MISSION_BUTTON_WIDTH = 280
 export const UI_MISSION_BUTTON_HEIGHT = 64
 export const UI_MISSION_BUTTON_MARGIN_BOTTOM = 80
+export const UI_MISSION_STATUS_LABEL_WIDTH = 560
+export const UI_HEALTH_BAR_WIDTH = 480
+export const UI_HEALTH_BAR_HEIGHT = 24
+export const UI_HEALTH_BAR_MARGIN_TOP = 32
