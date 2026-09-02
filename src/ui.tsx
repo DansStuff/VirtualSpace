@@ -2,6 +2,7 @@ import { Color4 } from '@dcl/sdk/math'
 import { isStateSyncronized } from '@dcl/sdk/network'
 import ReactEcs, { Button, Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 import {
+  UI_HEALTH_BAR_FONT_SIZE,
   UI_HEALTH_BAR_HEIGHT,
   UI_HEALTH_BAR_MARGIN_TOP,
   UI_HEALTH_BAR_WIDTH,
@@ -95,11 +96,28 @@ export const uiMenu = () => (
           width: UI_HEALTH_BAR_WIDTH,
           height: UI_HEALTH_BAR_HEIGHT
         }}
-        uiBackground={{ color: HEALTH_BAR_BACKGROUND }}
       >
         <UiEntity
-          uiTransform={{ width: `${shipHealth}%`, height: '100%' }}
-          uiBackground={{ color: HEALTH_BAR_FOREGROUND }}
+          uiTransform={{ width: '100%', height: '100%' }}
+          uiBackground={{ color: HEALTH_BAR_BACKGROUND }}
+        >
+          <UiEntity
+            uiTransform={{ width: `${shipHealth}%`, height: '100%' }}
+            uiBackground={{ color: HEALTH_BAR_FOREGROUND }}
+          />
+        </UiEntity>
+        <Label
+          value="Hull Status"
+          fontSize={UI_HEALTH_BAR_FONT_SIZE}
+          color={Color4.Black()}
+          textAlign="middle-center"
+          uiTransform={{
+            width: '100%',
+            height: '100%',
+            positionType: 'absolute',
+            position: { top: 0, left: 0 },
+            zIndex: 1
+          }}
         />
       </UiEntity>
     </UiEntity>

@@ -1,5 +1,8 @@
 code:
 
+
+portraits around reticule:
+
 notifyHazardTargeted payload should contain an array of current targeters instead of most recent targeter and count
 
 notifyHazardTargeted: Schemas.Map({
@@ -8,19 +11,28 @@ notifyHazardTargeted: Schemas.Map({
   targetCount: Schemas.Int
 }),
 
-art:
+new targeting:
 
-sound:
+hazards/selection.ts
+  SelectedHazardComponent + entity in module
+  HazardSelector system with raycast (or current conecast for now)
+
+
+replace conecast with raycast against larger collider
+track current targeted hazard in a component
 
 
 
-optimization / cleanup:
 
-modularize timers
-organize follow.ts
 
-check hazard spawning for ecs patterns (did ai default to OO?)
 
-hazard picking algorithm is sus but fine because low hazard count
+
+
+
+
+
+
+
+
 
 

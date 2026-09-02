@@ -19,6 +19,12 @@
       "skillPath": "authoritative-server/SKILL.md",
       "computedHash": "bb2d7f34b19e45333e3303ce55458e244aa82a3aeb26dd1a65f9a5aaef542bbf"
     },
+    "build-ui": {
+      "source": "decentraland/sdk-skills",
+      "sourceType": "github",
+      "skillPath": "build-ui/SKILL.md",
+      "computedHash": "e4b9e85af9d1ce3e5934ae34f3b659e84afbc4d4cc0aee3b7ef0534a04b2c7d2"
+    },
     "deploy-scene": {
       "source": "decentraland/sdk-skills",
       "sourceType": "github",
