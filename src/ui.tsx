@@ -12,6 +12,10 @@ import {
   UI_MISSION_BUTTON_MARGIN_BOTTOM,
   UI_MISSION_BUTTON_WIDTH,
   UI_MISSION_STATUS_LABEL_WIDTH,
+  UI_SHIP_DESTROYED_DURATION_SECONDS,
+  UI_SHIP_DESTROYED_FONT_SIZE,
+  UI_SHIP_DESTROYED_LABEL_HEIGHT,
+  UI_SHIP_DESTROYED_LABEL_WIDTH,
   UI_VIRTUAL_HEIGHT,
   UI_VIRTUAL_WIDTH
 } from './constants'
@@ -20,8 +24,10 @@ import { room } from './networking/messages'
 import { lastStopId } from './path/follow'
 
 let turretOccupied = false
+let shipDestroyedUntil = 0
 
 const MISSION_STATUS_COLOR = Color4.create(0.55, 0.55, 0.55, 1)
+const SHIP_DESTROYED_COLOR = Color4.create(1, 0.2, 0.15, 1)
 const HEALTH_BAR_BACKGROUND = Color4.Red()
 const HEALTH_BAR_FOREGROUND = Color4.Green()
 
@@ -31,6 +37,14 @@ export function markTurretOccupied() {
 
 export function markTurretExited() {
   turretOccupied = false
+}
+
+export function markShipDestroyed() {
+  shipDestroyedUntil = Date.now() + UI_SHIP_DESTROYED_DURATION_SECONDS * 1000
+}
+
+function showingShipDestroyed() {
+  return Date.now() < shipDestroyedUntil
 }
 
 function showRestart(): boolean {
@@ -47,7 +61,7 @@ export function setupUi() {
 }
 
 function requestMissionStart() {
-  if (getGameState().missionStarted || !isStateSyncronized()) return
+  if (showingShipDestroyed() || getGameState().missionStarted || !isStateSyncronized()) return
   room.send('requestMissionStart', { requestedAt: Date.now() })
 }
 
@@ -131,7 +145,7 @@ export const uiMenu = () => (
           width: UI_MISSION_BUTTON_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
           margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
-          display: getGameState().missionStarted || showRestart() ? 'none' : 'flex'
+          display: showingShipDestroyed() || getGameState().missionStarted || showRestart() ? 'none' : 'flex'
         }}
         onMouseDown={requestMissionStart}
       />
@@ -172,6 +186,29 @@ export const uiMenu = () => (
           display: showRestart() ? 'flex' : 'none'
         }}
         onMouseDown={requestNewMission}
+      />
+    </UiEntity>
+
+    <UiEntity
+      uiTransform={{
+        width: '100%',
+        height: '100%',
+        positionType: 'absolute',
+        position: { top: 0, left: 0 },
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: showingShipDestroyed() ? 'flex' : 'none'
+      }}
+    >
+      <Label
+        value="Ship Destroyed"
+        fontSize={UI_SHIP_DESTROYED_FONT_SIZE}
+        color={SHIP_DESTROYED_COLOR}
+        textAlign="middle-center"
+        uiTransform={{
+          width: UI_SHIP_DESTROYED_LABEL_WIDTH,
+          height: UI_SHIP_DESTROYED_LABEL_HEIGHT
+        }}
       />
     </UiEntity>
   </UiEntity>

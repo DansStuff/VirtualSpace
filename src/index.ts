@@ -2,7 +2,7 @@ import { AssetLoad, engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 import { registerGlobalSounds } from './audio/global'
 import { HAZARD_HIT_SHIP_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, PATH_START_STOP_ID, SHIP_LASER_SOUND_PATH } from './constants'
-import { resetEncounterState, setupEncounters } from './encounters/lifecycle'
+import { resetMission, setupEncounters } from './encounters/lifecycle'
 import { applyMissionStarted, getGameState, resetGameState, setupGameState, snapshotGameState } from './gamestate'
 import { setupHazards } from './hazards/simulation'
 import { despawnAllHazards } from './hazards/visuals'
@@ -11,7 +11,7 @@ import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPa
 import { onPlayerConnected, setupPlayers } from './players/stats'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
-import { markTurretExited, setupUi } from './ui'
+import { markShipDestroyed, markTurretExited, setupUi } from './ui'
 import { setupDebugTeleportToShip } from './utilities'
 
 function setupServerRoom() {
@@ -41,9 +41,7 @@ function setupServerRoom() {
     if (!getGameState().missionStarted || !isPathFinished()) return
 
     console.log(`[SERVER] Mission reset by ${context.from}`)
-    resetGameState()
-    resetEncounterState()
-    resetPathToStart()
+    resetMission()
     room.send('notifyNewMission', { resetAt: Date.now() })
   })
 }
@@ -51,6 +49,14 @@ function setupServerRoom() {
 function setupClientRoom() {
   let appliedStartedAt = 0
   let appliedResetAt = 0
+  let appliedDestroyedAt = 0
+
+  function applyClientMissionReset() {
+    resetPathToStart()
+    despawnAllHazards()
+    resetGameState()
+    markTurretExited()
+  }
 
   room.onMessage('notifyMissionStart', (data) => {
     if (data.startedAt <= appliedStartedAt) return
@@ -66,10 +72,15 @@ function setupClientRoom() {
     if (data.resetAt <= appliedResetAt) return
     appliedResetAt = data.resetAt
     console.log(`[CLIENT] Mission reset (${data.resetAt})`)
-    resetPathToStart()
-    despawnAllHazards()
-    resetGameState()
-    markTurretExited()
+    applyClientMissionReset()
+  })
+
+  room.onMessage('notifyShipDestroyed', (data) => {
+    if (data.destroyedAt <= appliedDestroyedAt) return
+    appliedDestroyedAt = data.destroyedAt
+    console.log(`[CLIENT] Ship destroyed`)
+    applyClientMissionReset()
+    markShipDestroyed()
   })
 
   let requestedInitialState = false

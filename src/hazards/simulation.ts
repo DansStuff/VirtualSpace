@@ -19,6 +19,7 @@ type LiveHazard = {
   flightElapsed: number
   flightTime: number
   hp: number
+  hullDamage: number
   damageElapsed: number
   targetedBy: Set<string>
 }
@@ -112,13 +113,13 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   const hazard = liveHazards[index]
   clearHazardLockers(hazard)
   liveHazards.splice(index, 1)
-  const hullHp = hitShip ? damageShipHull(1) : getGameState().hullHp
+  const hullHp = hitShip ? damageShipHull(hazard.hullDamage) : getGameState().hullHp
   room.send('notifyHazardDestroyed', { hazardId, hitShip, hullHp })
   console.log(`[SERVER] Hazard ${hazardId} destroyed (${hitShip ? 'hit ship' : 'shot'})`)
   return true
 }
 
-export function spawn(encounterId: string, opts: { flightTime: number; hp: number }): number {
+export function spawn(encounterId: string, opts: { flightTime: number; hp: number; hullDamage: number }): number {
   const position = Vector3.add(shipVirtualPosition, Vector3.scale(randomConeAhead(), HAZARD_SPAWN_DISTANCE))
   const hazard: LiveHazard = {
     hazardId: nextHazardId++,
@@ -127,6 +128,7 @@ export function spawn(encounterId: string, opts: { flightTime: number; hp: numbe
     flightElapsed: 0,
     flightTime: opts.flightTime,
     hp: opts.hp,
+    hullDamage: opts.hullDamage,
     damageElapsed: 0,
     targetedBy: new Set()
   }

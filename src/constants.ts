@@ -216,16 +216,18 @@ export type EncounterParams = {
   /** Seconds each asteroid exists before it hits the ship (unless shot). */
   flightTime: number
   asteroidHp: number
+  /** Hull damage dealt when an asteroid reaches the ship. */
+  asteroidDamage: number
 }
 
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
-  'encounter-1': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
-  'encounter-2': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
-  'encounter-3': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
-  'encounter-4': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
-  'encounter-5': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
-  'encounter-6': { hazardCount: 6, flightTime: 8, asteroidHp: 6 },
-  'encounter-7': { hazardCount: 6, flightTime: 8, asteroidHp: 6 }
+  'encounter-1': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+  'encounter-2': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+  'encounter-3': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+  'encounter-4': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+  'encounter-5': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+  'encounter-6': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+  'encounter-7': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 }
 }
 
 // MARK: UI
@@ -241,3 +243,7 @@ export const UI_HEALTH_BAR_WIDTH = 480
 export const UI_HEALTH_BAR_HEIGHT = 36
 export const UI_HEALTH_BAR_MARGIN_TOP = 32
 export const UI_HEALTH_BAR_FONT_SIZE = 18
+export const UI_SHIP_DESTROYED_DURATION_SECONDS = 3
+export const UI_SHIP_DESTROYED_FONT_SIZE = 48
+export const UI_SHIP_DESTROYED_LABEL_WIDTH = 720
+export const UI_SHIP_DESTROYED_LABEL_HEIGHT = 72

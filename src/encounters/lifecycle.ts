@@ -6,7 +6,7 @@ import {
   PATH_START_STOP_ID,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
-import { applyEncounterActive, applyEncounterEnded } from '../gamestate'
+import { applyEncounterActive, applyEncounterEnded, getGameState, resetGameState } from '../gamestate'
 import {
   clearLive,
   hasLive,
@@ -16,7 +16,7 @@ import {
 } from '../hazards/simulation'
 import { despawnEncounter } from '../hazards/visuals'
 import { room } from '../networking/messages'
-import { currentStopId, isPathFinished, isShipStopped, markEncounterComplete, resumeFromStop } from '../path/follow'
+import { currentStopId, isPathFinished, isShipStopped, markEncounterComplete, resetPathToStart, resumeFromStop } from '../path/follow'
 
 const completedEncounterIds: string[] = []
 let activeEncounterId: string | null = null
@@ -24,6 +24,7 @@ let encounterElapsed = 0
 let encounterHazardCount = 0
 let encounterFlightTime = 0
 let encounterAsteroidHp = 0
+let encounterAsteroidDamage = 0
 let spawnedThisEncounter = 0
 
 function beginEncounter(stopId: string) {
@@ -38,6 +39,7 @@ function beginEncounter(stopId: string) {
   encounterHazardCount = params.hazardCount
   encounterFlightTime = params.flightTime
   encounterAsteroidHp = params.asteroidHp
+  encounterAsteroidDamage = params.asteroidDamage
   spawnedThisEncounter = 0
   clearLive()
   applyEncounterActive(stopId)
@@ -53,6 +55,7 @@ function endEncounter() {
   encounterHazardCount = 0
   encounterFlightTime = 0
   encounterAsteroidHp = 0
+  encounterAsteroidDamage = 0
   spawnedThisEncounter = 0
   applyEncounterEnded(encounterId)
   console.log(`[SERVER] Encounter ${encounterId} ended`)
@@ -81,7 +84,8 @@ function EncounterSystem(dt: number) {
   ) {
     const hazardId = spawn(activeEncounterId, {
       flightTime: encounterFlightTime,
-      hp: encounterAsteroidHp
+      hp: encounterAsteroidHp,
+      hullDamage: encounterAsteroidDamage
     })
     spawnedThisEncounter += 1
     console.log(
@@ -91,9 +95,22 @@ function EncounterSystem(dt: number) {
 
   tick(step)
 
+  if (getGameState().missionStarted && getGameState().hullHp <= 0) {
+    console.log(`[SERVER] Ship destroyed`)
+    resetMission()
+    room.send('notifyShipDestroyed', { destroyedAt: Date.now() })
+    return
+  }
+
   if (spawnedThisEncounter >= encounterHazardCount && !hasLive()) {
     endEncounter()
   }
+}
+
+export function resetMission(): void {
+  resetGameState()
+  resetEncounterState()
+  resetPathToStart()
 }
 
 export function resetEncounterState(): void {
@@ -104,6 +121,7 @@ export function resetEncounterState(): void {
   encounterHazardCount = 0
   encounterFlightTime = 0
   encounterAsteroidHp = 0
+  encounterAsteroidDamage = 0
   spawnedThisEncounter = 0
 }
 
