@@ -191,16 +191,16 @@
               "y": 61.75,
               "z": 57
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0,
               "y": 0.4226182699203491,
               "z": 0,
               "w": 0.9063078165054321
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -212,11 +212,116 @@
               "y": 61.75,
               "z": 57
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0,
               "y": -0.4226182699203491,
               "z": 0,
               "w": 0.9063078165054321
+            },
+            "parent": 0
+          }
+        },
+        "520": {
+          "json": {
+            "position": {
+              "x": 53.3419189453125,
+              "y": 63,
+              "z": 70.25
+            },
+            "rotation": {
+              "x": -0.5,
+              "y": -0.5,
+              "z": -0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 1.4199999570846558,
+              "y": 1,
+              "z": 1.4199999570846558
+            },
+            "parent": 0
+          }
+        },
+        "521": {
+          "json": {
+            "position": {
+              "x": 53.3419189453125,
+              "y": 66.05707550048828,
+              "z": 81.94084167480469
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": 0.5,
+              "z": -0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 1.1985000371932983,
+              "y": 1,
+              "z": 1.1985000371932983
+            },
+            "parent": 0
+          }
+        },
+        "522": {
+          "json": {
+            "position": {
+              "x": 62.25,
+              "y": 63,
+              "z": 89.75
+            },
+            "rotation": {
+              "x": 4.329780301713277e-17,
+              "y": 0.7071067690849304,
+              "z": -0.7071067690849304,
+              "w": 4.329780301713277e-17
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1,
+              "z": 1.25
+            },
+            "parent": 0
+          }
+        },
+        "523": {
+          "json": {
+            "position": {
+              "x": 74.67273712158203,
+              "y": 66,
+              "z": 81.25
+            },
+            "rotation": {
+              "x": -0.5,
+              "y": 0.5,
+              "z": 0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 1.2000000476837158,
+              "y": 1,
+              "z": 1.2000000476837158
+            },
+            "parent": 0
+          }
+        },
+        "524": {
+          "json": {
+            "position": {
+              "x": 74.67174530029297,
+              "y": 63,
+              "z": 65.25
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": -0.5,
+              "z": 0.5,
+              "w": 0.5
             },
             "scale": {
               "x": 1,
@@ -292,6 +397,41 @@
             "visibleMeshesCollisionMask": 3,
             "invisibleMeshesCollisionMask": 3
           }
+        },
+        "520": {
+          "json": {
+            "src": "assets/scene/Models/Breach.gltf",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "521": {
+          "json": {
+            "src": "assets/scene/Models/Breach.gltf",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "522": {
+          "json": {
+            "src": "assets/scene/Models/Breach.gltf",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "523": {
+          "json": {
+            "src": "assets/scene/Models/Breach.gltf",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "524": {
+          "json": {
+            "src": "assets/scene/Models/Breach.gltf",
+            "visibleMeshesCollisionMask": 1,
+            "invisibleMeshesCollisionMask": 3
+          }
         }
       }
     },
@@ -346,6 +486,31 @@
         "519": {
           "json": {
             "value": "LeftWeaponConsole"
+          }
+        },
+        "520": {
+          "json": {
+            "value": "Breach.gltf"
+          }
+        },
+        "521": {
+          "json": {
+            "value": "Breach.gltf_2"
+          }
+        },
+        "522": {
+          "json": {
+            "value": "Breach.gltf_3"
+          }
+        },
+        "523": {
+          "json": {
+            "value": "Breach.gltf_4"
+          }
+        },
+        "524": {
+          "json": {
+            "value": "Breach.gltf_5"
           }
         }
       }
@@ -404,6 +569,96 @@
                   "button": 3,
                   "hoverText": "Control Left Laser",
                   "maxDistance": 4,
+                  "showFeedback": true,
+                  "showHighlight": true,
+                  "maxPlayerDistance": 0,
+                  "priority": 0
+                }
+              }
+            ]
+          }
+        },
+        "520": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 3,
+                  "hoverText": "Repair Breach",
+                  "maxDistance": 10,
+                  "showFeedback": true,
+                  "showHighlight": true,
+                  "maxPlayerDistance": 0,
+                  "priority": 0
+                }
+              }
+            ]
+          }
+        },
+        "521": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 3,
+                  "hoverText": "Repair Breach",
+                  "maxDistance": 10,
+                  "showFeedback": true,
+                  "showHighlight": true,
+                  "maxPlayerDistance": 0,
+                  "priority": 0
+                }
+              }
+            ]
+          }
+        },
+        "522": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 3,
+                  "hoverText": "Repair Breach",
+                  "maxDistance": 10,
+                  "showFeedback": true,
+                  "showHighlight": true,
+                  "maxPlayerDistance": 0,
+                  "priority": 0
+                }
+              }
+            ]
+          }
+        },
+        "523": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 3,
+                  "hoverText": "Repair Breach",
+                  "maxDistance": 10,
+                  "showFeedback": true,
+                  "showHighlight": true,
+                  "maxPlayerDistance": 0,
+                  "priority": 0
+                }
+              }
+            ]
+          }
+        },
+        "524": {
+          "json": {
+            "pointerEvents": [
+              {
+                "eventType": 1,
+                "eventInfo": {
+                  "button": 3,
+                  "hoverText": "Repair Breach",
+                  "maxDistance": 10,
                   "showFeedback": true,
                   "showHighlight": true,
                   "maxPlayerDistance": 0,
@@ -511,7 +766,12 @@
                   515,
                   517,
                   519,
-                  518
+                  518,
+                  520,
+                  521,
+                  522,
+                  523,
+                  524
                 ]
               },
               {
@@ -552,6 +812,26 @@
               },
               {
                 "entity": 519,
+                "children": []
+              },
+              {
+                "entity": 520,
+                "children": []
+              },
+              {
+                "entity": 521,
+                "children": []
+              },
+              {
+                "entity": 522,
+                "children": []
+              },
+              {
+                "entity": 523,
+                "children": []
+              },
+              {
+                "entity": 524,
                 "children": []
               }
             ]
@@ -604,6 +884,21 @@
           "json": {}
         },
         "519": {
+          "json": {}
+        },
+        "520": {
+          "json": {}
+        },
+        "521": {
+          "json": {}
+        },
+        "522": {
+          "json": {}
+        },
+        "523": {
+          "json": {}
+        },
+        "524": {
           "json": {}
         }
       }

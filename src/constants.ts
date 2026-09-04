@@ -90,7 +90,7 @@ export const CELESTIAL_SPHERE_INSET = 0.75
  * (the "eye" for parallax). (0,0,0) is current behavior (avatar root / feet).
  * +Y raises the eye; try ~1.6 for typical avatar eye height. +X / +Z shift left-right / fore-aft.
  */
-export const PROJECTION_EYE_OFFSET = Vector3.create(0, -4.5, 0)
+export const PROJECTION_EYE_OFFSET = Vector3.create(0, 0, 0)
 
 /** Assumed player camera vertical FOV (degrees). Angular matching is FOV-independent. */
 export const STANDARD_PLAYER_FOV_DEGREES = 50

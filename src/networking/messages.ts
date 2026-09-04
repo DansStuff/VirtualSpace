@@ -55,7 +55,16 @@ export const Messages = {
     encounterId: Schemas.String,
     hullHp: Schemas.Int,
     inEncounter: Schemas.Boolean,
-    missionStarted: Schemas.Boolean
+    missionStarted: Schemas.Boolean,
+    turret1: Schemas.Boolean,
+    turret2: Schemas.Boolean,
+    turret3: Schemas.Boolean,
+    breach1: Schemas.Boolean,
+    breach2: Schemas.Boolean,
+    breach3: Schemas.Boolean,
+    breach4: Schemas.Boolean,
+    breach5: Schemas.Boolean,
+    breach6: Schemas.Boolean
   })
 }
 

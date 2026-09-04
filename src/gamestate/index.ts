@@ -14,7 +14,16 @@ export function defaultGameState(): GameStateSnapshot {
     encounterId: PATH_START_STOP_ID,
     hullHp: SHIP_BASE_HULL_HP,
     inEncounter: false,
-    missionStarted: false
+    missionStarted: false,
+    turret1: true,
+    turret2: true,
+    turret3: true,
+    breach1: false,
+    breach2: false,
+    breach3: false,
+    breach4: false,
+    breach5: false,
+    breach6: false
   }
 }
 
@@ -35,7 +44,16 @@ export function snapshotGameState(): GameStateSnapshot {
     encounterId: state.encounterId,
     hullHp: state.hullHp,
     inEncounter: state.inEncounter,
-    missionStarted: state.missionStarted
+    missionStarted: state.missionStarted,
+    turret1: state.turret1,
+    turret2: state.turret2,
+    turret3: state.turret3,
+    breach1: state.breach1,
+    breach2: state.breach2,
+    breach3: state.breach3,
+    breach4: state.breach4,
+    breach5: state.breach5,
+    breach6: state.breach6
   }
 }
 
@@ -45,6 +63,15 @@ export function applyGameState(data: GameStateSnapshot): void {
   state.hullHp = data.hullHp
   state.inEncounter = data.inEncounter
   state.missionStarted = data.missionStarted
+  state.turret1 = data.turret1
+  state.turret2 = data.turret2
+  state.turret3 = data.turret3
+  state.breach1 = data.breach1
+  state.breach2 = data.breach2
+  state.breach3 = data.breach3
+  state.breach4 = data.breach4
+  state.breach5 = data.breach5
+  state.breach6 = data.breach6
 }
 
 export function applyMissionStarted(encounterId: string = PATH_START_STOP_ID): void {
