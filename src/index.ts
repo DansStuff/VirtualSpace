@@ -9,6 +9,7 @@ import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
 import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
 import { onPlayerConnected, setupPlayers } from './players/stats'
+import { setupSceneObjects } from './sceneObjects'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
 import { markShipDestroyed, markTurretExited, setupUi } from './ui'
@@ -108,6 +109,7 @@ export function main() {
   setupHazards()
   setupPlayers()
   setupSpaceObjects()
+  setupSceneObjects()
   setupShipWeapons()
   engine.addSystem(ShipPathSystem)
 

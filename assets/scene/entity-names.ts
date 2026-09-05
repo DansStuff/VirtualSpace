@@ -6,11 +6,11 @@
  */
 export enum EntityNames {
   Background_gltf = "Background.gltf",
-  Breach_gltf = "Breach.gltf",
-  Breach_gltf_2 = "Breach.gltf_2",
-  Breach_gltf_3 = "Breach.gltf_3",
-  Breach_gltf_4 = "Breach.gltf_4",
-  Breach_gltf_5 = "Breach.gltf_5",
+  Breach1 = "Breach1",
+  Breach2 = "Breach2",
+  Breach3 = "Breach3",
+  Breach4 = "Breach4",
+  Breach5 = "Breach5",
   CenterWeapon = "CenterWeapon",
   CenterWeaponConsole = "CenterWeaponConsole",
   LeftWeapon = "LeftWeapon",
