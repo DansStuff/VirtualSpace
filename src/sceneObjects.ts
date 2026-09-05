@@ -12,7 +12,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
-import { WEAPON_CAMERA_LOCAL_OFFSET } from './constants'
+import { WEAPON_CAMERA_FOV_DEGREES, WEAPON_CAMERA_LOCAL_OFFSET, WEAPON_CAMERA_TRANSITION_SECONDS } from './constants'
 
 const consoleCameras = new Map<Entity, Entity>()
 let turretOccupied = false
@@ -42,7 +42,12 @@ function initWeapon(weapon: Entity): Entity {
     position: Vector3.add(pose.position, Vector3.rotate(WEAPON_CAMERA_LOCAL_OFFSET, rotation)),
     rotation
   })
-  VirtualCamera.create(camera, {})
+  VirtualCamera.create(camera, {
+    fov: WEAPON_CAMERA_FOV_DEGREES,
+    defaultTransition: {
+      transitionMode: VirtualCamera.Transition.Time(WEAPON_CAMERA_TRANSITION_SECONDS)
+    }
+  })
   return camera
 }
 

@@ -195,7 +195,13 @@ export const SHIP_LASER_WIDTH = 0.25
 export const SHIP_LASER_ORIGIN_OFFSET = Vector3.create(0, 7, -6)
 
 /** Camera-local offset from the weapon pose (+Z look, +Y up, +X right). */
-export const WEAPON_CAMERA_LOCAL_OFFSET = Vector3.create(0, 5.5, 0)
+export const WEAPON_CAMERA_LOCAL_OFFSET = Vector3.create(0, -3, 2)
+
+/** Seconds to blend into / out of a weapon VirtualCamera. */
+export const WEAPON_CAMERA_TRANSITION_SECONDS = 0.5
+
+/** Vertical FOV in degrees while a weapon VirtualCamera is active. */
+export const WEAPON_CAMERA_FOV_DEGREES = 60
 
 export const SHIP_LASER_SOUND_PATH = 'assets/scene/Sounds/laser1.mp3'
 
