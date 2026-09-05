@@ -524,60 +524,6 @@
         "protocolBuffer": "PBPointerEvents"
       },
       "data": {
-        "517": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 3,
-                  "hoverText": "Control Middle Laser",
-                  "maxDistance": 4,
-                  "showFeedback": true,
-                  "showHighlight": true,
-                  "maxPlayerDistance": 0,
-                  "priority": 0
-                }
-              }
-            ]
-          }
-        },
-        "518": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 3,
-                  "hoverText": "Control Right Laser",
-                  "maxDistance": 4,
-                  "showFeedback": true,
-                  "showHighlight": true,
-                  "maxPlayerDistance": 0,
-                  "priority": 0
-                }
-              }
-            ]
-          }
-        },
-        "519": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 3,
-                  "hoverText": "Control Left Laser",
-                  "maxDistance": 4,
-                  "showFeedback": true,
-                  "showHighlight": true,
-                  "maxPlayerDistance": 0,
-                  "priority": 0
-                }
-              }
-            ]
-          }
-        },
         "520": {
           "json": {
             "pointerEvents": [

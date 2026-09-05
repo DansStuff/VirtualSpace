@@ -22,22 +22,14 @@ import {
 import { getGameState } from './gamestate'
 import { room } from './networking/messages'
 import { lastStopId } from './path/follow'
+import { exitWeaponCamera, isTurretOccupied } from './sceneObjects'
 
-let turretOccupied = false
 let shipDestroyedUntil = 0
 
 const MISSION_STATUS_COLOR = Color4.create(0.55, 0.55, 0.55, 1)
 const SHIP_DESTROYED_COLOR = Color4.create(1, 0.2, 0.15, 1)
 const HEALTH_BAR_BACKGROUND = Color4.Red()
 const HEALTH_BAR_FOREGROUND = Color4.Green()
-
-export function markTurretOccupied() {
-  turretOccupied = true
-}
-
-export function markTurretExited() {
-  turretOccupied = false
-}
 
 export function markShipDestroyed() {
   shipDestroyedUntil = Date.now() + UI_SHIP_DESTROYED_DURATION_SECONDS * 1000
@@ -71,7 +63,7 @@ function requestNewMission() {
 }
 
 function requestLeaveTurret() {
-  markTurretExited()
+  exitWeaponCamera()
 }
 
 function inMissionHud() {
@@ -158,7 +150,7 @@ export const uiMenu = () => (
           width: UI_MISSION_STATUS_LABEL_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
           margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
-          display: inMissionHud() && !turretOccupied ? 'flex' : 'none'
+          display: inMissionHud() && !isTurretOccupied() ? 'flex' : 'none'
         }}
       />
       <Button
@@ -170,7 +162,7 @@ export const uiMenu = () => (
           width: UI_MISSION_BUTTON_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
           margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
-          display: inMissionHud() && turretOccupied ? 'flex' : 'none'
+          display: isTurretOccupied() ? 'flex' : 'none'
         }}
         onMouseDown={requestLeaveTurret}
       />

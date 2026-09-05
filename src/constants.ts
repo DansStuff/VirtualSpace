@@ -194,6 +194,9 @@ export const SHIP_LASER_WIDTH = 0.25
 /** Offset from SCENE_SHIP_POSITION to the laser origin, slightly above the ship roof. */
 export const SHIP_LASER_ORIGIN_OFFSET = Vector3.create(0, 7, -6)
 
+/** Camera-local offset from the weapon pose (+Z look, +Y up, +X right). */
+export const WEAPON_CAMERA_LOCAL_OFFSET = Vector3.create(0, 5.5, 0)
+
 export const SHIP_LASER_SOUND_PATH = 'assets/scene/Sounds/laser1.mp3'
 
 /** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */

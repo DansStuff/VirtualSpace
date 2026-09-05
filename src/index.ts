@@ -9,10 +9,10 @@ import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
 import { currentStopId, isPathFinished, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
 import { onPlayerConnected, setupPlayers } from './players/stats'
-import { setupSceneObjects } from './sceneObjects'
+import { exitWeaponCamera, setupSceneObjects } from './sceneObjects'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
-import { markShipDestroyed, markTurretExited, setupUi } from './ui'
+import { markShipDestroyed, setupUi } from './ui'
 import { setupDebugTeleportToShip } from './utilities'
 
 function setupServerRoom() {
@@ -56,7 +56,7 @@ function setupClientRoom() {
     resetPathToStart()
     despawnAllHazards()
     resetGameState()
-    markTurretExited()
+    exitWeaponCamera()
   }
 
   room.onMessage('notifyMissionStart', (data) => {
