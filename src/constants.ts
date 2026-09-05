@@ -156,11 +156,8 @@ export const HAZARD_SPIN_DEGREES_PER_SECOND = 60
 /** Max scene-space distance for the click-to-target aim cone. */
 export const HAZARD_RAYCAST_MAX_DISTANCE = 40
 
-/** Aim-assist cone half-angle (degrees) for desktop cursor clicks. */
-export const HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES = 6
-
-/** Aim-assist cone half-angle (degrees) for mobile camera-forward aim. */
-export const HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES = 12
+/** Aim-assist cone half-angle (degrees) for click-to-target. */
+export const HAZARD_AIM_CONE_HALF_ANGLE_DEGREES = 6
 
 /** Minimum time between successful target-lock requests. */
 export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5

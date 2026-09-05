@@ -2,11 +2,14 @@ import {
   engine,
   Entity,
   InputAction,
+  InputModifier,
   inputSystem,
   MainCamera,
   Name,
   PointerEvents,
   PointerEventType,
+  PointerLock,
+  TouchScreenControls,
   Transform,
   VirtualCamera
 } from '@dcl/sdk/ecs'
@@ -76,13 +79,40 @@ function initConsole(entity: Entity, name: string, camera: Entity | undefined): 
   consoleCameras.set(entity, camera)
 }
 
+function hideMobileControls(): void {
+  TouchScreenControls.hideAll()
+  TouchScreenControls.hideJoystick()
+  TouchScreenControls.hideCrosshair()
+}
+
+function showMobileControls(): void {
+  TouchScreenControls.showAll()
+  TouchScreenControls.showJoystick()
+  TouchScreenControls.showCrosshair()
+}
+
+function freezePlayer(): void {
+  InputModifier.createOrReplace(engine.PlayerEntity, {
+    mode: InputModifier.Mode.Standard({ disableAll: true })
+  })
+}
+
+function unfreezePlayer(): void {
+  InputModifier.deleteFrom(engine.PlayerEntity)
+}
+
 function occupyWeaponCamera(camera: Entity): void {
   MainCamera.getOrCreateMutable(engine.CameraEntity).virtualCameraEntity = camera
+  PointerLock.getMutable(engine.CameraEntity).isPointerLocked = false
+  hideMobileControls()
+  freezePlayer()
   turretOccupied = true
 }
 
 export function exitWeaponCamera(): void {
   MainCamera.getOrCreateMutable(engine.CameraEntity).virtualCameraEntity = undefined
+  showMobileControls()
+  unfreezePlayer()
   turretOccupied = false
 }
 
@@ -100,6 +130,8 @@ function WeaponConsoleSystem(): void {
 
 export function setupSceneObjects(): void {
   if (isServer()) return
+
+  PointerLock.createOrReplace(engine.CameraEntity, { isPointerLocked: false })
 
   const breaches: Entity[] = []
   const weapons = new Map<string, Entity>()

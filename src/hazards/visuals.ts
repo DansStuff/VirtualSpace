@@ -18,14 +18,12 @@ import {
   VisibilityComponent
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 import {
+  HAZARD_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_ASTEROID_MODEL_PATH,
   HAZARD_ASTEROID_POOL_SIZE,
-  HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_HIT_SHIP_SOUND_PATH,
   HAZARD_IMPACT_DISTANCE,
-  HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_RADIUS,
   HAZARD_RAYCAST_MAX_DISTANCE,
   HAZARD_SELECT_SOUND_PATH,
@@ -41,6 +39,7 @@ import {
 import { playGlobalSound } from '../audio/global'
 import { applyHullHp } from '../gamestate'
 import { room } from '../networking/messages'
+import { isTurretOccupied } from '../sceneObjects'
 import { shipVirtualPosition } from '../ship'
 import { AsteroidData, forgetAsteroidSpin } from '../spaceobjects/asteroids'
 import { directionFromTo } from '../utilities'
@@ -299,19 +298,10 @@ function pickHazardInAimCone(origin: Vector3, axis: Vector3, halfAngleDegrees: n
   return bestId
 }
 
-/** Desktop: camera origin + cursor world ray. Mobile: camera origin + camera forward. */
+/** Camera origin + pointer world ray (mouse or tap). */
 function targetingAim(): { origin: Vector3; axis: Vector3 } | undefined {
   if (!Transform.has(engine.CameraEntity)) return undefined
-  const camera = Transform.get(engine.CameraEntity)
-  const origin = camera.position
-
-  if (isMobile()) {
-    return {
-      origin,
-      axis: Vector3.rotate(Vector3.Forward(), camera.rotation)
-    }
-  }
-
+  const origin = Transform.get(engine.CameraEntity).position
   const axis = PrimaryPointerInfo.getOrCreateMutable(engine.RootEntity).worldRayDirection
   if (!axis) return undefined
   return { origin, axis }
@@ -322,16 +312,14 @@ function HazardTargetSystem(dt: number) {
     targetCooldownRemaining = Math.max(0, targetCooldownRemaining - dt)
   }
 
+  if (!isTurretOccupied()) return
   if (!inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN)) return
   if (targetCooldownRemaining > 0) return
 
   const aim = targetingAim()
   if (!aim) return
 
-  const halfAngle = isMobile()
-    ? HAZARD_MOBILE_AIM_CONE_HALF_ANGLE_DEGREES
-    : HAZARD_DESKTOP_AIM_CONE_HALF_ANGLE_DEGREES
-  const hazardId = pickHazardInAimCone(aim.origin, aim.axis, halfAngle)
+  const hazardId = pickHazardInAimCone(aim.origin, aim.axis, HAZARD_AIM_CONE_HALF_ANGLE_DEGREES)
   if (hazardId === undefined) return
   requestHazardTarget(hazardId)
 }
