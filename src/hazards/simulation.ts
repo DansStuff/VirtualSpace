@@ -1,14 +1,16 @@
 import { Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
-  HAZARD_CONE_HORIZONTAL_DEGREES,
   HAZARD_CONE_VERTICAL_DEGREES,
   HAZARD_DAMAGE_INTERVAL,
-  HAZARD_SPAWN_DISTANCE
+  HAZARD_SPAWN_DISTANCE,
+  TURRET_SPAWN_FRUSTUM,
+  type TurretId
 } from '../constants'
 import { damageShipHull, getGameState } from '../gamestate'
 import { room } from '../networking/messages'
 import { getPlayerDamage } from '../players/stats'
+import { getTurretView } from '../sceneObjects'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { setupHazardVisuals } from './visuals'
 
@@ -28,18 +30,22 @@ let liveHazards: LiveHazard[] = []
 const playerTarget = new Map<string, number>()
 let nextHazardId = 1
 
-function randomConeAhead(): Vector3 {
-  const yaw = (Math.random() - 0.5) * HAZARD_CONE_HORIZONTAL_DEGREES * (Math.PI / 180)
-  const pitch = Math.random() * 0.5 * HAZARD_CONE_VERTICAL_DEGREES * (Math.PI / 180)
+function directionInTurretView(turret: TurretId): Vector3 {
+  const view = getTurretView(turret)
+  const look = view ? view.look : Vector3.Forward()
+  const upRef = Math.abs(Vector3.dot(look, Vector3.Up())) > 0.99 ? Vector3.Right() : Vector3.Up()
+  const right = Vector3.normalize(Vector3.cross(upRef, look))
+  const up = Vector3.normalize(Vector3.cross(look, right))
+
+  const yawHalf = (TURRET_SPAWN_FRUSTUM.horizontalFovDegrees * TURRET_SPAWN_FRUSTUM.inset * 0.5) * (Math.PI / 180)
+  const yaw = (Math.random() * 2 - 1) * yawHalf
+  const pitch = Math.random() * HAZARD_CONE_VERTICAL_DEGREES * (Math.PI / 180)
   const cosPitch = Math.cos(pitch)
-  // +Z ahead in travel space. shipVirtualRotation includes a 180° model yaw, so travel +Z is virtual -Z.
-  const travelLocal = Vector3.create(
-    Math.sin(yaw) * cosPitch,
-    Math.sin(pitch),
-    Math.cos(yaw) * cosPitch
+  const sceneDir = Vector3.add(
+    Vector3.add(Vector3.scale(right, Math.sin(yaw) * cosPitch), Vector3.scale(up, Math.sin(pitch))),
+    Vector3.scale(look, Math.cos(yaw) * cosPitch)
   )
-  const modelLocal = Vector3.create(-travelLocal.x, travelLocal.y, -travelLocal.z)
-  return Vector3.rotate(modelLocal, shipVirtualRotation)
+  return Vector3.rotate(Vector3.normalize(sceneDir), shipVirtualRotation)
 }
 
 function hazardSpawnMessage(hazard: LiveHazard) {
@@ -119,8 +125,11 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   return true
 }
 
-export function spawn(encounterId: string, opts: { flightTime: number; hp: number; hullDamage: number }): number {
-  const position = Vector3.add(shipVirtualPosition, Vector3.scale(randomConeAhead(), HAZARD_SPAWN_DISTANCE))
+export function spawn(
+  encounterId: string,
+  opts: { turret: TurretId; flightTime: number; hp: number; hullDamage: number }
+): number {
+  const position = Vector3.add(shipVirtualPosition, Vector3.scale(directionInTurretView(opts.turret), HAZARD_SPAWN_DISTANCE))
   const hazard: LiveHazard = {
     hazardId: nextHazardId++,
     encounterId,

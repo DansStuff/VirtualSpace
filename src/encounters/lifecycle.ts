@@ -1,10 +1,14 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
+import { playGlobalSound } from '../audio/global'
 import {
   ENCOUNTER_PARAMS,
+  ENCOUNTER_STAGE_SOUND_PATH,
+  ENCOUNTER_STAGE_TELEGRAPH_SECONDS,
   HAZARD_SPAWN_INTERVAL,
   PATH_START_STOP_ID,
-  SIMULATION_MAX_DELTA_SECONDS
+  SIMULATION_MAX_DELTA_SECONDS,
+  type EncounterStage
 } from '../constants'
 import { applyEncounterActive, applyEncounterEnded, getGameState, resetGameState } from '../gamestate'
 import {
@@ -17,32 +21,47 @@ import {
 import { despawnEncounter } from '../hazards/visuals'
 import { room } from '../networking/messages'
 import { currentStopId, isPathFinished, isShipStopped, markEncounterComplete, resetPathToStart, resumeFromStop } from '../path/follow'
+import { markEncounterStage } from '../ui'
 
 const completedEncounterIds: string[] = []
 let activeEncounterId: string | null = null
-let encounterElapsed = 0
-let encounterHazardCount = 0
-let encounterFlightTime = 0
-let encounterAsteroidHp = 0
-let encounterAsteroidDamage = 0
-let spawnedThisEncounter = 0
+let activeStages: EncounterStage[] = []
+let currentStageIndex = -1
+let stageElapsed = 0
+let spawnedThisStage = 0
+
+function currentStage(): EncounterStage | undefined {
+  if (currentStageIndex < 0 || currentStageIndex >= activeStages.length) return undefined
+  return activeStages[currentStageIndex]
+}
+
+export function currentEncounterStageTurret(): string | null {
+  return currentStage()?.turret ?? null
+}
+
+function beginStage(index: number) {
+  const stage = activeStages[index]
+  if (!stage || !activeEncounterId) return
+
+  currentStageIndex = index
+  stageElapsed = 0
+  spawnedThisStage = 0
+  console.log(`[SERVER] Encounter ${activeEncounterId} stage ${index} ${stage.turret}`)
+  room.send('notifyEncounterStage', { turret: stage.turret, startedAt: Date.now() })
+}
 
 function beginEncounter(stopId: string) {
   const params = ENCOUNTER_PARAMS[stopId]
-  if (params === undefined) {
+  if (params === undefined || params.stages.length === 0) {
     if (!isPathFinished()) resumeFromStop()
     return
   }
 
   activeEncounterId = stopId
-  encounterElapsed = 0
-  encounterHazardCount = params.hazardCount
-  encounterFlightTime = params.flightTime
-  encounterAsteroidHp = params.asteroidHp
-  encounterAsteroidDamage = params.asteroidDamage
-  spawnedThisEncounter = 0
+  activeStages = params.stages
   clearLive()
   applyEncounterActive(stopId)
+  beginStage(0)
 }
 
 function endEncounter() {
@@ -51,12 +70,10 @@ function endEncounter() {
   completedEncounterIds.push(encounterId)
   clearLive()
   activeEncounterId = null
-  encounterElapsed = 0
-  encounterHazardCount = 0
-  encounterFlightTime = 0
-  encounterAsteroidHp = 0
-  encounterAsteroidDamage = 0
-  spawnedThisEncounter = 0
+  activeStages = []
+  currentStageIndex = -1
+  stageElapsed = 0
+  spawnedThisStage = 0
   applyEncounterEnded(encounterId)
   console.log(`[SERVER] Encounter ${encounterId} ended`)
   room.send('notifyEncounterEnd', { encounterId })
@@ -76,20 +93,24 @@ function EncounterSystem(dt: number) {
   }
   if (!activeEncounterId) return
 
+  const stage = currentStage()
+  if (!stage) return
+
   const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
-  encounterElapsed += step
+  stageElapsed += step
   while (
-    spawnedThisEncounter < encounterHazardCount &&
-    encounterElapsed >= spawnedThisEncounter * HAZARD_SPAWN_INTERVAL
+    spawnedThisStage < stage.hazardCount &&
+    stageElapsed >= ENCOUNTER_STAGE_TELEGRAPH_SECONDS + spawnedThisStage * HAZARD_SPAWN_INTERVAL
   ) {
     const hazardId = spawn(activeEncounterId, {
-      flightTime: encounterFlightTime,
-      hp: encounterAsteroidHp,
-      hullDamage: encounterAsteroidDamage
+      turret: stage.turret,
+      flightTime: stage.flightTime,
+      hp: stage.asteroidHp,
+      hullDamage: stage.asteroidDamage
     })
-    spawnedThisEncounter += 1
+    spawnedThisStage += 1
     console.log(
-      `[SERVER] Encounter ${activeEncounterId} spawned hazard ${hazardId} (${spawnedThisEncounter}/${encounterHazardCount})`
+      `[SERVER] Encounter ${activeEncounterId} stage ${currentStageIndex} spawned hazard ${hazardId} (${spawnedThisStage}/${stage.hazardCount})`
     )
   }
 
@@ -102,8 +123,12 @@ function EncounterSystem(dt: number) {
     return
   }
 
-  if (spawnedThisEncounter >= encounterHazardCount && !hasLive()) {
-    endEncounter()
+  if (spawnedThisStage >= stage.hazardCount && !hasLive()) {
+    if (currentStageIndex + 1 < activeStages.length) {
+      beginStage(currentStageIndex + 1)
+    } else {
+      endEncounter()
+    }
   }
 }
 
@@ -117,12 +142,10 @@ export function resetEncounterState(): void {
   completedEncounterIds.length = 0
   resetLive()
   activeEncounterId = null
-  encounterElapsed = 0
-  encounterHazardCount = 0
-  encounterFlightTime = 0
-  encounterAsteroidHp = 0
-  encounterAsteroidDamage = 0
-  spawnedThisEncounter = 0
+  activeStages = []
+  currentStageIndex = -1
+  stageElapsed = 0
+  spawnedThisStage = 0
 }
 
 export function setupEncounters() {
@@ -130,6 +153,16 @@ export function setupEncounters() {
     engine.addSystem(EncounterSystem)
     return
   }
+
+  let appliedStageAt = 0
+
+  room.onMessage('notifyEncounterStage', (data) => {
+    if (data.startedAt <= appliedStageAt) return
+    appliedStageAt = data.startedAt
+    console.log(`[CLIENT] Encounter stage: ${data.turret}`)
+    markEncounterStage(data.turret)
+    playGlobalSound(ENCOUNTER_STAGE_SOUND_PATH)
+  })
 
   room.onMessage('notifyEncounterEnd', (data) => {
     console.log(`[CLIENT] Encounter ended: ${data.encounterId}`)

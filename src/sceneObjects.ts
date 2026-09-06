@@ -15,10 +15,34 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
-import { WEAPON_CAMERA_FOV_DEGREES, WEAPON_CAMERA_LOCAL_OFFSET, WEAPON_CAMERA_TRANSITION_SECONDS } from './constants'
+import {
+  WEAPON_CAMERA_FOV_DEGREES,
+  WEAPON_CAMERA_LOCAL_OFFSET,
+  WEAPON_CAMERA_TRANSITION_SECONDS,
+  type TurretId
+} from './constants'
 
 const consoleCameras = new Map<Entity, Entity>()
 let turretOccupied = false
+
+export type TurretView = {
+  position: Vector3
+  rotation: Quaternion
+  look: Vector3
+}
+
+const turretViews = new Map<TurretId, TurretView>()
+
+export function getTurretView(id: TurretId): TurretView | undefined {
+  return turretViews.get(id)
+}
+
+function turretIdFromWeaponName(name: string): TurretId | undefined {
+  if (name === 'LeftWeapon') return 'left'
+  if (name === 'CenterWeapon') return 'center'
+  if (name === 'RightWeapon') return 'right'
+  return undefined
+}
 
 function isBreachName(name: string): boolean {
   return name.startsWith('Breach')
@@ -37,13 +61,21 @@ function initBreach(_entity: Entity): void {}
 /** Weapon GLTFs face -Z; VirtualCamera looks along +Z. */
 const WEAPON_CAMERA_YAW = Quaternion.fromEulerDegrees(0, 180, 0)
 
-function initWeapon(weapon: Entity): Entity {
+function cacheTurretView(id: TurretId, weapon: Entity): TurretView {
   const pose = Transform.get(weapon)
   const rotation = Quaternion.multiply(pose.rotation, WEAPON_CAMERA_YAW)
+  const position = Vector3.add(pose.position, Vector3.rotate(WEAPON_CAMERA_LOCAL_OFFSET, rotation))
+  const look = Vector3.normalize(Vector3.rotate(Vector3.Forward(), rotation))
+  const view: TurretView = { position, rotation, look }
+  turretViews.set(id, view)
+  return view
+}
+
+function initWeaponFromView(view: TurretView): Entity {
   const camera = engine.addEntity()
   Transform.create(camera, {
-    position: Vector3.add(pose.position, Vector3.rotate(WEAPON_CAMERA_LOCAL_OFFSET, rotation)),
-    rotation
+    position: view.position,
+    rotation: view.rotation
   })
   VirtualCamera.create(camera, {
     fov: WEAPON_CAMERA_FOV_DEGREES,
@@ -129,9 +161,7 @@ function WeaponConsoleSystem(): void {
 }
 
 export function setupSceneObjects(): void {
-  if (isServer()) return
-
-  PointerLock.createOrReplace(engine.CameraEntity, { isPointerLocked: false })
+  turretViews.clear()
 
   const breaches: Entity[] = []
   const weapons = new Map<string, Entity>()
@@ -144,6 +174,12 @@ export function setupSceneObjects(): void {
     }
     if (isWeaponName(name.value)) {
       weapons.set(name.value, entity)
+      const turretId = turretIdFromWeaponName(name.value)
+      if (turretId) {
+        cacheTurretView(turretId, entity)
+      } else {
+        console.log(`[SCENE] Unrecognized weapon name: ${name.value}`)
+      }
       continue
     }
     if (isConsoleName(name.value)) {
@@ -151,13 +187,23 @@ export function setupSceneObjects(): void {
     }
   }
 
+  const role = isServer() ? 'SERVER' : 'CLIENT'
+  console.log(`[${role}] Cached ${turretViews.size} turret views`)
+
+  if (isServer()) return
+
+  PointerLock.createOrReplace(engine.CameraEntity, { isPointerLocked: false })
+
   for (const entity of breaches) {
     initBreach(entity)
   }
 
   const cameras = new Map<string, Entity>()
-  for (const [name, entity] of weapons) {
-    cameras.set(name, initWeapon(entity))
+  for (const [name] of weapons) {
+    const turretId = turretIdFromWeaponName(name)
+    const view = turretId ? turretViews.get(turretId) : undefined
+    if (!view) continue
+    cameras.set(name, initWeaponFromView(view))
   }
 
   for (const console of consoles) {

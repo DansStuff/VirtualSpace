@@ -1,8 +1,8 @@
 import { AssetLoad, engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 import { registerGlobalSounds } from './audio/global'
-import { HAZARD_HIT_SHIP_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, PATH_START_STOP_ID, SHIP_LASER_SOUND_PATH } from './constants'
-import { resetMission, setupEncounters } from './encounters/lifecycle'
+import { ENCOUNTER_STAGE_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, PATH_START_STOP_ID, SHIP_LASER_SOUND_PATH } from './constants'
+import { currentEncounterStageTurret, resetMission, setupEncounters } from './encounters/lifecycle'
 import { applyMissionStarted, getGameState, resetGameState, setupGameState, snapshotGameState } from './gamestate'
 import { setupHazards } from './hazards/simulation'
 import { despawnAllHazards } from './hazards/visuals'
@@ -18,6 +18,10 @@ import { setupDebugTeleportToShip } from './utilities'
 function setupServerRoom() {
   function sendInitialState(playerAddress: string) {
     room.send('notifyGameState', snapshotGameState(), { to: [playerAddress] })
+    const turret = currentEncounterStageTurret()
+    if (getGameState().inEncounter && turret) {
+      room.send('notifyEncounterStage', { turret, startedAt: Date.now() }, { to: [playerAddress] })
+    }
   }
 
   room.onMessage('requestMissionStart', (_data, context) => {
@@ -105,11 +109,11 @@ function setupClientRoom() {
 
 export function main() {
   setupGameState()
+  setupSceneObjects()
   setupEncounters()
   setupHazards()
   setupPlayers()
   setupSpaceObjects()
-  setupSceneObjects()
   setupShipWeapons()
   engine.addSystem(ShipPathSystem)
 
@@ -122,8 +126,8 @@ export function main() {
   setupClientRoom()
   setupUi()
   setupDebugTeleportToShip()
-  registerGlobalSounds([HAZARD_SELECT_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH])
+  registerGlobalSounds([HAZARD_SELECT_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH, ENCOUNTER_STAGE_SOUND_PATH])
   AssetLoad.create(engine.RootEntity, {
-    assets: [SHIP_LASER_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH]
+    assets: [SHIP_LASER_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH, ENCOUNTER_STAGE_SOUND_PATH]
   })
 }

@@ -85,13 +85,6 @@ export const ASTEROID_ENCLOSING_SPHERE_RADIUS = 20
 /** Pull celestial body centers inward from the shell along the view ray (meters). */
 export const CELESTIAL_SPHERE_INSET = 0.75
 
-/**
- * Scene-space offset added to the player position used as the projection ray origin
- * (the "eye" for parallax). (0,0,0) is current behavior (avatar root / feet).
- * +Y raises the eye; try ~1.6 for typical avatar eye height. +X / +Z shift left-right / fore-aft.
- */
-export const PROJECTION_EYE_OFFSET = Vector3.create(0, 0, 0)
-
 /** Assumed player camera vertical FOV (degrees). Angular matching is FOV-independent. */
 export const STANDARD_PLAYER_FOV_DEGREES = 50
 
@@ -143,8 +136,7 @@ export const HAZARD_SPAWN_DISTANCE = 240
 /** Virtual-space distance from the ship at the end of an asteroid's flight. */
 export const HAZARD_IMPACT_DISTANCE = 8
 
-/** Random spawn cone in front of the ship (full width / height, degrees). Vertical is sampled upward only. */
-export const HAZARD_CONE_HORIZONTAL_DEGREES = 120
+/** Upward-only spawn pitch, degrees above the turret look axis. Sampled from 0 to this value. */
 export const HAZARD_CONE_VERTICAL_DEGREES = 20
 
 /** Seconds between damage ticks on a locked asteroid. First hit waits one full interval. */
@@ -217,7 +209,20 @@ export const SHIP_LASER_EMISSIVE_INTENSITY = 4
 
 // MARK: Encounters
 
-export type EncounterParams = {
+export type TurretId = 'left' | 'center' | 'right'
+
+/** Horizontal spawn frustum around a cached gun look. Vertical uses HAZARD_CONE_VERTICAL_DEGREES. */
+export const TURRET_SPAWN_FRUSTUM = {
+  /** 16:9 @ 60 vFOV is ~91; 80 keeps rocks off the bezel. */
+  horizontalFovDegrees: 80,
+  inset: 0.55
+}
+
+/** Seconds after a stage signal before the first spawn. */
+export const ENCOUNTER_STAGE_TELEGRAPH_SECONDS = 2
+
+export type EncounterStage = {
+  turret: TurretId
   hazardCount: number
   /** Seconds each asteroid exists before it hits the ship (unless shot). */
   flightTime: number
@@ -226,15 +231,29 @@ export type EncounterParams = {
   asteroidDamage: number
 }
 
-export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
-  'encounter-1': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-  'encounter-2': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-  'encounter-3': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-  'encounter-4': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-  'encounter-5': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-  'encounter-6': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-  'encounter-7': { hazardCount: 6, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 }
+export type EncounterParams = {
+  stages: EncounterStage[]
 }
+
+function defaultEncounterStages(): EncounterStage[] {
+  return [
+    { turret: 'left', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+    { turret: 'right', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+    { turret: 'center', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 }
+  ]
+}
+
+export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
+  'encounter-1': { stages: defaultEncounterStages() },
+  'encounter-2': { stages: defaultEncounterStages() },
+  'encounter-3': { stages: defaultEncounterStages() },
+  'encounter-4': { stages: defaultEncounterStages() },
+  'encounter-5': { stages: defaultEncounterStages() },
+  'encounter-6': { stages: defaultEncounterStages() },
+  'encounter-7': { stages: defaultEncounterStages() }
+}
+
+export const ENCOUNTER_STAGE_SOUND_PATH = 'assets/scene/Sounds/fail1.mp3'
 
 // MARK: UI
 
@@ -253,3 +272,7 @@ export const UI_SHIP_DESTROYED_DURATION_SECONDS = 3
 export const UI_SHIP_DESTROYED_FONT_SIZE = 48
 export const UI_SHIP_DESTROYED_LABEL_WIDTH = 720
 export const UI_SHIP_DESTROYED_LABEL_HEIGHT = 72
+export const UI_ENCOUNTER_STAGE_DURATION_SECONDS = 2
+export const UI_ENCOUNTER_STAGE_FONT_SIZE = 48
+export const UI_ENCOUNTER_STAGE_LABEL_WIDTH = 720
+export const UI_ENCOUNTER_STAGE_LABEL_HEIGHT = 72

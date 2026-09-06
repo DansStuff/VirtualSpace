@@ -45,6 +45,10 @@ export const Messages = {
   notifyEncounterEnd: Schemas.Map({
     encounterId: Schemas.String
   }),
+  notifyEncounterStage: Schemas.Map({
+    turret: Schemas.String,
+    startedAt: Schemas.Int64
+  }),
   notifyNewMission: Schemas.Map({
     resetAt: Schemas.Int64
   }),

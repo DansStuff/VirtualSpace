@@ -12,6 +12,10 @@ import {
   UI_MISSION_BUTTON_MARGIN_BOTTOM,
   UI_MISSION_BUTTON_WIDTH,
   UI_MISSION_STATUS_LABEL_WIDTH,
+  UI_ENCOUNTER_STAGE_DURATION_SECONDS,
+  UI_ENCOUNTER_STAGE_FONT_SIZE,
+  UI_ENCOUNTER_STAGE_LABEL_HEIGHT,
+  UI_ENCOUNTER_STAGE_LABEL_WIDTH,
   UI_SHIP_DESTROYED_DURATION_SECONDS,
   UI_SHIP_DESTROYED_FONT_SIZE,
   UI_SHIP_DESTROYED_LABEL_HEIGHT,
@@ -25,9 +29,12 @@ import { lastStopId } from './path/follow'
 import { exitWeaponCamera, isTurretOccupied } from './sceneObjects'
 
 let shipDestroyedUntil = 0
+let encounterStageUntil = 0
+let encounterStageTurret = ''
 
 const MISSION_STATUS_COLOR = Color4.create(0.55, 0.55, 0.55, 1)
 const SHIP_DESTROYED_COLOR = Color4.create(1, 0.2, 0.15, 1)
+const ENCOUNTER_STAGE_COLOR = Color4.create(1, 0.75, 0.2, 1)
 const HEALTH_BAR_BACKGROUND = Color4.Red()
 const HEALTH_BAR_FOREGROUND = Color4.Green()
 
@@ -35,8 +42,24 @@ export function markShipDestroyed() {
   shipDestroyedUntil = Date.now() + UI_SHIP_DESTROYED_DURATION_SECONDS * 1000
 }
 
+export function markEncounterStage(turret: string) {
+  encounterStageTurret = turret
+  encounterStageUntil = Date.now() + UI_ENCOUNTER_STAGE_DURATION_SECONDS * 1000
+}
+
 function showingShipDestroyed() {
   return Date.now() < shipDestroyedUntil
+}
+
+function showingEncounterStage() {
+  return !showingShipDestroyed() && Date.now() < encounterStageUntil
+}
+
+function encounterStageLabel(): string {
+  if (encounterStageTurret === 'left') return 'INCOMING LEFT'
+  if (encounterStageTurret === 'right') return 'INCOMING RIGHT'
+  if (encounterStageTurret === 'center') return 'INCOMING CENTER'
+  return 'INCOMING'
 }
 
 function showRestart(): boolean {
@@ -200,6 +223,29 @@ export const uiMenu = () => (
         uiTransform={{
           width: UI_SHIP_DESTROYED_LABEL_WIDTH,
           height: UI_SHIP_DESTROYED_LABEL_HEIGHT
+        }}
+      />
+    </UiEntity>
+
+    <UiEntity
+      uiTransform={{
+        width: '100%',
+        height: '100%',
+        positionType: 'absolute',
+        position: { top: 0, left: 0 },
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: showingEncounterStage() ? 'flex' : 'none'
+      }}
+    >
+      <Label
+        value={encounterStageLabel()}
+        fontSize={UI_ENCOUNTER_STAGE_FONT_SIZE}
+        color={ENCOUNTER_STAGE_COLOR}
+        textAlign="middle-center"
+        uiTransform={{
+          width: UI_ENCOUNTER_STAGE_LABEL_WIDTH,
+          height: UI_ENCOUNTER_STAGE_LABEL_HEIGHT
         }}
       />
     </UiEntity>

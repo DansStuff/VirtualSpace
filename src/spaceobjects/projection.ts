@@ -2,8 +2,7 @@ import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   CELESTIAL_SPHERE_INSET,
   PLANET_ENCLOSING_SPHERE_RADIUS,
-  PROJECTED_BODY_MIN_SCALE,
-  PROJECTION_EYE_OFFSET
+  PROJECTED_BODY_MIN_SCALE
 } from '../constants'
 import { conjugateQuaternion, directionFromTo, rotateByInverse } from '../utilities'
 
@@ -85,8 +84,8 @@ export function raySphereForwardDistance(
  * Projects a body from virtual space onto a *fixed* enclosing scene sphere.
  *
  * Direction comes from the virtual ship pose. The ray starts at the local player
- * plus PROJECTION_EYE_OFFSET (free to move inside the sphere) and hits the shell —
- * so walking closer to one side shortens that ray without moving the sphere itself.
+ * (free to move inside the sphere) and hits the shell — so walking closer to one
+ * side shortens that ray without moving the sphere itself.
  */
 export function projectVirtualBodyToSceneSphere(
   bodyVirtualPosition: Vector3,
@@ -97,7 +96,7 @@ export function projectVirtualBodyToSceneSphere(
   sphereRadius: number,
   virtualRadius: number
 ): SphereProjection {
-  const eye = Vector3.add(rayOrigin, PROJECTION_EYE_OFFSET)
+  const eye = rayOrigin
   // Step 1: world-space offset from the ship to the body in virtual coordinates.
   const offset = Vector3.subtract(bodyVirtualPosition, shipVirtualPosition)
   // Step 2: true virtual distance (for apparent size).
