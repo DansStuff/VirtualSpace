@@ -157,11 +157,21 @@ export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5
 /** Uniform scale of the billboard crosshair parented to a hazard. */
 export const HAZARD_TARGETING_INDICATOR_SCALE = 4
 
-/** Local offset of the target-count label from the reticule center (plane is 1×1). */
-export const HAZARD_TARGETING_COUNT_OFFSET = Vector3.create(0.3, -0.25, -0.1)
+/** How many targeter portraits each reticule shows. */
+export const HAZARD_TARGETING_PORTRAIT_COUNT = 3
 
-/** TextShape fontSize for the target-count label. Inverse-scaled by the reticule parent. */
-export const HAZARD_TARGETING_COUNT_FONT_SIZE = 10
+/** Radius of the portrait ring around the reticule center (plane is 1×1). */
+export const HAZARD_TARGETING_PORTRAIT_RADIUS = 0.55
+
+/** Local Z so portraits sit in front of the reticule plane. */
+export const HAZARD_TARGETING_PORTRAIT_Z = -0.1
+
+/** First portrait at 3 o'clock; remaining portraits step clockwise (downward). */
+export const HAZARD_TARGETING_PORTRAIT_START_ANGLE_DEGREES = 0
+export const HAZARD_TARGETING_PORTRAIT_STEP_DEGREES = -60
+
+/** Local scale of each portrait plane relative to the 1×1 reticule. */
+export const HAZARD_TARGETING_PORTRAIT_SCALE = 0.2
 
 /** Local offset of the "Target Locked" label from the reticule center (plane is 1×1). */
 export const HAZARD_TARGETING_LOCKED_OFFSET = Vector3.create(0, 0.55, -0.1)

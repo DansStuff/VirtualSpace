@@ -61,11 +61,11 @@ function clearTargeting() {
   playerTarget.clear()
 }
 
-function broadcastHazardTargeted(hazard: LiveHazard, playerAddress: string) {
+function broadcastHazardTargeted(hazard: LiveHazard) {
   room.send('notifyHazardTargeted', {
     hazardId: hazard.hazardId,
-    playerAddress,
-    targetCount: hazard.targetedBy.size
+    // TODO: potentially limit the number of targeters passed over the network to three
+    targeters: [...hazard.targetedBy]
   })
 }
 
@@ -100,13 +100,13 @@ function setPlayerTarget(playerAddress: string, hazardId: number) {
       if (previous.targetedBy.size === 0) {
         previous.damageElapsed = 0
       }
-      broadcastHazardTargeted(previous, playerAddress)
+      broadcastHazardTargeted(previous)
     }
   }
 
   hazard.targetedBy.add(playerAddress)
   playerTarget.set(playerAddress, hazardId)
-  broadcastHazardTargeted(hazard, playerAddress)
+  broadcastHazardTargeted(hazard)
   console.log(
     `[SERVER] Hazard ${hazardId} targeted by ${playerAddress} (count ${hazard.targetedBy.size})`
   )

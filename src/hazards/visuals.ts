@@ -28,12 +28,16 @@ import {
   HAZARD_RAYCAST_MAX_DISTANCE,
   HAZARD_SELECT_SOUND_PATH,
   HAZARD_TARGET_COOLDOWN_SECONDS,
-  HAZARD_TARGETING_COUNT_FONT_SIZE,
-  HAZARD_TARGETING_COUNT_OFFSET,
   HAZARD_TARGETING_CROSSHAIR_TEXTURE_PATH,
   HAZARD_TARGETING_INDICATOR_SCALE,
   HAZARD_TARGETING_LOCKED_FONT_SIZE,
   HAZARD_TARGETING_LOCKED_OFFSET,
+  HAZARD_TARGETING_PORTRAIT_COUNT,
+  HAZARD_TARGETING_PORTRAIT_RADIUS,
+  HAZARD_TARGETING_PORTRAIT_SCALE,
+  HAZARD_TARGETING_PORTRAIT_START_ANGLE_DEGREES,
+  HAZARD_TARGETING_PORTRAIT_STEP_DEGREES,
+  HAZARD_TARGETING_PORTRAIT_Z,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
@@ -47,8 +51,22 @@ import { directionFromTo } from '../utilities'
 type HazardVisuals = {
   entity: Entity
   targetingIndicator: Entity
-  targetingCountLabel: Entity
   targetingLockedLabel: Entity
+  portraitSlots: Entity[]
+}
+
+type SpawnedHazard = {
+  hazardId: number
+  encounterId: string
+  entity: Entity
+  targetingIndicator: Entity
+  targetingLockedLabel: Entity
+  portraitSlots: Entity[]
+  targeters: string[]
+  start: Vector3
+  end: Vector3
+  flightTime: number
+  elapsed: number
 }
 
 const free: HazardVisuals[] = []
@@ -90,23 +108,7 @@ function createHazardVisuals(): HazardVisuals {
   })
   VisibilityComponent.create(targetingIndicator, { visible: false })
 
-  const targetingCountLabel = engine.addEntity()
   const labelScale = 1 / HAZARD_TARGETING_INDICATOR_SCALE
-  Transform.create(targetingCountLabel, {
-    parent: targetingIndicator,
-    position: Vector3.clone(HAZARD_TARGETING_COUNT_OFFSET),
-    scale: Vector3.create(labelScale, labelScale, labelScale)
-  })
-  TextShape.create(targetingCountLabel, {
-    text: '',
-    fontSize: HAZARD_TARGETING_COUNT_FONT_SIZE,
-    textColor: Color4.Green(),
-    outlineColor: Color4.Black(),
-    outlineWidth: 0.4,
-    textAlign: TextAlignMode.TAM_TOP_LEFT
-  })
-  VisibilityComponent.create(targetingCountLabel, { visible: false })
-
   const targetingLockedLabel = engine.addEntity()
   Transform.create(targetingLockedLabel, {
     parent: targetingIndicator,
@@ -123,7 +125,78 @@ function createHazardVisuals(): HazardVisuals {
   })
   VisibilityComponent.create(targetingLockedLabel, { visible: false })
 
-  return { entity, targetingIndicator, targetingCountLabel, targetingLockedLabel }
+  const portraitSlots: Entity[] = []
+  for (let i = 0; i < HAZARD_TARGETING_PORTRAIT_COUNT; i++) {
+    portraitSlots.push(createPortraitSlot(targetingIndicator, i))
+  }
+
+  return { entity, targetingIndicator, targetingLockedLabel, portraitSlots }
+}
+
+function portraitPosition(index: number): Vector3 {
+  const angle =
+    (HAZARD_TARGETING_PORTRAIT_START_ANGLE_DEGREES + index * HAZARD_TARGETING_PORTRAIT_STEP_DEGREES) *
+    (Math.PI / 180)
+  return Vector3.create(
+    Math.cos(angle) * HAZARD_TARGETING_PORTRAIT_RADIUS,
+    Math.sin(angle) * HAZARD_TARGETING_PORTRAIT_RADIUS,
+    HAZARD_TARGETING_PORTRAIT_Z
+  )
+}
+
+function createPortraitSlot(parent: Entity, index: number): Entity {
+  const entity = engine.addEntity()
+  Transform.create(entity, {
+    parent,
+    position: portraitPosition(index),
+    scale: Vector3.create(
+      HAZARD_TARGETING_PORTRAIT_SCALE,
+      HAZARD_TARGETING_PORTRAIT_SCALE,
+      HAZARD_TARGETING_PORTRAIT_SCALE
+    )
+  })
+  MeshRenderer.setPlane(entity)
+  Material.setPbrMaterial(entity, {
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    castShadows: false
+  })
+  VisibilityComponent.create(entity, { visible: false })
+  return entity
+}
+
+function hidePortraitSlots(slots: Entity[]) {
+  for (const slot of slots) {
+    VisibilityComponent.getMutable(slot).visible = false
+  }
+}
+
+function stripPortraitMaterials(slots: Entity[]) {
+  for (const slot of slots) {
+    if (Material.has(slot)) Material.deleteFrom(slot)
+  }
+}
+
+function applyTargeterPortraits(hazard: SpawnedHazard) {
+  const { targeters, portraitSlots } = hazard
+  for (let i = 0; i < portraitSlots.length; i++) {
+    const slot = portraitSlots[i]
+    const address = targeters[i]
+    if (!address) {
+      VisibilityComponent.getMutable(slot).visible = false
+      if (Material.has(slot)) Material.deleteFrom(slot)
+      continue
+    }
+    const portrait = Material.Texture.Avatar({ userId: address })
+    Material.setPbrMaterial(slot, {
+      texture: portrait,
+      emissiveTexture: portrait,
+      emissiveColor: Color3.White(),
+      emissiveIntensity: 1,
+      castShadows: false
+    })
+    VisibilityComponent.getMutable(slot).visible = true
+  }
 }
 
 function acquireHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
@@ -138,26 +211,15 @@ function acquireHazard(virtualPosition: Vector3, radius: number): HazardVisuals 
 
 function releaseHazard(visuals: HazardVisuals) {
   forgetAsteroidSpin(visuals.entity)
-  VisibilityComponent.getMutable(visuals.entity).visible = false
+  hidePortraitSlots(visuals.portraitSlots)
   VisibilityComponent.getMutable(visuals.targetingIndicator).visible = false
-  VisibilityComponent.getMutable(visuals.targetingCountLabel).visible = false
   VisibilityComponent.getMutable(visuals.targetingLockedLabel).visible = false
-  TextShape.getMutable(visuals.targetingCountLabel).text = ''
-  free.push(visuals)
-}
-
-type SpawnedHazard = {
-  hazardId: number
-  encounterId: string
-  entity: Entity
-  targetingIndicator: Entity
-  targetingCountLabel: Entity
-  targetingLockedLabel: Entity
-  targetCount: number
-  start: Vector3
-  end: Vector3
-  flightTime: number
-  elapsed: number
+  VisibilityComponent.getMutable(visuals.entity).visible = false
+  try {
+    stripPortraitMaterials(visuals.portraitSlots)
+  } finally {
+    free.push(visuals)
+  }
 }
 
 const spawned: SpawnedHazard[] = []
@@ -168,7 +230,7 @@ let targetCooldownRemaining = 0
 /** Visit every live client-side hazard. Used by ship lasers for fire rate and aim. */
 export function forEachLiveHazard(visitor: (entity: Entity, targetCount: number) => void): void {
   for (const hazard of spawned) {
-    visitor(hazard.entity, hazard.targetCount)
+    visitor(hazard.entity, hazard.targeters.length)
   }
 }
 
@@ -184,11 +246,10 @@ function clearLastRequestedIf(hazardId: number) {
 
 function applyTargetingAppearance(hazard: SpawnedHazard) {
   const isLocal = hazard.hazardId === lastRequestedHazardId
-  const locked = hazard.targetCount > 0 || isLocal
-  TextShape.getMutable(hazard.targetingCountLabel).text = hazard.targetCount > 0 ? String(hazard.targetCount) : ''
+  const locked = hazard.targeters.length > 0 || isLocal
   VisibilityComponent.getMutable(hazard.targetingIndicator).visible = locked
-  VisibilityComponent.getMutable(hazard.targetingCountLabel).visible = hazard.targetCount > 0
   VisibilityComponent.getMutable(hazard.targetingLockedLabel).visible = isLocal
+  applyTargeterPortraits(hazard)
 }
 
 function virtualFlightPath(spawnPosition: Vector3): { start: Vector3; end: Vector3 } {
@@ -209,8 +270,9 @@ function despawnHazard(hazardId: number) {
   clearLastRequestedIf(hazardId)
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].hazardId !== hazardId) continue
-    releaseHazard(spawned[i])
+    const hazard = spawned[i]
     spawned.splice(i, 1)
+    releaseHazard(hazard)
     return
   }
 }
@@ -218,18 +280,19 @@ function despawnHazard(hazardId: number) {
 export function despawnEncounter(encounterId: string) {
   for (let i = spawned.length - 1; i >= 0; i--) {
     if (spawned[i].encounterId !== encounterId) continue
-    clearLastRequestedIf(spawned[i].hazardId)
-    releaseHazard(spawned[i])
+    const hazard = spawned[i]
+    clearLastRequestedIf(hazard.hazardId)
     spawned.splice(i, 1)
+    releaseHazard(hazard)
   }
 }
 
 export function despawnAllHazards() {
   lastRequestedHazardId = undefined
-  for (const hazard of spawned) {
+  const hazards = spawned.splice(0, spawned.length)
+  for (const hazard of hazards) {
     releaseHazard(hazard)
   }
-  spawned.length = 0
 }
 
 function HazardFlightSystem(dt: number) {
@@ -341,9 +404,9 @@ export function setupHazardVisuals() {
       encounterId: data.encounterId,
       entity: visuals.entity,
       targetingIndicator: visuals.targetingIndicator,
-      targetingCountLabel: visuals.targetingCountLabel,
       targetingLockedLabel: visuals.targetingLockedLabel,
-      targetCount: 0,
+      portraitSlots: visuals.portraitSlots,
+      targeters: [],
       start: path.start,
       end: path.end,
       flightTime: data.flightTime,
@@ -366,12 +429,10 @@ export function setupHazardVisuals() {
   })
 
   room.onMessage('notifyHazardTargeted', (data) => {
-    console.log(
-      `[CLIENT] Hazard ${data.hazardId} targeted by ${data.playerAddress} (count ${data.targetCount})`
-    )
+    console.log(`[CLIENT] Hazard ${data.hazardId} targeted by [${data.targeters.join(', ')}]`)
     const hazard = findSpawnedHazard(data.hazardId)
     if (!hazard) return
-    hazard.targetCount = data.targetCount
+    hazard.targeters = data.targeters
     applyTargetingAppearance(hazard)
   })
 }
