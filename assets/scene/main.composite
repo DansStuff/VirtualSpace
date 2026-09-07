@@ -330,6 +330,52 @@
             },
             "parent": 0
           }
+        },
+        "525": {
+          "json": {
+            "position": {
+              "x": 64.75,
+              "y": 64,
+              "z": 35.75
+            },
+            "scale": {
+              "x": 5.099999904632568,
+              "y": 5.099999904632568,
+              "z": 5.099999904632568
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Animator",
+      "jsonSchema": {
+        "type": "object",
+        "properties": {},
+        "serializationType": "protocol-buffer",
+        "protocolBuffer": "PBAnimator"
+      },
+      "data": {
+        "525": {
+          "json": {
+            "states": [
+              {
+                "clip": "Spin",
+                "playing": true,
+                "weight": 1,
+                "speed": 1,
+                "loop": true,
+                "shouldReset": true
+              }
+            ]
+          }
         }
       }
     },
@@ -432,6 +478,13 @@
             "visibleMeshesCollisionMask": 1,
             "invisibleMeshesCollisionMask": 3
           }
+        },
+        "525": {
+          "json": {
+            "src": "assets/scene/Models/Saucer.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
         }
       }
     },
@@ -511,6 +564,11 @@
         "524": {
           "json": {
             "value": "Breach5"
+          }
+        },
+        "525": {
+          "json": {
+            "value": "Saucer.gltf"
           }
         }
       }
@@ -717,7 +775,8 @@
                   521,
                   522,
                   523,
-                  524
+                  524,
+                  525
                 ]
               },
               {
@@ -778,6 +837,10 @@
               },
               {
                 "entity": 524,
+                "children": []
+              },
+              {
+                "entity": 525,
                 "children": []
               }
             ]
@@ -845,6 +908,9 @@
           "json": {}
         },
         "524": {
+          "json": {}
+        },
+        "525": {
           "json": {}
         }
       }
