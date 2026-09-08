@@ -4,6 +4,7 @@ import { registerGlobalSounds } from './audio/global'
 import { ENCOUNTER_STAGE_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, PATH_START_STOP_ID, SHIP_LASER_SOUND_PATH } from './constants'
 import { currentEncounterStageTurret, resetMission, setupEncounters } from './encounters/lifecycle'
 import { applyMissionStarted, getGameState, resetGameState, setupGameState, snapshotGameState } from './gamestate'
+import { setupStateMachine } from './gamestate/stateMachine'
 import { setupHazards } from './hazards/simulation'
 import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
@@ -109,6 +110,7 @@ function setupClientRoom() {
 
 export function main() {
   setupGameState()
+  setupStateMachine()
   setupSceneObjects()
   setupEncounters()
   setupHazards()
