@@ -1,7 +1,11 @@
 /**
- * Client path-follow: each frame this module writes the ship's *virtual* pose
+ * Ship path-follow: each frame this module writes the ship's *virtual* pose
  * (`shipVirtualPosition` / `shipVirtualRotation`). The visible ship Transform
  * stays fixed; other systems offset the world around that virtual pose.
+ *
+ * On the server, arriving at an authored stop calls `onStopReached` so the
+ * mission state machine can start a fight or resume. Clients still release
+ * holds from `notifyEncounterEnd`.
  *
  * Authored data is `SHIP_ROUTE.legs` (open path, no loop). Each leg is a
  * waypoint polyline whose `stopId` is the encounter at the *end* of the leg.
@@ -341,6 +345,11 @@ const state: PathState = {
 
 let skipHold = false
 const completedStops = new Set<string>()
+let onStopReached: ((stopId: string, pathFinished: boolean) => void) | null = null
+
+export function setOnStopReached(handler: ((stopId: string, pathFinished: boolean) => void) | null): void {
+  onStopReached = handler
+}
 
 function holdLogPrefix(): string {
   return isServer() ? '[SERVER]' : '[CLIENT]'
@@ -461,6 +470,7 @@ export function ShipPathSystem(dt: number): void {
   if (!leg || leg.duration <= 0) {
     enterHold(leg ? leg.stopId : null, leg)
     finishOrAdvance()
+    emitStopReached()
     return
   }
 
@@ -471,6 +481,7 @@ export function ShipPathSystem(dt: number): void {
   if (state.elapsed >= leg.duration) {
     enterHold(leg.stopId, leg)
     finishOrAdvance()
+    emitStopReached()
   }
 }
 
@@ -480,6 +491,13 @@ function finishOrAdvance(): void {
   } else {
     state.legIndex += 1
   }
+}
+
+function emitStopReached(): void {
+  if (!isServer()) return
+  const stopId = state.currentStopId
+  if (!stopId || stopId === PATH_START_STOP_ID) return
+  onStopReached?.(stopId, state.finished)
 }
 
 function enterHold(stopId: string | null, leg: PreparedLeg | undefined): void {

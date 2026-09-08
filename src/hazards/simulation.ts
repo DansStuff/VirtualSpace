@@ -1,3 +1,8 @@
+/**
+ * Server asteroid sim: spawn, targeting, damage, and expiry. Does not call
+ * `room`; the state machine installs notify callbacks at setup. Client
+ * visuals are in visuals.ts.
+ */
 import { Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
@@ -8,7 +13,6 @@ import {
   type TurretId
 } from '../constants'
 import { damageShipHull, getGameState } from '../gamestate'
-import { room } from '../networking/messages'
 import { getPlayerDamage } from '../players/stats'
 import { getTurretView } from '../sceneObjects'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
@@ -26,9 +30,25 @@ type LiveHazard = {
   targetedBy: Set<string>
 }
 
+export type HazardNotifies = {
+  notifyHazardSpawn: (data: {
+    hazardId: number
+    encounterId: string
+    position: { x: number; y: number; z: number }
+    flightTime: number
+  }) => void
+  notifyHazardTargeted: (data: { hazardId: number; targeters: string[] }) => void
+  notifyHazardDestroyed: (data: { hazardId: number; hitShip: boolean; hullHp: number }) => void
+}
+
 let liveHazards: LiveHazard[] = []
 const playerTarget = new Map<string, number>()
 let nextHazardId = 1
+let notifies: HazardNotifies | null = null
+
+export function configureHazardNotifies(next: HazardNotifies): void {
+  notifies = next
+}
 
 function directionInTurretView(turret: TurretId): Vector3 {
   const view = getTurretView(turret)
@@ -62,9 +82,8 @@ function clearTargeting() {
 }
 
 function broadcastHazardTargeted(hazard: LiveHazard) {
-  room.send('notifyHazardTargeted', {
+  notifies?.notifyHazardTargeted({
     hazardId: hazard.hazardId,
-    // TODO: potentially limit the number of targeters passed over the network to three
     targeters: [...hazard.targetedBy]
   })
 }
@@ -86,7 +105,7 @@ function damageHazard(hazardId: number, amount: number): boolean {
   return destroyHazard(hazardId, false)
 }
 
-function setPlayerTarget(playerAddress: string, hazardId: number) {
+export function setPlayerTarget(playerAddress: string, hazardId: number) {
   const hazard = liveHazards.find((h) => h.hazardId === hazardId)
   if (!hazard) return
 
@@ -120,7 +139,7 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   clearHazardLockers(hazard)
   liveHazards.splice(index, 1)
   const hullHp = hitShip ? damageShipHull(hazard.hullDamage) : getGameState().hullHp
-  room.send('notifyHazardDestroyed', { hazardId, hitShip, hullHp })
+  notifies?.notifyHazardDestroyed({ hazardId, hitShip, hullHp })
   console.log(`[SERVER] Hazard ${hazardId} destroyed (${hitShip ? 'hit ship' : 'shot'})`)
   return true
 }
@@ -142,7 +161,7 @@ export function spawn(
     targetedBy: new Set()
   }
   liveHazards.push(hazard)
-  room.send('notifyHazardSpawn', hazardSpawnMessage(hazard))
+  notifies?.notifyHazardSpawn(hazardSpawnMessage(hazard))
   return hazard.hazardId
 }
 
@@ -196,12 +215,6 @@ export function resetLive(): void {
 }
 
 export function setupHazards() {
-  if (isServer()) {
-    room.onMessage('requestHazardTarget', (data, context) => {
-      if (!context?.from) return
-      setPlayerTarget(context.from, data.hazardId)
-    })
-    return
-  }
+  if (isServer()) return
   setupHazardVisuals()
 }

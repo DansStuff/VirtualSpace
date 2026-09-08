@@ -1,20 +1,40 @@
+/**
+ * Server mission authority: legal transitions, the active Encounter, and
+ * world side effects. `nextState` is pure; `applyTransition` writes GameState,
+ * path, and notifies. Clients do not run this machine.
+ */
+import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
+import { createWaveEncounter, type Encounter } from '../encounters/encounter'
 import { ENCOUNTER_PARAMS, PATH_START_STOP_ID } from '../constants'
-import { room } from '../networking/messages'
+import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/simulation'
+import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
+import { onPlayerConnected } from '../players/stats'
+import { applyEncounterActive, applyEncounterEnded, applyMissionStarted, resetGameState, snapshotGameState } from './index'
+import {
+  notifyEncounterEnd,
+  notifyEncounterStage,
+  notifyGameStateTo,
+  notifyHazardDestroyed,
+  notifyHazardSpawn,
+  notifyHazardTargeted,
+  notifyMissionStart,
+  notifyNewMission,
+  notifyShipDestroyed,
+  setupServerInbox
+} from './serverRoom'
 
 export type MissionState = 'idle' | 'traveling' | 'inEncounter' | 'missionComplete'
 
 export type MissionEvent =
   | { type: 'MISSION_START' }
   | { type: 'STOP_REACHED'; stopId: string; pathFinished: boolean }
-  | { type: 'STAGE_CLEARED' }
   | { type: 'ENCOUNTER_CLEARED'; pathFinished: boolean }
   | { type: 'SHIP_DESTROYED' }
   | { type: 'MISSION_RESET' }
 
 let currentState: MissionState = 'idle'
-let encounterId: string | null = null
-let stageIndex = -1
+let activeEncounter: Encounter | null = null
 
 function hasEncounterStages(stopId: string): boolean {
   const params = ENCOUNTER_PARAMS[stopId]
@@ -34,7 +54,6 @@ function nextState(state: MissionState, event: MissionEvent): MissionState | nul
       }
       return null
     case 'inEncounter':
-      if (event.type === 'STAGE_CLEARED') return 'inEncounter'
       if (event.type === 'ENCOUNTER_CLEARED') return event.pathFinished ? 'missionComplete' : 'traveling'
       if (event.type === 'SHIP_DESTROYED') return 'idle'
       return null
@@ -44,64 +63,141 @@ function nextState(state: MissionState, event: MissionEvent): MissionState | nul
   }
 }
 
-function sendEncounterStageNotify(): void {
-  if (!encounterId) return
-  const turret = ENCOUNTER_PARAMS[encounterId]?.stages[stageIndex]?.turret
-  if (!turret) return
-  room.send('notifyEncounterStage', { turret, startedAt: Date.now() })
+function disposeEncounter(): void {
+  if (!activeEncounter) return
+  activeEncounter.dispose()
+  activeEncounter = null
 }
 
-function sendRoomNotify(event: MissionEvent): void {
-  if (!isServer()) return
-
-  switch (event.type) {
-    case 'MISSION_START':
-      room.send('notifyMissionStart', { encounterId: PATH_START_STOP_ID, startedAt: Date.now() })
-      return
-    case 'STOP_REACHED':
-      if (currentState === 'inEncounter') sendEncounterStageNotify()
-      return
-    case 'STAGE_CLEARED':
-      sendEncounterStageNotify()
-      return
-    case 'ENCOUNTER_CLEARED':
-      if (encounterId) room.send('notifyEncounterEnd', { encounterId })
-      return
-    case 'SHIP_DESTROYED':
-      room.send('notifyShipDestroyed', { destroyedAt: Date.now() })
-      return
-    case 'MISSION_RESET':
-      room.send('notifyNewMission', { resetAt: Date.now() })
-      return
-  }
+function resetWorld(): void {
+  disposeEncounter()
+  resetGameState()
+  resetLive()
+  resetPathToStart()
 }
 
-export function processEvent(event: MissionEvent): void {
-  const next = nextState(currentState, event)
-  if (next === null) {
-    console.log(`[STATE] Ignored ${event.type} in ${currentState}`)
+function applyTransition(from: MissionState, to: MissionState, event: MissionEvent): void {
+  console.log(`[STATE] ${from} → ${to} (${event.type})`)
+
+  if (event.type === 'MISSION_START') {
+    applyMissionStarted(PATH_START_STOP_ID)
+    resumeFromStop()
+    notifyMissionStart()
     return
   }
 
-  if (event.type === 'STOP_REACHED' && next === 'inEncounter') {
-    encounterId = event.stopId
-    stageIndex = 0
-  }
-  if (event.type === 'STAGE_CLEARED') {
-    stageIndex += 1
+  if (event.type === 'STOP_REACHED' && to === 'inEncounter') {
+    activeEncounter = createWaveEncounter(event.stopId)
+    applyEncounterActive(event.stopId)
+    const turret = activeEncounter.currentTurret()
+    if (turret) {
+      console.log(`[SERVER] Encounter ${event.stopId} stage 0 ${turret}`)
+      notifyEncounterStage(turret)
+    }
+    return
   }
 
+  if (event.type === 'STOP_REACHED' && to === 'traveling') {
+    resumeFromStop()
+    return
+  }
+
+  if (event.type === 'ENCOUNTER_CLEARED') {
+    const encounterId = activeEncounter?.id
+    disposeEncounter()
+    if (encounterId) {
+      applyEncounterEnded(encounterId)
+      console.log(`[SERVER] Encounter ${encounterId} ended`)
+      notifyEncounterEnd(encounterId)
+    }
+    if (to === 'traveling') resumeFromStop()
+    return
+  }
+
+  if (event.type === 'SHIP_DESTROYED') {
+    resetWorld()
+    notifyShipDestroyed()
+    return
+  }
+
+  if (event.type === 'MISSION_RESET') {
+    resetWorld()
+    notifyNewMission()
+  }
+}
+
+export function processEvent(event: MissionEvent): boolean {
+  const next = nextState(currentState, event)
+  if (next === null) {
+    console.log(`[STATE] Ignored ${event.type} in ${currentState}`)
+    return false
+  }
+
+  const from = currentState
   currentState = next
-  sendRoomNotify(event)
+  applyTransition(from, next, event)
+  return true
+}
 
-  if (next !== 'inEncounter') {
-    encounterId = null
-    stageIndex = -1
+function EncounterTickSystem(dt: number): void {
+  if (!activeEncounter) return
+
+  const result = activeEncounter.tick(dt)
+  if (result === 'stageStarted') {
+    const turret = activeEncounter.currentTurret()
+    if (turret) notifyEncounterStage(turret)
+    return
+  }
+  if (result === 'cleared') {
+    processEvent({ type: 'ENCOUNTER_CLEARED', pathFinished: isPathFinished() })
+    return
+  }
+  if (result === 'shipDestroyed') {
+    processEvent({ type: 'SHIP_DESTROYED' })
   }
 }
 
 export function setupStateMachine(): void {
   currentState = 'idle'
-  encounterId = null
-  stageIndex = -1
+  disposeEncounter()
+
+  if (!isServer()) return
+
+  configureHazardNotifies({
+    notifyHazardSpawn,
+    notifyHazardTargeted,
+    notifyHazardDestroyed
+  })
+
+  setOnStopReached((stopId, pathFinished) => {
+    processEvent({ type: 'STOP_REACHED', stopId, pathFinished })
+  })
+
+  setupServerInbox({
+    onMissionStart: (from) => {
+      if (processEvent({ type: 'MISSION_START' })) {
+        console.log(`[SERVER] Mission started (${PATH_START_STOP_ID}) by ${from}`)
+      }
+    },
+    onNewMission: (from) => {
+      if (processEvent({ type: 'MISSION_RESET' })) {
+        console.log(`[SERVER] Mission reset by ${from}`)
+      }
+    },
+    onInitialState: (from) => {
+      console.log(`[SERVER] Initial state requested by ${from}`)
+      onPlayerConnected(from)
+      notifyGameStateTo(from, snapshotGameState())
+      const turret = activeEncounter?.currentTurret()
+      if (currentState === 'inEncounter' && turret) {
+        notifyEncounterStage(turret, from)
+      }
+    },
+    onHazardTarget: (from, hazardId) => {
+      if (currentState !== 'inEncounter') return
+      setPlayerTarget(from, hazardId)
+    }
+  })
+
+  engine.addSystem(EncounterTickSystem)
 }
