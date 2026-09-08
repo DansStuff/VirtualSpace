@@ -1,26 +1,3 @@
-code:
-
-
-portraits around reticule:
-
-notifyHazardTargeted payload should contain an array of current targeters instead of most recent targeter and count
-
-notifyHazardTargeted: Schemas.Map({
-  hazardId: Schemas.Int,
-  playerAddress: Schemas.String,
-  targetCount: Schemas.Int
-}),
-
-new targeting:
-
-hazards/selection.ts
-  SelectedHazardComponent + entity in module
-  HazardSelector system with raycast (or current conecast for now)
-
-
-replace conecast with raycast against larger collider
-track current targeted hazard in a component
-
 
 
 
