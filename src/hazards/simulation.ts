@@ -13,7 +13,7 @@ import {
   type TurretId
 } from '../constants'
 import { activateRandomBreach, damageShipHull } from '../gamestate'
-import { getPlayerDamage } from '../players/stats'
+import { getGunnerLevel } from '../players/stats'
 import { getKnownBreachIds, getTurretView } from '../sceneObjects'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { setupHazardVisuals } from './visuals'
@@ -197,7 +197,7 @@ export function tick(dt: number): void {
     if (!hazard) continue
     while (hazard.damageElapsed >= HAZARD_DAMAGE_INTERVAL) {
       hazard.damageElapsed -= HAZARD_DAMAGE_INTERVAL
-      const amount = [...hazard.targetedBy].reduce((sum, address) => sum + getPlayerDamage(address), 0)
+      const amount = [...hazard.targetedBy].reduce((sum, address) => sum + getGunnerLevel(address), 0)
       if (amount <= 0) break
       if (!damageHazard(hazardId, amount)) break
     }
