@@ -10,11 +10,10 @@ import { ENCOUNTER_PARAMS, PATH_START_STOP_ID } from '../constants'
 import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/simulation'
 import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
 import { onPlayerConnected } from '../players/stats'
-import { applyEncounterActive, applyEncounterEnded, applyMissionStarted, resetGameState, snapshotGameState } from './index'
+import { applyEncounterActive, applyEncounterEnded, applyMissionStarted, repairBreach, resetGameState } from './index'
 import {
   notifyEncounterEnd,
   notifyEncounterStage,
-  notifyGameStateTo,
   notifyHazardDestroyed,
   notifyHazardSpawn,
   notifyHazardTargeted,
@@ -187,7 +186,6 @@ export function setupStateMachine(): void {
     onInitialState: (from) => {
       console.log(`[SERVER] Initial state requested by ${from}`)
       onPlayerConnected(from)
-      notifyGameStateTo(from, snapshotGameState())
       const turret = activeEncounter?.currentTurret()
       if (currentState === 'inEncounter' && turret) {
         notifyEncounterStage(turret, from)
@@ -196,6 +194,11 @@ export function setupStateMachine(): void {
     onHazardTarget: (from, hazardId) => {
       if (currentState !== 'inEncounter') return
       setPlayerTarget(from, hazardId)
+    },
+    onRepairBreach: (from, breachId) => {
+      if (repairBreach(breachId)) {
+        console.log(`[SERVER] Breach ${breachId} repaired by ${from}`)
+      }
     }
   })
 

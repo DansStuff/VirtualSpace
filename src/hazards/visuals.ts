@@ -41,7 +41,6 @@ import {
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
-import { applyHullHp } from '../gamestate'
 import { room } from '../networking/messages'
 import { isTurretOccupied } from '../sceneObjects'
 import { shipVirtualPosition } from '../ship'
@@ -424,7 +423,6 @@ export function setupHazardVisuals() {
     if (data.hitShip) {
       playGlobalSound(HAZARD_HIT_SHIP_SOUND_PATH)
     }
-    applyHullHp(data.hullHp)
     despawnHazard(data.hazardId)
   })
 

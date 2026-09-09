@@ -19,6 +19,9 @@ export const Messages = {
   requestNewMission: Schemas.Map({
     requestedAt: Schemas.Int64
   }),
+  requestRepairBreach: Schemas.Map({
+    breachId: Schemas.Int
+  }),
 
   // Server → Client
   notifyMissionStart: Schemas.Map({
@@ -38,8 +41,7 @@ export const Messages = {
   notifyHazardDestroyed: Schemas.Map({
     hazardId: Schemas.Int,
     /** true = hit the ship; false = shot down */
-    hitShip: Schemas.Boolean,
-    hullHp: Schemas.Int
+    hitShip: Schemas.Boolean
   }),
   notifyEncounterEnd: Schemas.Map({
     encounterId: Schemas.String
@@ -53,21 +55,6 @@ export const Messages = {
   }),
   notifyShipDestroyed: Schemas.Map({
     destroyedAt: Schemas.Int64
-  }),
-  notifyGameState: Schemas.Map({
-    encounterId: Schemas.String,
-    hullHp: Schemas.Int,
-    inEncounter: Schemas.Boolean,
-    missionStarted: Schemas.Boolean,
-    turret1: Schemas.Boolean,
-    turret2: Schemas.Boolean,
-    turret3: Schemas.Boolean,
-    breach1: Schemas.Boolean,
-    breach2: Schemas.Boolean,
-    breach3: Schemas.Boolean,
-    breach4: Schemas.Boolean,
-    breach5: Schemas.Boolean,
-    breach6: Schemas.Boolean
   })
 }
 

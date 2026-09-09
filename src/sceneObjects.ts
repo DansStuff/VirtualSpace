@@ -11,18 +11,22 @@ import {
   PointerLock,
   TouchScreenControls,
   Transform,
-  VirtualCamera
+  VirtualCamera,
+  VisibilityComponent
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
-import { isServer } from '@dcl/sdk/network'
+import { isServer, isStateSyncronized } from '@dcl/sdk/network'
 import {
   WEAPON_CAMERA_FOV_DEGREES,
   WEAPON_CAMERA_LOCAL_OFFSET,
   WEAPON_CAMERA_TRANSITION_SECONDS,
   type TurretId
 } from './constants'
+import { getGameState, isBreachActive } from './gamestate'
+import { room } from './networking/messages'
 
 const consoleCameras = new Map<Entity, Entity>()
+const breachEntities = new Map<number, Entity>()
 let turretOccupied = false
 
 export type TurretView = {
@@ -48,6 +52,18 @@ function isBreachName(name: string): boolean {
   return name.startsWith('Breach')
 }
 
+function breachIdFromName(name: string): number | undefined {
+  const match = /^Breach(\d+)$/.exec(name)
+  if (!match) return undefined
+  const id = Number(match[1])
+  if (id < 1 || id > 6) return undefined
+  return id
+}
+
+export function getKnownBreachIds(): number[] {
+  return [...breachEntities.keys()]
+}
+
 function isConsoleName(name: string): boolean {
   return name.endsWith('WeaponConsole')
 }
@@ -56,7 +72,23 @@ function isWeaponName(name: string): boolean {
   return name.endsWith('Weapon')
 }
 
-function initBreach(_entity: Entity): void {}
+function initBreach(entity: Entity): void {
+  VisibilityComponent.createOrReplace(entity, { visible: false, propagateToChildren: true })
+  PointerEvents.create(entity, {
+    pointerEvents: [
+      {
+        eventType: PointerEventType.PET_DOWN,
+        eventInfo: {
+          button: InputAction.IA_POINTER,
+          hoverText: 'Repair Breach!',
+          maxDistance: 4,
+          showFeedback: true,
+          showHighlight: true
+        }
+      }
+    ]
+  })
+}
 
 /** Weapon GLTFs face -Z; VirtualCamera looks along +Z. */
 const WEAPON_CAMERA_YAW = Quaternion.fromEulerDegrees(0, 180, 0)
@@ -160,16 +192,42 @@ function WeaponConsoleSystem(): void {
   }
 }
 
+function BreachVisibilitySystem(): void {
+  const state = getGameState()
+  for (const [id, entity] of breachEntities) {
+    const visible = isBreachActive(state, id)
+    const current = VisibilityComponent.getOrNull(entity)
+    if (current && current.visible === visible) continue
+    VisibilityComponent.createOrReplace(entity, { visible, propagateToChildren: true })
+  }
+}
+
+function BreachRepairSystem(): void {
+  if (!isStateSyncronized()) return
+  const state = getGameState()
+  for (const [id, entity] of breachEntities) {
+    if (!isBreachActive(state, id)) continue
+    if (inputSystem.getInputCommand(InputAction.IA_POINTER, PointerEventType.PET_DOWN, entity)) {
+      room.send('requestRepairBreach', { breachId: id })
+    }
+  }
+}
+
 export function setupSceneObjects(): void {
   turretViews.clear()
+  breachEntities.clear()
 
-  const breaches: Entity[] = []
   const weapons = new Map<string, Entity>()
   const consoles: { entity: Entity; name: string }[] = []
 
   for (const [entity, name] of engine.getEntitiesWith(Name)) {
     if (isBreachName(name.value)) {
-      breaches.push(entity)
+      const breachId = breachIdFromName(name.value)
+      if (breachId === undefined) {
+        console.log(`[SCENE] Unrecognized breach name: ${name.value}`)
+        continue
+      }
+      breachEntities.set(breachId, entity)
       continue
     }
     if (isWeaponName(name.value)) {
@@ -188,13 +246,13 @@ export function setupSceneObjects(): void {
   }
 
   const role = isServer() ? 'SERVER' : 'CLIENT'
-  console.log(`[${role}] Cached ${turretViews.size} turret views`)
+  console.log(`[${role}] Cached ${turretViews.size} turret views, ${breachEntities.size} breaches`)
 
   if (isServer()) return
 
   PointerLock.createOrReplace(engine.CameraEntity, { isPointerLocked: false })
 
-  for (const entity of breaches) {
+  for (const entity of breachEntities.values()) {
     initBreach(entity)
   }
 
@@ -212,4 +270,6 @@ export function setupSceneObjects(): void {
   }
 
   engine.addSystem(WeaponConsoleSystem)
+  engine.addSystem(BreachVisibilitySystem)
+  engine.addSystem(BreachRepairSystem)
 }

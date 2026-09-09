@@ -36,6 +36,9 @@ export const SHIP_MODEL_YAW_DEGREES = 180
 /** Starting hull hit points. The HUD bar is hullHp / this value. */
 export const SHIP_BASE_HULL_HP = 100
 
+/** Hull HP restored the first time a breach is repaired. Later repairs of the same breach are no-ops. */
+export const BREACH_REPAIR_HP = 10
+
 // MARK: Path
 
 /**

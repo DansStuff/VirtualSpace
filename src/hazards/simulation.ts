@@ -12,9 +12,9 @@ import {
   TURRET_SPAWN_FRUSTUM,
   type TurretId
 } from '../constants'
-import { damageShipHull, getGameState } from '../gamestate'
+import { activateRandomBreach, damageShipHull } from '../gamestate'
 import { getPlayerDamage } from '../players/stats'
-import { getTurretView } from '../sceneObjects'
+import { getKnownBreachIds, getTurretView } from '../sceneObjects'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { setupHazardVisuals } from './visuals'
 
@@ -38,7 +38,7 @@ export type HazardNotifies = {
     flightTime: number
   }) => void
   notifyHazardTargeted: (data: { hazardId: number; targeters: string[] }) => void
-  notifyHazardDestroyed: (data: { hazardId: number; hitShip: boolean; hullHp: number }) => void
+  notifyHazardDestroyed: (data: { hazardId: number; hitShip: boolean }) => void
 }
 
 let liveHazards: LiveHazard[] = []
@@ -138,8 +138,14 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   const hazard = liveHazards[index]
   clearHazardLockers(hazard)
   liveHazards.splice(index, 1)
-  const hullHp = hitShip ? damageShipHull(hazard.hullDamage) : getGameState().hullHp
-  notifies?.notifyHazardDestroyed({ hazardId, hitShip, hullHp })
+  if (hitShip) {
+    damageShipHull(hazard.hullDamage)
+    const breachId = activateRandomBreach(getKnownBreachIds())
+    if (breachId !== null) {
+      console.log(`[SERVER] Breach ${breachId} opened`)
+    }
+  }
+  notifies?.notifyHazardDestroyed({ hazardId, hitShip })
   console.log(`[SERVER] Hazard ${hazardId} destroyed (${hitShip ? 'hit ship' : 'shot'})`)
   return true
 }

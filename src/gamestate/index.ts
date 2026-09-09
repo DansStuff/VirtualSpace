@@ -1,11 +1,16 @@
 import { engine, Entity } from '@dcl/sdk/ecs'
-import { isServer } from '@dcl/sdk/network'
-import { PATH_START_STOP_ID, SHIP_BASE_HULL_HP } from '../constants'
-import { room } from '../networking/messages'
+import { isServer, syncEntity } from '@dcl/sdk/network'
+import { BREACH_REPAIR_HP, PATH_START_STOP_ID, SHIP_BASE_HULL_HP } from '../constants'
 import { isPathFinished, resumeFromStop, teleportToStop } from '../path/follow'
 import { GameState, type GameStateSnapshot } from './schema'
 
 export { GameState, type GameStateSnapshot } from './schema'
+
+const GAME_STATE_SYNC_ID = 1
+const RESERVED_ENTITY_SLOT = 512
+
+const BREACH_FIELDS = ['breach1', 'breach2', 'breach3', 'breach4', 'breach5', 'breach6'] as const
+type BreachField = (typeof BREACH_FIELDS)[number]
 
 let stateEntity: Entity | null = null
 
@@ -34,27 +39,61 @@ function stateEntityOrThrow(): Entity {
   return stateEntity
 }
 
-export function getGameState(): GameStateSnapshot {
-  return GameState.get(stateEntityOrThrow())
+function breachField(id: number): BreachField | undefined {
+  return BREACH_FIELDS[id - 1]
 }
 
-export function snapshotGameState(): GameStateSnapshot {
-  const state = getGameState()
-  return {
-    encounterId: state.encounterId,
-    hullHp: state.hullHp,
-    inEncounter: state.inEncounter,
-    missionStarted: state.missionStarted,
-    turret1: state.turret1,
-    turret2: state.turret2,
-    turret3: state.turret3,
-    breach1: state.breach1,
-    breach2: state.breach2,
-    breach3: state.breach3,
-    breach4: state.breach4,
-    breach5: state.breach5,
-    breach6: state.breach6
+export function isBreachActive(state: GameStateSnapshot, id: number): boolean {
+  const field = breachField(id)
+  return field !== undefined && state[field]
+}
+
+export function activateRandomBreach(knownIds: number[]): number | null {
+  const state = GameState.getMutable(stateEntityOrThrow())
+  const hidden = knownIds.filter((id) => {
+    const field = breachField(id)
+    return field !== undefined && !state[field]
+  })
+  if (hidden.length === 0) return null
+  const id = hidden[Math.floor(Math.random() * hidden.length)]
+  const field = breachField(id)
+  if (!field) return null
+  state[field] = true
+  return id
+}
+
+/** Hide a breach and restore hull HP. No-op (and no HP) if already repaired. */
+export function repairBreach(id: number): boolean {
+  const field = breachField(id)
+  if (!field) return false
+  const state = GameState.getMutable(stateEntityOrThrow())
+  if (!state[field]) return false
+  state[field] = false
+  state.hullHp = Math.min(SHIP_BASE_HULL_HP, state.hullHp + BREACH_REPAIR_HP)
+  return true
+}
+
+function bindClientGameState(): boolean {
+  if (stateEntity !== null) return true
+  for (const [entity] of engine.getEntitiesWith(GameState)) {
+    if ((entity & 0xffff) < RESERVED_ENTITY_SLOT) continue
+    stateEntity = entity
+    placeFromGameState()
+    const state = getGameState()
+    console.log(
+      `[CLIENT] GameState bound: ${state.encounterId} mission=${state.missionStarted} hull=${state.hullHp}`
+    )
+    return true
   }
+  return false
+}
+
+export function getGameState(): GameStateSnapshot {
+  if (!isServer() && stateEntity === null) {
+    bindClientGameState()
+  }
+  if (stateEntity === null) return defaultGameState()
+  return GameState.getOrNull(stateEntity) ?? defaultGameState()
 }
 
 export function applyGameState(data: GameStateSnapshot): void {
@@ -97,10 +136,6 @@ export function resetGameState(): void {
   applyGameState(defaultGameState())
 }
 
-export function applyHullHp(hullHp: number): void {
-  GameState.getMutable(stateEntityOrThrow()).hullHp = Math.max(0, hullHp)
-}
-
 export function damageShipHull(amount: number): number {
   const state = GameState.getMutable(stateEntityOrThrow())
   state.hullHp = Math.max(0, state.hullHp - amount)
@@ -126,17 +161,20 @@ export function placeFromGameState(): void {
 }
 
 export function setupGameState(): void {
-  if (stateEntity !== null) return
-  stateEntity = engine.addEntity()
-  GameState.create(stateEntity, defaultGameState())
+  if (isServer()) {
+    if (stateEntity !== null) return
+    stateEntity = engine.addEntity()
+    GameState.create(stateEntity, defaultGameState())
+    syncEntity(stateEntity, [GameState.componentId], GAME_STATE_SYNC_ID)
+    return
+  }
 
-  if (isServer()) return
-
-  room.onMessage('notifyGameState', (data) => {
-    applyGameState(data)
-    placeFromGameState()
-    console.log(
-      `[CLIENT] Game state snapshot: ${data.encounterId} mission=${data.missionStarted} fight=${data.inEncounter} hull=${data.hullHp}`
-    )
+  bindClientGameState()
+  engine.addSystem(function BindGameStateSystem() {
+    if (stateEntity !== null && !GameState.getOrNull(stateEntity)) {
+      stateEntity = null
+    }
+    if (stateEntity !== null) return
+    bindClientGameState()
   })
 }

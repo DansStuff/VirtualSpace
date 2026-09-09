@@ -4,7 +4,6 @@
  */
 import { PATH_START_STOP_ID } from '../constants'
 import { room } from '../networking/messages'
-import type { GameStateSnapshot } from './schema'
 
 export type HazardSpawnNotify = {
   hazardId: number
@@ -21,7 +20,6 @@ export type HazardTargetedNotify = {
 export type HazardDestroyedNotify = {
   hazardId: number
   hitShip: boolean
-  hullHp: number
 }
 
 export type ServerInboxHandlers = {
@@ -29,6 +27,7 @@ export type ServerInboxHandlers = {
   onNewMission: (playerAddress: string) => void
   onInitialState: (playerAddress: string) => void
   onHazardTarget: (playerAddress: string, hazardId: number) => void
+  onRepairBreach: (playerAddress: string, breachId: number) => void
 }
 
 export function notifyMissionStart(): void {
@@ -54,10 +53,6 @@ export function notifyEncounterStage(turret: string, to?: string): void {
     return
   }
   room.send('notifyEncounterStage', payload)
-}
-
-export function notifyGameStateTo(playerAddress: string, snapshot: GameStateSnapshot): void {
-  room.send('notifyGameState', snapshot, { to: [playerAddress] })
 }
 
 export function notifyHazardSpawn(data: HazardSpawnNotify): void {
@@ -95,5 +90,10 @@ export function setupServerInbox(handlers: ServerInboxHandlers): void {
   room.onMessage('requestHazardTarget', (data, context) => {
     if (!context?.from) return
     handlers.onHazardTarget(context.from, data.hazardId)
+  })
+
+  room.onMessage('requestRepairBreach', (data, context) => {
+    if (!context?.from) return
+    handlers.onRepairBreach(context.from, data.breachId)
   })
 }
