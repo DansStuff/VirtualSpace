@@ -12,7 +12,6 @@ import { isServer } from '@dcl/sdk/network'
 import {
   PLANET_CULL_BEHIND_HALF_ANGLE_DEGREES,
   PLANET_ENCLOSING_SPHERE_RADIUS,
-  SCENE_SHIP_POSITION,
   STAR_BASE_COLOR,
   STAR_MODEL_PATH,
   STAR_SPAWN_COUNT_DEFAULT,
@@ -22,14 +21,11 @@ import {
 import { SHIP_ROUTE } from '../path/route'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { directionFromTo, rotateByInverse } from '../utilities'
-import { AsteroidSystem } from './asteroids'
-import { projectVirtualBodyToSceneSphere } from './projection'
+import { ProjectedBody, ProjectedBodySystem } from './projection'
+import { TumbleSystem } from './tumble'
 
 export const PlanetData = engine.defineComponent('PlanetData', {
-  position: Schemas.Vector3,
-  name: Schemas.String,
-  /** Virtual-space radius. Imported models are authored at radius 1; this drives apparent size. */
-  radius: Schemas.Float
+  name: Schemas.String
 })
 
 /** Tag for bodies hidden when they sit in the ship's rear cull cone. */
@@ -52,14 +48,15 @@ export function createPlanet(
   const entity = engine.addEntity()
 
   // Models must be origin-centered with radius 1. Baked glTF node translations get multiplied
-  // by Transform.scale and will fling the mesh off-screen once PlanetSystem applies apparent size.
+  // by Transform.scale and will fling the mesh off-screen once ProjectedBodySystem applies apparent size.
   GltfContainer.create(entity, { src: modelPath })
   Transform.create(entity, { position: data.position })
-  PlanetData.create(entity, {
-    name: data.name,
+  ProjectedBody.create(entity, {
     position: data.position,
-    radius: data.radius
+    radius: data.radius,
+    shellRadius: PLANET_ENCLOSING_SPHERE_RADIUS
   })
+  PlanetData.create(entity, { name: data.name })
   if (cullable) {
     Cullable.create(entity)
     VisibilityComponent.create(entity, { visible: true })
@@ -99,7 +96,7 @@ function applyStarOrangeTint(entity: Entity, tintStrength: number): void {
 
 /**
  * Spawns distant background stars at varied directions, all at STAR_SPAWN_DISTANCE.
- * Uses PlanetData so PlanetSystem projects them onto the enclosing sphere.
+ * Uses ProjectedBody so they share the planet enclosing sphere.
  */
 export function spawnDistantStars(count: number = STAR_SPAWN_COUNT_DEFAULT): void {
   for (let i = 0; i < count; i++) {
@@ -145,51 +142,12 @@ export function spawnPlanetsFromRoute(): void {
 }
 
 /**
- * Each frame, reproject every planet onto the fixed enclosing sphere at scene center.
- * Rays start at the local player (inside the sphere) and travel in the virtual
- * celestial direction until they hit the shell.
- */
-export function PlanetSystem(_dt: number) {
-  // Step 1: read the ship's virtual pose (not the fixed scene Transform).
-  const virtualPosition = shipVirtualPosition
-  const virtualRotation = shipVirtualRotation
-
-  // Step 2: ray origin is the player; sphere stays fixed at the ship / scene anchor.
-  let rayOrigin = SCENE_SHIP_POSITION
-  if (Transform.has(engine.PlayerEntity)) {
-    rayOrigin = Transform.get(engine.PlayerEntity).position
-  }
-
-  // Step 3: visit every planet that has both simulation data and a scene Transform.
-  for (const [entity, planet] of engine.getEntitiesWith(PlanetData, Transform)) {
-    // Step 4: get a writable Transform so we can move/scale the visible planet model.
-    const transform = Transform.getMutable(entity)
-
-    // Step 5: player → celestial direction → intersection with the fixed sphere.
-    const projection = projectVirtualBodyToSceneSphere(
-      planet.position,
-      virtualPosition,
-      virtualRotation,
-      SCENE_SHIP_POSITION,
-      rayOrigin,
-      PLANET_ENCLOSING_SPHERE_RADIUS,
-      planet.radius
-    )
-
-    // Step 6: apply projected pose (center on the fixed enclosing sphere).
-    transform.position = projection.position
-    transform.rotation = projection.rotation
-    transform.scale = Vector3.create(projection.scale, projection.scale, projection.scale)
-  }
-}
-
-/**
  * Hide Cullable planets that sit in a 90° cone behind the ship (45° either side of the stern).
  * Scene +Z is aft; uses virtual pose so walking the deck does not pop visibility.
  */
 export function PlanetCuller(_dt: number) {
-  for (const [entity, planet] of engine.getEntitiesWith(PlanetData, Cullable, VisibilityComponent)) {
-    const worldDirection = directionFromTo(shipVirtualPosition, planet.position)
+  for (const [entity, body] of engine.getEntitiesWith(ProjectedBody, Cullable, VisibilityComponent)) {
+    const worldDirection = directionFromTo(shipVirtualPosition, body.position)
     const localDirection = rotateByInverse(worldDirection, shipVirtualRotation)
     const visible = localDirection.z < CULL_BEHIND_DOT
     const visibility = VisibilityComponent.getMutable(entity)
@@ -203,8 +161,7 @@ export function setupSpaceObjects() {
   if (isServer()) return
   spawnPlanetsFromRoute()
   spawnDistantStars(40)
-  // setupAsteroids()
-  engine.addSystem(PlanetSystem)
+  engine.addSystem(ProjectedBodySystem)
   engine.addSystem(PlanetCuller)
-  engine.addSystem(AsteroidSystem)
+  engine.addSystem(TumbleSystem)
 }

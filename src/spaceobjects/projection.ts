@@ -1,10 +1,23 @@
+import { engine, Schemas, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   CELESTIAL_SPHERE_INSET,
   PLANET_ENCLOSING_SPHERE_RADIUS,
-  PROJECTED_BODY_MIN_SCALE
+  PROJECTED_BODY_MIN_SCALE,
+  SCENE_SHIP_POSITION
 } from '../constants'
+import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { conjugateQuaternion, directionFromTo, rotateByInverse } from '../utilities'
+
+/**
+ * Virtual-space body projected onto a scene enclosing sphere.
+ * `shellRadius` chooses the planet shell vs the closer asteroid/saucer shell.
+ */
+export const ProjectedBody = engine.defineComponent('ProjectedBody', {
+  position: Schemas.Vector3,
+  radius: Schemas.Float,
+  shellRadius: Schemas.Float
+})
 
 /**
  * Angular radius (radians) of a virtual body as seen from the ship.
@@ -128,4 +141,38 @@ export function projectVirtualBodyToSceneSphere(
   const rotation = stationaryBodySceneRotation(shipVirtualRotation)
 
   return { position, rotation, scale, distance }
+}
+
+/**
+ * Reproject every visible `ProjectedBody` onto its `shellRadius` sphere.
+ * Tumble (asteroids) is a separate system that must run after this, because
+ * projection overwrites Transform.rotation.
+ */
+export function ProjectedBodySystem(_dt: number) {
+  const virtualPosition = shipVirtualPosition
+  const virtualRotation = shipVirtualRotation
+
+  let rayOrigin = SCENE_SHIP_POSITION
+  if (Transform.has(engine.PlayerEntity)) {
+    rayOrigin = Transform.get(engine.PlayerEntity).position
+  }
+
+  for (const [entity, body] of engine.getEntitiesWith(ProjectedBody, Transform)) {
+    if (VisibilityComponent.has(entity) && !VisibilityComponent.get(entity).visible) continue
+
+    const projection = projectVirtualBodyToSceneSphere(
+      body.position,
+      virtualPosition,
+      virtualRotation,
+      SCENE_SHIP_POSITION,
+      rayOrigin,
+      body.shellRadius,
+      body.radius
+    )
+
+    const transform = Transform.getMutable(entity)
+    transform.position = projection.position
+    transform.rotation = projection.rotation
+    transform.scale = Vector3.create(projection.scale, projection.scale, projection.scale)
+  }
 }
