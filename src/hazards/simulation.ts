@@ -1,7 +1,7 @@
 /**
- * Server asteroid sim: spawn, targeting, damage, and expiry. Does not call
- * `room`; the state machine installs notify callbacks at setup. Client
- * visuals are in visuals.ts.
+ * Server hazard sim: spawn, targeting, damage, asteroid expiry, and saucer fire.
+ * Does not call `room`; the state machine installs notify callbacks at setup.
+ * Client visuals are in visuals.ts.
  */
 import { Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
@@ -9,24 +9,32 @@ import {
   HAZARD_CONE_VERTICAL_DEGREES,
   HAZARD_DAMAGE_INTERVAL,
   HAZARD_SPAWN_DISTANCE,
+  SAUCER_APPROACH_SECONDS,
+  SAUCER_FIRE_INTERVAL,
+  SAUCER_HOVER_DISTANCE,
+  SAUCER_SHOT_DAMAGE,
   TURRET_SPAWN_FRUSTUM,
+  type HazardKind,
   type TurretId
 } from '../constants'
 import { activateRandomBreach, damageShipHull } from '../gamestate'
 import { getGunnerLevel } from '../players/stats'
 import { getKnownBreachIds, getTurretView } from '../sceneObjects'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
+import { directionFromTo } from '../utilities'
 import { setupHazardVisuals } from './visuals'
 
 type LiveHazard = {
   hazardId: number
   encounterId: string
+  kind: HazardKind
   position: Vector3
   flightElapsed: number
   flightTime: number
   hp: number
   hullDamage: number
   damageElapsed: number
+  fireElapsed: number
   targetedBy: Set<string>
 }
 
@@ -36,9 +44,14 @@ export type HazardNotifies = {
     encounterId: string
     position: { x: number; y: number; z: number }
     flightTime: number
+    kind: HazardKind
   }) => void
   notifyHazardTargeted: (data: { hazardId: number; targeters: string[] }) => void
   notifyHazardDestroyed: (data: { hazardId: number; hitShip: boolean }) => void
+  notifySaucerFired: (data: {
+    hazardId: number
+    position: { x: number; y: number; z: number }
+  }) => void
 }
 
 let liveHazards: LiveHazard[] = []
@@ -73,7 +86,8 @@ function hazardSpawnMessage(hazard: LiveHazard) {
     hazardId: hazard.hazardId,
     encounterId: hazard.encounterId,
     position: hazard.position,
-    flightTime: Math.max(0, hazard.flightTime - hazard.flightElapsed)
+    flightTime: Math.max(0, hazard.flightTime - hazard.flightElapsed),
+    kind: hazard.kind
   }
 }
 
@@ -152,18 +166,26 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
 
 export function spawn(
   encounterId: string,
-  opts: { turret: TurretId; flightTime: number; hp: number; hullDamage: number }
+  opts: {
+    kind: HazardKind
+    turret: TurretId
+    flightTime: number
+    hp: number
+    hullDamage: number
+  }
 ): number {
   const position = Vector3.add(shipVirtualPosition, Vector3.scale(directionInTurretView(opts.turret), HAZARD_SPAWN_DISTANCE))
   const hazard: LiveHazard = {
     hazardId: nextHazardId++,
     encounterId,
+    kind: opts.kind,
     position,
     flightElapsed: 0,
-    flightTime: opts.flightTime,
+    flightTime: opts.kind === 'saucer' ? SAUCER_APPROACH_SECONDS : opts.flightTime,
     hp: opts.hp,
     hullDamage: opts.hullDamage,
     damageElapsed: 0,
+    fireElapsed: 0,
     targetedBy: new Set()
   }
   liveHazards.push(hazard)
@@ -175,12 +197,28 @@ export function tick(dt: number): void {
   const expiredIds: number[] = []
   for (const hazard of liveHazards) {
     hazard.flightElapsed += dt
-    if (hazard.flightElapsed >= hazard.flightTime) {
+    if (hazard.kind === 'asteroid' && hazard.flightElapsed >= hazard.flightTime) {
       expiredIds.push(hazard.hazardId)
     }
   }
   for (const hazardId of expiredIds) {
     destroyHazard(hazardId, true)
+  }
+
+  for (const hazard of liveHazards) {
+    if (hazard.kind !== 'saucer') continue
+    if (hazard.flightElapsed < hazard.flightTime) continue
+    hazard.fireElapsed += dt
+    while (hazard.fireElapsed >= SAUCER_FIRE_INTERVAL) {
+      hazard.fireElapsed -= SAUCER_FIRE_INTERVAL
+      damageShipHull(SAUCER_SHOT_DAMAGE)
+      const dir = directionFromTo(shipVirtualPosition, hazard.position)
+      notifies?.notifySaucerFired({
+        hazardId: hazard.hazardId,
+        position: Vector3.add(shipVirtualPosition, Vector3.scale(dir, SAUCER_HOVER_DISTANCE))
+      })
+      console.log(`[SERVER] Saucer ${hazard.hazardId} fired`)
+    }
   }
 
   const lockedIds: number[] = []

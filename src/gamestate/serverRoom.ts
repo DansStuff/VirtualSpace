@@ -2,7 +2,7 @@
  * The only server `room.onMessage` / `room.send`. Imported by the state
  * machine; other server modules notify through it, they do not import `room`.
  */
-import { PATH_START_STOP_ID } from '../constants'
+import { PATH_START_STOP_ID, type HazardKind } from '../constants'
 import { room } from '../networking/messages'
 
 export type HazardSpawnNotify = {
@@ -10,6 +10,7 @@ export type HazardSpawnNotify = {
   encounterId: string
   position: { x: number; y: number; z: number }
   flightTime: number
+  kind: HazardKind
 }
 
 export type HazardTargetedNotify = {
@@ -20,6 +21,11 @@ export type HazardTargetedNotify = {
 export type HazardDestroyedNotify = {
   hazardId: number
   hitShip: boolean
+}
+
+export type SaucerFiredNotify = {
+  hazardId: number
+  position: { x: number; y: number; z: number }
 }
 
 export type ServerInboxHandlers = {
@@ -69,6 +75,10 @@ export function notifyHazardTargeted(data: HazardTargetedNotify): void {
 
 export function notifyHazardDestroyed(data: HazardDestroyedNotify): void {
   room.send('notifyHazardDestroyed', data)
+}
+
+export function notifySaucerFired(data: SaucerFiredNotify): void {
+  room.send('notifySaucerFired', data)
 }
 
 export function setupServerInbox(handlers: ServerInboxHandlers): void {

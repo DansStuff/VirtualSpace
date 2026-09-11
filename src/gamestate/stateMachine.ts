@@ -19,6 +19,7 @@ import {
   notifyHazardTargeted,
   notifyMissionStart,
   notifyNewMission,
+  notifySaucerFired,
   notifyShipDestroyed,
   setupServerInbox
 } from './serverRoom'
@@ -165,7 +166,8 @@ export function setupStateMachine(): void {
   configureHazardNotifies({
     notifyHazardSpawn,
     notifyHazardTargeted,
-    notifyHazardDestroyed
+    notifyHazardDestroyed,
+    notifySaucerFired
   })
 
   setOnStopReached((stopId, pathFinished) => {

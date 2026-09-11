@@ -53,21 +53,7 @@ class WaveEncounter implements Encounter {
 
     const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
     this.stageElapsed += step
-    while (
-      this.spawnedThisStage < stage.hazardCount &&
-      this.stageElapsed >= ENCOUNTER_STAGE_TELEGRAPH_SECONDS + this.spawnedThisStage * HAZARD_SPAWN_INTERVAL
-    ) {
-      const hazardId = spawn(this.id, {
-        turret: stage.turret,
-        flightTime: stage.flightTime,
-        hp: stage.asteroidHp,
-        hullDamage: stage.asteroidDamage
-      })
-      this.spawnedThisStage += 1
-      console.log(
-        `[SERVER] Encounter ${this.id} stage ${this.stageIndex} spawned hazard ${hazardId} (${this.spawnedThisStage}/${stage.hazardCount})`
-      )
-    }
+    this.spawnDueHazards(stage)
 
     tick(step)
 
@@ -76,7 +62,7 @@ class WaveEncounter implements Encounter {
       return 'shipDestroyed'
     }
 
-    if (this.spawnedThisStage >= stage.hazardCount && !hasLive()) {
+    if (this.stageFullySpawned(stage) && !hasLive()) {
       if (this.stageIndex + 1 < this.stages.length) {
         this.stageIndex += 1
         this.stageElapsed = 0
@@ -88,6 +74,44 @@ class WaveEncounter implements Encounter {
     }
 
     return 'running'
+  }
+
+  private spawnDueHazards(stage: EncounterStage): void {
+    if (stage.kind === 'saucer') {
+      if (this.spawnedThisStage > 0) return
+      if (this.stageElapsed < ENCOUNTER_STAGE_TELEGRAPH_SECONDS) return
+      const hazardId = spawn(this.id, {
+        kind: 'saucer',
+        turret: stage.turret,
+        flightTime: 0,
+        hp: stage.saucerHp,
+        hullDamage: 0
+      })
+      this.spawnedThisStage = 1
+      console.log(`[SERVER] Encounter ${this.id} stage ${this.stageIndex} spawned saucer ${hazardId}`)
+      return
+    }
+
+    while (
+      this.spawnedThisStage < stage.hazardCount &&
+      this.stageElapsed >= ENCOUNTER_STAGE_TELEGRAPH_SECONDS + this.spawnedThisStage * HAZARD_SPAWN_INTERVAL
+    ) {
+      const hazardId = spawn(this.id, {
+        kind: 'asteroid',
+        turret: stage.turret,
+        flightTime: stage.flightTime,
+        hp: stage.asteroidHp,
+        hullDamage: stage.asteroidDamage
+      })
+      this.spawnedThisStage += 1
+      console.log(
+        `[SERVER] Encounter ${this.id} stage ${this.stageIndex} spawned hazard ${hazardId} (${this.spawnedThisStage}/${stage.hazardCount})`
+      )
+    }
+  }
+
+  private stageFullySpawned(stage: EncounterStage): boolean {
+    return stage.kind === 'saucer' ? this.spawnedThisStage >= 1 : this.spawnedThisStage >= stage.hazardCount
   }
 
   dispose(): void {

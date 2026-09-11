@@ -1,4 +1,5 @@
 import {
+  Animator,
   Billboard,
   BillboardMode,
   ColliderLayer,
@@ -19,13 +20,18 @@ import {
 } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import {
+  ASTEROID_ENCLOSING_SPHERE_RADIUS,
   HAZARD_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_ASTEROID_MODEL_PATH,
   HAZARD_ASTEROID_POOL_SIZE,
   HAZARD_HIT_SHIP_SOUND_PATH,
   HAZARD_IMPACT_DISTANCE,
   HAZARD_RADIUS,
+  SAUCER_HOVER_DISTANCE,
   HAZARD_RAYCAST_MAX_DISTANCE,
+  HAZARD_SAUCER_MODEL_PATH,
+  HAZARD_SAUCER_POOL_SIZE,
+  HAZARD_SAUCER_RADIUS,
   HAZARD_SELECT_SOUND_PATH,
   HAZARD_TARGET_COOLDOWN_SECONDS,
   HAZARD_TARGETING_CROSSHAIR_TEXTURE_PATH,
@@ -38,16 +44,19 @@ import {
   HAZARD_TARGETING_PORTRAIT_START_ANGLE_DEGREES,
   HAZARD_TARGETING_PORTRAIT_STEP_DEGREES,
   HAZARD_TARGETING_PORTRAIT_Z,
-  SIMULATION_MAX_DELTA_SECONDS
+  SIMULATION_MAX_DELTA_SECONDS,
+  type HazardKind
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
 import { room } from '../networking/messages'
 import { isTurretOccupied } from '../sceneObjects'
 import { shipVirtualPosition } from '../ship'
-import { AsteroidData, forgetAsteroidSpin } from '../spaceobjects/asteroids'
+import { ProjectedBody } from '../spaceobjects/projection'
+import { forgetTumble, Tumble } from '../spaceobjects/tumble'
 import { directionFromTo } from '../utilities'
 
 type HazardVisuals = {
+  kind: HazardKind
   entity: Entity
   targetingIndicator: Entity
   targetingLockedLabel: Entity
@@ -55,6 +64,7 @@ type HazardVisuals = {
 }
 
 type SpawnedHazard = {
+  kind: HazardKind
   hazardId: number
   encounterId: string
   entity: Entity
@@ -68,21 +78,48 @@ type SpawnedHazard = {
   elapsed: number
 }
 
-const free: HazardVisuals[] = []
+const freeAsteroids: HazardVisuals[] = []
+const freeSaucers: HazardVisuals[] = []
 
-/** Client-only incoming asteroid. AsteroidSystem projects `AsteroidData.position`. */
-function createHazardVisuals(): HazardVisuals {
+function freePool(kind: HazardKind): HazardVisuals[] {
+  return kind === 'saucer' ? freeSaucers : freeAsteroids
+}
+
+function parseHazardKind(value: string): HazardKind {
+  return value === 'saucer' ? 'saucer' : 'asteroid'
+}
+
+/** Client-only incoming hazard. ProjectedBodySystem projects `ProjectedBody.position`. */
+function createHazardVisuals(kind: HazardKind): HazardVisuals {
   const entity = engine.addEntity()
+  const isSaucer = kind === 'saucer'
   GltfContainer.create(entity, {
-    src: HAZARD_ASTEROID_MODEL_PATH,
+    src: isSaucer ? HAZARD_SAUCER_MODEL_PATH : HAZARD_ASTEROID_MODEL_PATH,
     visibleMeshesCollisionMask: ColliderLayer.CL_CUSTOM1,
     invisibleMeshesCollisionMask: ColliderLayer.CL_NONE
   })
   Transform.create(entity, { position: Vector3.Zero() })
-  AsteroidData.create(entity, {
+  ProjectedBody.create(entity, {
     position: Vector3.Zero(),
-    radius: HAZARD_RADIUS
+    radius: isSaucer ? HAZARD_SAUCER_RADIUS : HAZARD_RADIUS,
+    shellRadius: ASTEROID_ENCLOSING_SPHERE_RADIUS
   })
+  if (isSaucer) {
+    Animator.create(entity, {
+      states: [
+        {
+          clip: 'Spin',
+          playing: true,
+          weight: 1,
+          speed: 1,
+          loop: true,
+          shouldReset: true
+        }
+      ]
+    })
+  } else {
+    Tumble.create(entity)
+  }
   VisibilityComponent.create(entity, { visible: false })
 
   // Default plane is 1×1; asteroid mesh extends ~1.35 from origin (~2.7 across).
@@ -129,7 +166,7 @@ function createHazardVisuals(): HazardVisuals {
     portraitSlots.push(createPortraitSlot(targetingIndicator, i))
   }
 
-  return { entity, targetingIndicator, targetingLockedLabel, portraitSlots }
+  return { kind, entity, targetingIndicator, targetingLockedLabel, portraitSlots }
 }
 
 function portraitPosition(index: number): Vector3 {
@@ -198,18 +235,20 @@ function applyTargeterPortraits(hazard: SpawnedHazard) {
   }
 }
 
-function acquireHazard(virtualPosition: Vector3, radius: number): HazardVisuals {
-  const visuals = free.pop() ?? createHazardVisuals()
-  const asteroid = AsteroidData.getMutable(visuals.entity)
-  asteroid.position = Vector3.clone(virtualPosition)
-  asteroid.radius = radius
+function acquireHazard(kind: HazardKind, virtualPosition: Vector3, radius: number): HazardVisuals {
+  const visuals = freePool(kind).pop() ?? createHazardVisuals(kind)
+  const body = ProjectedBody.getMutable(visuals.entity)
+  body.position = Vector3.clone(virtualPosition)
+  body.radius = radius
   Transform.getMutable(visuals.entity).position = Vector3.clone(virtualPosition)
   VisibilityComponent.getMutable(visuals.entity).visible = true
   return visuals
 }
 
 function releaseHazard(visuals: HazardVisuals) {
-  forgetAsteroidSpin(visuals.entity)
+  if (visuals.kind === 'asteroid') {
+    forgetTumble(visuals.entity)
+  }
   hidePortraitSlots(visuals.portraitSlots)
   VisibilityComponent.getMutable(visuals.targetingIndicator).visible = false
   VisibilityComponent.getMutable(visuals.targetingLockedLabel).visible = false
@@ -217,7 +256,7 @@ function releaseHazard(visuals: HazardVisuals) {
   try {
     stripPortraitMaterials(visuals.portraitSlots)
   } finally {
-    free.push(visuals)
+    freePool(visuals.kind).push(visuals)
   }
 }
 
@@ -251,18 +290,17 @@ function applyTargetingAppearance(hazard: SpawnedHazard) {
   applyTargeterPortraits(hazard)
 }
 
-function virtualFlightPath(spawnPosition: Vector3): { start: Vector3; end: Vector3 } {
+function virtualApproachPath(spawnPosition: Vector3, endDistance: number): { start: Vector3; end: Vector3 } {
   const dir = directionFromTo(shipVirtualPosition, spawnPosition)
   const start = Vector3.clone(spawnPosition)
-  const end = Vector3.add(shipVirtualPosition, Vector3.scale(dir, HAZARD_IMPACT_DISTANCE))
+  const end = Vector3.add(shipVirtualPosition, Vector3.scale(dir, endDistance))
   return { start, end }
 }
 
 function applyVirtualPosition(hazard: SpawnedHazard) {
   const duration = hazard.flightTime
   const u = duration <= 1e-6 ? 1 : Math.min(1, hazard.elapsed / duration)
-  const asteroid = AsteroidData.getMutable(hazard.entity)
-  asteroid.position = Vector3.lerp(hazard.start, hazard.end, u)
+  ProjectedBody.getMutable(hazard.entity).position = Vector3.lerp(hazard.start, hazard.end, u)
 }
 
 function despawnHazard(hazardId: number) {
@@ -388,7 +426,10 @@ function HazardTargetSystem(dt: number) {
 
 export function setupHazardVisuals() {
   for (let i = 0; i < HAZARD_ASTEROID_POOL_SIZE; i++) {
-    free.push(createHazardVisuals())
+    freeAsteroids.push(createHazardVisuals('asteroid'))
+  }
+  for (let i = 0; i < HAZARD_SAUCER_POOL_SIZE; i++) {
+    freeSaucers.push(createHazardVisuals('saucer'))
   }
 
   engine.addSystem(HazardFlightSystem)
@@ -396,9 +437,13 @@ export function setupHazardVisuals() {
 
   room.onMessage('notifyHazardSpawn', (data) => {
     if (spawned.some((h) => h.hazardId === data.hazardId)) return
-    const path = virtualFlightPath(data.position)
-    const visuals = acquireHazard(path.start, HAZARD_RADIUS)
+    const kind = parseHazardKind(data.kind)
+    const endDistance = kind === 'saucer' ? SAUCER_HOVER_DISTANCE : HAZARD_IMPACT_DISTANCE
+    const path = virtualApproachPath(data.position, endDistance)
+    const radius = kind === 'saucer' ? HAZARD_SAUCER_RADIUS : HAZARD_RADIUS
+    const visuals = acquireHazard(kind, path.start, radius)
     const hazard: SpawnedHazard = {
+      kind,
       hazardId: data.hazardId,
       encounterId: data.encounterId,
       entity: visuals.entity,
@@ -414,7 +459,7 @@ export function setupHazardVisuals() {
     spawned.push(hazard)
     applyVirtualPosition(hazard)
     applyTargetingAppearance(hazard)
-    console.log(`[CLIENT] Hazard ${data.hazardId} spawned for ${data.encounterId} (${data.flightTime}s)`)
+    console.log(`[CLIENT] Hazard ${data.hazardId} (${kind}) spawned for ${data.encounterId}`)
   })
 
   room.onMessage('notifyHazardDestroyed', (data) => {
@@ -432,5 +477,9 @@ export function setupHazardVisuals() {
     if (!hazard) return
     hazard.targeters = data.targeters
     applyTargetingAppearance(hazard)
+  })
+
+  room.onMessage('notifySaucerFired', (data) => {
+    console.log(`[CLIENT] Saucer ${data.hazardId} fired`)
   })
 }

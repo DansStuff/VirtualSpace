@@ -16,6 +16,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer, isStateSyncronized } from '@dcl/sdk/network'
+import { EntityNames } from '../assets/scene/entity-names'
 import {
   WEAPON_CAMERA_FOV_DEGREES,
   WEAPON_CAMERA_LOCAL_OFFSET,
@@ -221,6 +222,10 @@ export function setupSceneObjects(): void {
   const consoles: { entity: Entity; name: string }[] = []
 
   for (const [entity, name] of engine.getEntitiesWith(Name)) {
+    if (name.value === EntityNames.Saucer_gltf) {
+      VisibilityComponent.createOrReplace(entity, { visible: false, propagateToChildren: true })
+      continue
+    }
     if (isBreachName(name.value)) {
       const breachId = breachIdFromName(name.value)
       if (breachId === undefined) {

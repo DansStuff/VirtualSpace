@@ -185,6 +185,26 @@ export const HAZARD_TARGETING_LOCKED_FONT_SIZE = 8
 export const HAZARD_SELECT_SOUND_PATH = 'assets/scene/Sounds/select1.mp3'
 export const HAZARD_HIT_SHIP_SOUND_PATH = 'assets/scene/Sounds/boom1.mp3'
 
+export const HAZARD_SAUCER_MODEL_PATH = 'assets/scene/Models/Saucer.gltf'
+
+/** Pre-warmed saucer entity trees. The pool grows if this is exhausted. */
+export const HAZARD_SAUCER_POOL_SIZE = 2
+
+/** Virtual-space radius of a saucer (models are authored at radius 1). */
+export const HAZARD_SAUCER_RADIUS = 5
+
+/** Virtual-space distance from the ship where a saucer stops approaching. */
+export const SAUCER_HOVER_DISTANCE = 40
+
+/** Seconds to fly from HAZARD_SPAWN_DISTANCE to SAUCER_HOVER_DISTANCE. */
+export const SAUCER_APPROACH_SECONDS = 2
+
+/** Seconds between saucer shots. First shot waits one full interval after approach. */
+export const SAUCER_FIRE_INTERVAL = 3
+
+/** Hull damage dealt by each saucer shot. */
+export const SAUCER_SHOT_DAMAGE = 10
+
 // MARK: Ship Weapons
 
 /** How long a laser plane stays visible after each shot. */
@@ -234,7 +254,10 @@ export const TURRET_SPAWN_FRUSTUM = {
 /** Seconds after a stage signal before the first spawn. */
 export const ENCOUNTER_STAGE_TELEGRAPH_SECONDS = 2
 
-export type EncounterStage = {
+export type HazardKind = 'asteroid' | 'saucer'
+
+export type AsteroidEncounterStage = {
+  kind: 'asteroid'
   turret: TurretId
   hazardCount: number
   /** Seconds each asteroid exists before it hits the ship (unless shot). */
@@ -244,20 +267,32 @@ export type EncounterStage = {
   asteroidDamage: number
 }
 
+export type SaucerEncounterStage = {
+  kind: 'saucer'
+  turret: TurretId
+  saucerHp: number
+}
+
+export type EncounterStage = AsteroidEncounterStage | SaucerEncounterStage
+
 export type EncounterParams = {
   stages: EncounterStage[]
 }
 
-function defaultEncounterStages(): EncounterStage[] {
+function defaultEncounterStages(): AsteroidEncounterStage[] {
   return [
-    { turret: 'left', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-    { turret: 'right', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-    { turret: 'center', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 }
+    { kind: 'asteroid', turret: 'left', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+    { kind: 'asteroid', turret: 'right', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
+    { kind: 'asteroid', turret: 'center', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 }
   ]
 }
 
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
-  'encounter-1': { stages: defaultEncounterStages() },
+  'encounter-1': {
+    stages: [
+      { kind: 'saucer', turret: 'center', saucerHp: 12 }
+    ]
+  },
   'encounter-2': { stages: defaultEncounterStages() },
   'encounter-3': { stages: defaultEncounterStages() },
   'encounter-4': { stages: defaultEncounterStages() },

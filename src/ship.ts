@@ -13,7 +13,7 @@ Transform.create(ship, {
 
 /**
  * Virtual pose of the ship in space.
- * PlanetSystem reads these each frame; ShipPathSystem (or gameplay) writes them.
+ * ProjectedBodySystem reads these each frame; ShipPathSystem (or gameplay) writes them.
  * The scene Transform above stays fixed at SCENE_SHIP_POSITION.
  */
 export const shipVirtualPosition: Vector3.Mutable = Vector3.create(0, 0, 0)
