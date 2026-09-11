@@ -331,17 +331,12 @@
             "parent": 0
           }
         },
-        "525": {
+        "66061": {
           "json": {
             "position": {
-              "x": 64.75,
+              "x": 44.5,
               "y": 64,
-              "z": 35.75
-            },
-            "scale": {
-              "x": 5.099999904632568,
-              "y": 5.099999904632568,
-              "z": 5.099999904632568
+              "z": 45.5
             },
             "rotation": {
               "x": 0,
@@ -349,32 +344,12 @@
               "z": 0,
               "w": 1
             },
+            "scale": {
+              "x": 9,
+              "y": 9,
+              "z": 9
+            },
             "parent": 0
-          }
-        }
-      }
-    },
-    {
-      "name": "core::Animator",
-      "jsonSchema": {
-        "type": "object",
-        "properties": {},
-        "serializationType": "protocol-buffer",
-        "protocolBuffer": "PBAnimator"
-      },
-      "data": {
-        "525": {
-          "json": {
-            "states": [
-              {
-                "clip": "Spin",
-                "playing": true,
-                "weight": 1,
-                "speed": 1,
-                "loop": true,
-                "shouldReset": true
-              }
-            ]
           }
         }
       }
@@ -479,9 +454,9 @@
             "invisibleMeshesCollisionMask": 3
           }
         },
-        "525": {
+        "66061": {
           "json": {
-            "src": "assets/scene/Models/Saucer.gltf",
+            "src": "assets/scene/Models/Planet1.gltf",
             "visibleMeshesCollisionMask": 0,
             "invisibleMeshesCollisionMask": 3
           }
@@ -566,9 +541,9 @@
             "value": "Breach5"
           }
         },
-        "525": {
+        "66061": {
           "json": {
-            "value": "Saucer.gltf"
+            "value": "Planet1.gltf"
           }
         }
       }
@@ -675,7 +650,7 @@
                   522,
                   523,
                   524,
-                  525
+                  66061
                 ]
               },
               {
@@ -739,7 +714,7 @@
                 "children": []
               },
               {
-                "entity": 525,
+                "entity": 66061,
                 "children": []
               }
             ]
@@ -809,8 +784,10 @@
         "524": {
           "json": {}
         },
-        "525": {
-          "json": {}
+        "66061": {
+          "json": {
+            "porportionalScaling": true
+          }
         }
       }
     },
@@ -1162,12 +1139,9 @@
             "ageRating": "A",
             "categories": [],
             "author": "DanL",
+            "email": "",
             "tags": [],
             "layout": {
-              "base": {
-                "x": 0,
-                "y": 0
-              },
               "parcels": [
                 {
                   "x": 0,
@@ -1457,8 +1431,14 @@
                   "x": 7,
                   "y": 0
                 }
-              ]
+              ],
+              "base": {
+                "x": 0,
+                "y": 0
+              }
             },
+            "silenceVoiceChat": false,
+            "disablePortableExperiences": false,
             "spawnPoints": [
               {
                 "name": "SpawnArea1",
@@ -1472,8 +1452,11 @@
                     ]
                   },
                   "y": {
-                    "$case": "single",
-                    "value": 64.58999633789062
+                    "$case": "range",
+                    "value": [
+                      64.58999633789062,
+                      64.58999633789062
+                    ]
                   },
                   "z": {
                     "$case": "range",
@@ -1493,6 +1476,8 @@
             "skyboxConfig": {
               "fixedTime": 86340
             },
+            "creator": "",
+            "disableNearbyVoiceChat": false,
             "hideLandscapeTerrain": true
           }
         }
