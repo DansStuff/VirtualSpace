@@ -16,6 +16,7 @@ import {
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
 import { forEachLiveHazard } from '../hazards/visuals'
+import { ObjectPool } from '../objectPool'
 import { directionFromTo } from '../utilities'
 
 type ActiveLaser = {
@@ -27,7 +28,7 @@ type ActiveLaser = {
 const laserOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_ORIGIN_OFFSET)
 const worldDown = Vector3.Down()
 
-const free: Entity[] = []
+let laserPool: ObjectPool<Entity>
 const active: ActiveLaser[] = []
 const fireElapsed = new Map<Entity, number>()
 
@@ -50,8 +51,12 @@ function createLaserEntity(): Entity {
   return entity
 }
 
+function resetLaser(entity: Entity): void {
+  VisibilityComponent.getMutable(entity).visible = false
+}
+
 function acquireLaser(target: Entity): void {
-  const entity = free.pop() ?? createLaserEntity()
+  const entity = laserPool.acquire()
   VisibilityComponent.getMutable(entity).visible = true
   if (Transform.has(target)) {
     applyLaserPose(entity, Transform.get(target).position)
@@ -62,8 +67,7 @@ function acquireLaser(target: Entity): void {
 
 function releaseLaser(index: number): void {
   const laser = active[index]
-  VisibilityComponent.getMutable(laser.entity).visible = false
-  free.push(laser.entity)
+  laserPool.release(laser.entity)
   active.splice(index, 1)
 }
 
@@ -150,8 +154,10 @@ export function setupShipWeapons() {
   if (isServer()) return
 
   laserSoundEntity = createLaserSoundEntity()
-  for (let i = 0; i < SHIP_LASER_POOL_SIZE; i++) {
-    free.push(createLaserEntity())
-  }
+  laserPool = new ObjectPool({
+    create: createLaserEntity,
+    reset: resetLaser,
+    initialSize: SHIP_LASER_POOL_SIZE
+  })
   engine.addSystem(LaserSystem)
 }

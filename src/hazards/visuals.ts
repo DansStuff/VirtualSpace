@@ -49,6 +49,7 @@ import {
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
 import { room } from '../networking/messages'
+import { ObjectPool } from '../objectPool'
 import { isTurretOccupied } from '../sceneObjects'
 import { shipVirtualPosition } from '../ship'
 import { ProjectedBody } from '../spaceobjects/projection'
@@ -78,11 +79,11 @@ type SpawnedHazard = {
   elapsed: number
 }
 
-const freeAsteroids: HazardVisuals[] = []
-const freeSaucers: HazardVisuals[] = []
+let asteroidPool: ObjectPool<HazardVisuals>
+let saucerPool: ObjectPool<HazardVisuals>
 
-function freePool(kind: HazardKind): HazardVisuals[] {
-  return kind === 'saucer' ? freeSaucers : freeAsteroids
+function hazardPool(kind: HazardKind): ObjectPool<HazardVisuals> {
+  return kind === 'saucer' ? saucerPool : asteroidPool
 }
 
 function parseHazardKind(value: string): HazardKind {
@@ -236,7 +237,7 @@ function applyTargeterPortraits(hazard: SpawnedHazard) {
 }
 
 function acquireHazard(kind: HazardKind, virtualPosition: Vector3, radius: number): HazardVisuals {
-  const visuals = freePool(kind).pop() ?? createHazardVisuals(kind)
+  const visuals = hazardPool(kind).acquire()
   const body = ProjectedBody.getMutable(visuals.entity)
   body.position = Vector3.clone(virtualPosition)
   body.radius = radius
@@ -245,7 +246,7 @@ function acquireHazard(kind: HazardKind, virtualPosition: Vector3, radius: numbe
   return visuals
 }
 
-function releaseHazard(visuals: HazardVisuals) {
+function resetHazard(visuals: HazardVisuals) {
   if (visuals.kind === 'asteroid') {
     forgetTumble(visuals.entity)
   }
@@ -253,11 +254,11 @@ function releaseHazard(visuals: HazardVisuals) {
   VisibilityComponent.getMutable(visuals.targetingIndicator).visible = false
   VisibilityComponent.getMutable(visuals.targetingLockedLabel).visible = false
   VisibilityComponent.getMutable(visuals.entity).visible = false
-  try {
-    stripPortraitMaterials(visuals.portraitSlots)
-  } finally {
-    freePool(visuals.kind).push(visuals)
-  }
+  stripPortraitMaterials(visuals.portraitSlots)
+}
+
+function releaseHazard(visuals: HazardVisuals) {
+  hazardPool(visuals.kind).release(visuals)
 }
 
 const spawned: SpawnedHazard[] = []
@@ -425,12 +426,16 @@ function HazardTargetSystem(dt: number) {
 }
 
 export function setupHazardVisuals() {
-  for (let i = 0; i < HAZARD_ASTEROID_POOL_SIZE; i++) {
-    freeAsteroids.push(createHazardVisuals('asteroid'))
-  }
-  for (let i = 0; i < HAZARD_SAUCER_POOL_SIZE; i++) {
-    freeSaucers.push(createHazardVisuals('saucer'))
-  }
+  asteroidPool = new ObjectPool({
+    create: () => createHazardVisuals('asteroid'),
+    reset: resetHazard,
+    initialSize: HAZARD_ASTEROID_POOL_SIZE
+  })
+  saucerPool = new ObjectPool({
+    create: () => createHazardVisuals('saucer'),
+    reset: resetHazard,
+    initialSize: HAZARD_SAUCER_POOL_SIZE
+  })
 
   engine.addSystem(HazardFlightSystem)
   engine.addSystem(HazardTargetSystem)
