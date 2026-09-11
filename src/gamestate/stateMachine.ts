@@ -9,6 +9,7 @@ import { createWaveEncounter, type Encounter } from '../encounters/encounter'
 import { ENCOUNTER_PARAMS, PATH_START_STOP_ID } from '../constants'
 import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/simulation'
 import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
+import { addRepair, resetContributions, stringifyContributions } from '../players/contributions'
 import { onPlayerConnected } from '../players/stats'
 import { applyEncounterActive, applyEncounterEnded, applyMissionStarted, repairBreach, resetGameState } from './index'
 import {
@@ -80,6 +81,7 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
   console.log(`[STATE] ${from} → ${to} (${event.type})`)
 
   if (event.type === 'MISSION_START') {
+    resetContributions()
     applyMissionStarted(PATH_START_STOP_ID)
     resumeFromStop()
     notifyMissionStart()
@@ -115,12 +117,14 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
   }
 
   if (event.type === 'SHIP_DESTROYED') {
+    console.log(`[SERVER] Round contributions (loss): ${stringifyContributions()}`)
     resetWorld()
     notifyShipDestroyed()
     return
   }
 
   if (event.type === 'MISSION_RESET') {
+    console.log(`[SERVER] Round contributions (win): ${stringifyContributions()}`)
     resetWorld()
     notifyNewMission()
   }
@@ -199,6 +203,7 @@ export function setupStateMachine(): void {
     },
     onRepairBreach: (from, breachId) => {
       if (repairBreach(breachId)) {
+        addRepair(from)
         console.log(`[SERVER] Breach ${breachId} repaired by ${from}`)
       }
     }
