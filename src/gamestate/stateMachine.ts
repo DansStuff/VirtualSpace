@@ -9,7 +9,7 @@ import { createWaveEncounter, type Encounter } from '../encounters/encounter'
 import { ENCOUNTER_PARAMS, PATH_START_STOP_ID } from '../constants'
 import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/simulation'
 import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
-import { addRepair, resetContributions, stringifyContributions } from '../players/contributions'
+import { addRepair, resetContributions, snapshotContributions, stringifyContributions } from '../players/contributions'
 import { onPlayerConnected } from '../players/stats'
 import { applyEncounterActive, applyEncounterEnded, applyMissionStarted, repairBreach, resetGameState } from './index'
 import {
@@ -20,6 +20,7 @@ import {
   notifyHazardTargeted,
   notifyMissionStart,
   notifyNewMission,
+  notifyRoundResults,
   notifySaucerFired,
   notifyShipDestroyed,
   setupServerInbox
@@ -118,6 +119,11 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
 
   if (event.type === 'SHIP_DESTROYED') {
     console.log(`[SERVER] Round contributions (loss): ${stringifyContributions()}`)
+    notifyRoundResults({
+      won: false,
+      endedAt: Date.now(),
+      contributions: snapshotContributions()
+    })
     resetWorld()
     notifyShipDestroyed()
     return
@@ -125,6 +131,11 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
 
   if (event.type === 'MISSION_RESET') {
     console.log(`[SERVER] Round contributions (win): ${stringifyContributions()}`)
+    notifyRoundResults({
+      won: true,
+      endedAt: Date.now(),
+      contributions: snapshotContributions()
+    })
     resetWorld()
     notifyNewMission()
   }

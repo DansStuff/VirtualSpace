@@ -28,6 +28,12 @@ export type SaucerFiredNotify = {
   position: { x: number; y: number; z: number }
 }
 
+export type RoundResultsNotify = {
+  won: boolean
+  endedAt: number
+  contributions: { playerId: string; damage: number; repairs: number }[]
+}
+
 export type ServerInboxHandlers = {
   onMissionStart: (playerAddress: string) => void
   onNewMission: (playerAddress: string) => void
@@ -79,6 +85,10 @@ export function notifyHazardDestroyed(data: HazardDestroyedNotify): void {
 
 export function notifySaucerFired(data: SaucerFiredNotify): void {
   room.send('notifySaucerFired', data)
+}
+
+export function notifyRoundResults(data: RoundResultsNotify): void {
+  room.send('notifyRoundResults', data)
 }
 
 export function setupServerInbox(handlers: ServerInboxHandlers): void {

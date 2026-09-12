@@ -331,23 +331,23 @@
             "parent": 0
           }
         },
-        "66061": {
+        "525": {
           "json": {
             "position": {
-              "x": 44.5,
-              "y": 64,
-              "z": 45.5
+              "x": 64,
+              "y": 62.25,
+              "z": 72.25
             },
             "rotation": {
-              "x": 0,
+              "x": 0.13052618503570557,
               "y": 0,
               "z": 0,
-              "w": 1
+              "w": 0.9914448857307434
             },
             "scale": {
-              "x": 9,
-              "y": 9,
-              "z": 9
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -454,10 +454,10 @@
             "invisibleMeshesCollisionMask": 3
           }
         },
-        "66061": {
+        "525": {
           "json": {
-            "src": "assets/scene/Models/Planet1.gltf",
-            "visibleMeshesCollisionMask": 0,
+            "src": "assets/scene/Models/OverchargeStation.gltf",
+            "visibleMeshesCollisionMask": 3,
             "invisibleMeshesCollisionMask": 3
           }
         }
@@ -541,9 +541,9 @@
             "value": "Breach5"
           }
         },
-        "66061": {
+        "525": {
           "json": {
-            "value": "Planet1.gltf"
+            "value": "OverchargeStation"
           }
         }
       }
@@ -650,7 +650,7 @@
                   522,
                   523,
                   524,
-                  66061
+                  525
                 ]
               },
               {
@@ -714,7 +714,7 @@
                 "children": []
               },
               {
-                "entity": 66061,
+                "entity": 525,
                 "children": []
               }
             ]
@@ -784,10 +784,8 @@
         "524": {
           "json": {}
         },
-        "66061": {
-          "json": {
-            "porportionalScaling": true
-          }
+        "525": {
+          "json": {}
         }
       }
     },

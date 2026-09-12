@@ -35,6 +35,20 @@ export function getContributions(): ReadonlyMap<string, RoundContribution> {
   return contributions
 }
 
+export type RoundContributionRow = {
+  playerId: string
+  damage: number
+  repairs: number
+}
+
+export function snapshotContributions(): RoundContributionRow[] {
+  const rows: RoundContributionRow[] = []
+  for (const [playerId, row] of contributions) {
+    rows.push({ playerId, damage: row.damage, repairs: row.repairs })
+  }
+  return rows
+}
+
 /** Temporary: dump the table for logging. */
 export function stringifyContributions(): string {
   return JSON.stringify([...contributions])

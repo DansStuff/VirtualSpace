@@ -8,46 +8,22 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				0,
-				1
+				0
 			]
 		}
 	],
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Cube",
-			"translation":[
-				0,
-				1,
-				0
-			]
-		},
-		{
-			"mesh":1,
-			"name":"Cube.004",
-			"translation":[
-				0,
-				1,
-				0
+			"name":"Cube.006",
+			"scale":[
+				0.682971715927124,
+				0.5245141386985779,
+				0.1054907962679863
 			]
 		}
 	],
 	"materials":[
-		{
-			"doubleSided":true,
-			"name":"Ship",
-			"pbrMetallicRoughness":{
-				"baseColorFactor":[
-					0.14159438014030457,
-					0.12022318691015244,
-					0.16504591703414917,
-					1
-				],
-				"metallicFactor":0.539130449295044,
-				"roughnessFactor":0.7347825765609741
-			}
-		},
 		{
 			"doubleSided":true,
 			"emissiveFactor":[
@@ -66,11 +42,25 @@
 				"metallicFactor":0,
 				"roughnessFactor":0.5
 			}
+		},
+		{
+			"doubleSided":true,
+			"name":"Ship",
+			"pbrMetallicRoughness":{
+				"baseColorFactor":[
+					0.14159438014030457,
+					0.12022318691015244,
+					0.16504591703414917,
+					1
+				],
+				"metallicFactor":0.539130449295044,
+				"roughnessFactor":0.7347825765609741
+			}
 		}
 	],
 	"meshes":[
 		{
-			"name":"Cube.009",
+			"name":"Cube.010",
 			"primitives":[
 				{
 					"attributes":{
@@ -80,12 +70,7 @@
 					},
 					"indices":3,
 					"material":0
-				}
-			]
-		},
-		{
-			"name":"Cube.011",
-			"primitives":[
+				},
 				{
 					"attributes":{
 						"POSITION":4,
@@ -102,126 +87,126 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":86,
+			"count":4,
 			"max":[
-				0.6949848532676697,
-				1.4270858764648438,
-				1.432697057723999
+				0.8985313177108765,
+				0.8985313177108765,
+				-0.4928409457206726
 			],
 			"min":[
-				-0.6909635066986084,
-				-0.9937578439712524,
-				-0.03018486499786377
+				-0.8985313177108765,
+				-0.8985313177108765,
+				-0.4928409457206726
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":86,
+			"count":4,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":86,
+			"count":4,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5123,
-			"count":162,
+			"count":6,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":4,
 			"componentType":5126,
-			"count":4,
+			"count":44,
 			"max":[
-				0.5844712257385254,
-				1.3235547542572021,
-				0.8378034234046936
+				1,
+				1,
+				1
 			],
 			"min":[
-				-0.5835481882095337,
-				0.3206232488155365,
-				0.8378034234046936
+				-1,
+				-1,
+				-1
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":5,
 			"componentType":5126,
-			"count":4,
+			"count":44,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":6,
 			"componentType":5126,
-			"count":4,
+			"count":44,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":7,
 			"componentType":5123,
-			"count":6,
+			"count":78,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":1032,
+			"byteLength":48,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":1032,
-			"byteOffset":1032,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":688,
-			"byteOffset":2064,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":324,
-			"byteOffset":2752,
-			"target":34963
-		},
-		{
-			"buffer":0,
 			"byteLength":48,
-			"byteOffset":3076,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":48,
-			"byteOffset":3124,
+			"byteOffset":48,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":32,
-			"byteOffset":3172,
+			"byteOffset":96,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":12,
-			"byteOffset":3204,
+			"byteOffset":128,
+			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":528,
+			"byteOffset":140,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":528,
+			"byteOffset":668,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":352,
+			"byteOffset":1196,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":156,
+			"byteOffset":1548,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":3216,
-			"uri":"WeaponsConsole.bin"
+			"byteLength":1704,
+			"uri":"OverchargeStation.bin"
 		}
 	]
 }

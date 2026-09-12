@@ -10,7 +10,7 @@ hud for upgrades
 
 ui for upgrade progression
 
-
+object pool utility
 
 
 
@@ -33,7 +33,7 @@ scrolling toast thingy (as layered renderer for reuse)
 
 secondary encounter stage type : saucer
 
-  make model - done
+  client side laser effect
   
 
 

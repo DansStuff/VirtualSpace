@@ -60,6 +60,17 @@ export const Messages = {
   notifySaucerFired: Schemas.Map({
     hazardId: Schemas.Int,
     position: Schemas.Vector3
+  }),
+  notifyRoundResults: Schemas.Map({
+    won: Schemas.Boolean,
+    endedAt: Schemas.Int64,
+    contributions: Schemas.Array(
+      Schemas.Map({
+        playerId: Schemas.String,
+        damage: Schemas.Int,
+        repairs: Schemas.Int
+      })
+    )
   })
 }
 

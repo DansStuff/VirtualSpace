@@ -16,10 +16,6 @@ import {
   UI_ENCOUNTER_STAGE_FONT_SIZE,
   UI_ENCOUNTER_STAGE_LABEL_HEIGHT,
   UI_ENCOUNTER_STAGE_LABEL_WIDTH,
-  UI_SHIP_DESTROYED_DURATION_SECONDS,
-  UI_SHIP_DESTROYED_FONT_SIZE,
-  UI_SHIP_DESTROYED_LABEL_HEIGHT,
-  UI_SHIP_DESTROYED_LABEL_WIDTH,
   UI_VIRTUAL_HEIGHT,
   UI_VIRTUAL_WIDTH
 } from './constants'
@@ -27,32 +23,23 @@ import { getGameState } from './gamestate'
 import { room } from './networking/messages'
 import { lastStopId } from './path/follow'
 import { exitWeaponCamera, isTurretOccupied } from './sceneObjects'
+import { setupRoundResultsUi } from './ui/roundResults'
 
-let shipDestroyedUntil = 0
 let encounterStageUntil = 0
 let encounterStageTurret = ''
 
 const MISSION_STATUS_COLOR = Color4.create(0.55, 0.55, 0.55, 1)
-const SHIP_DESTROYED_COLOR = Color4.create(1, 0.2, 0.15, 1)
 const ENCOUNTER_STAGE_COLOR = Color4.create(1, 0.75, 0.2, 1)
 const HEALTH_BAR_BACKGROUND = Color4.Red()
 const HEALTH_BAR_FOREGROUND = Color4.Green()
-
-export function markShipDestroyed() {
-  shipDestroyedUntil = Date.now() + UI_SHIP_DESTROYED_DURATION_SECONDS * 1000
-}
 
 export function markEncounterStage(turret: string) {
   encounterStageTurret = turret
   encounterStageUntil = Date.now() + UI_ENCOUNTER_STAGE_DURATION_SECONDS * 1000
 }
 
-function showingShipDestroyed() {
-  return Date.now() < shipDestroyedUntil
-}
-
 function showingEncounterStage() {
-  return !showingShipDestroyed() && Date.now() < encounterStageUntil
+  return Date.now() < encounterStageUntil
 }
 
 function encounterStageLabel(): string {
@@ -73,10 +60,11 @@ function hullPercent(): number {
 
 export function setupUi() {
   ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: UI_VIRTUAL_WIDTH, virtualHeight: UI_VIRTUAL_HEIGHT })
+  setupRoundResultsUi()
 }
 
 function requestMissionStart() {
-  if (showingShipDestroyed() || getGameState().missionStarted || !isStateSyncronized()) return
+  if (getGameState().missionStarted || !isStateSyncronized()) return
   room.send('requestMissionStart', { requestedAt: Date.now() })
 }
 
@@ -160,7 +148,7 @@ export const uiMenu = () => (
           width: UI_MISSION_BUTTON_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
           margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
-          display: showingShipDestroyed() || getGameState().missionStarted || showRestart() ? 'none' : 'flex'
+          display: getGameState().missionStarted || showRestart() ? 'none' : 'flex'
         }}
         onMouseDown={requestMissionStart}
       />
@@ -201,29 +189,6 @@ export const uiMenu = () => (
           display: showRestart() ? 'flex' : 'none'
         }}
         onMouseDown={requestNewMission}
-      />
-    </UiEntity>
-
-    <UiEntity
-      uiTransform={{
-        width: '100%',
-        height: '100%',
-        positionType: 'absolute',
-        position: { top: 0, left: 0 },
-        justifyContent: 'center',
-        alignItems: 'center',
-        display: showingShipDestroyed() ? 'flex' : 'none'
-      }}
-    >
-      <Label
-        value="Ship Destroyed"
-        fontSize={UI_SHIP_DESTROYED_FONT_SIZE}
-        color={SHIP_DESTROYED_COLOR}
-        textAlign="middle-center"
-        uiTransform={{
-          width: UI_SHIP_DESTROYED_LABEL_WIDTH,
-          height: UI_SHIP_DESTROYED_LABEL_HEIGHT
-        }}
       />
     </UiEntity>
 

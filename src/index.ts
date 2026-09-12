@@ -18,7 +18,7 @@ import { setupPlayers } from './players/stats'
 import { exitWeaponCamera, setupSceneObjects } from './sceneObjects'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
-import { markShipDestroyed, setupUi } from './ui'
+import { setupUi } from './ui'
 import { setupDebugTeleportToShip } from './utilities'
 
 function setupClientRoom() {
@@ -53,7 +53,6 @@ function setupClientRoom() {
     appliedDestroyedAt = data.destroyedAt
     console.log(`[CLIENT] Ship destroyed`)
     applyClientMissionReset()
-    markShipDestroyed()
   })
 
   let requestedInitialState = false
