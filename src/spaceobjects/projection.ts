@@ -4,7 +4,8 @@ import {
   CELESTIAL_SPHERE_INSET,
   PLANET_ENCLOSING_SPHERE_RADIUS,
   PROJECTED_BODY_MIN_SCALE,
-  SCENE_SHIP_POSITION
+  SCENE_SHIP_POSITION,
+  SHIP_INTERIOR_RADIUS
 } from '../constants'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { conjugateQuaternion, directionFromTo, rotateByInverse } from '../utilities'
@@ -45,7 +46,7 @@ export function scaleForAngularRadiusAtDistance(
   angularRadius: number,
   distanceFromViewer: number,
   minScale: number = PROJECTED_BODY_MIN_SCALE,
-  maxScale: number = PLANET_ENCLOSING_SPHERE_RADIUS
+  maxScale: number = PLANET_ENCLOSING_SPHERE_RADIUS - SHIP_INTERIOR_RADIUS
 ): number {
   if (distanceFromViewer < 1e-8) {
     return maxScale
@@ -131,11 +132,17 @@ export function projectVirtualBodyToSceneSphere(
   const position = Vector3.add(eye, Vector3.scale(localDirection, centerDistance))
   // Step 7: scale the radius-1 model so it keeps that angular size at the *actual*
   //         player→body distance (shrinks when you walk closer, grows when farther).
+  //         Cap so the near face stays outside the ship interior, not merely the origin.
+  const distanceFromOrigin = Vector3.distance(position, sphereCenter)
+  const maxScale =
+    sphereRadius >= PLANET_ENCLOSING_SPHERE_RADIUS
+      ? Math.max(PROJECTED_BODY_MIN_SCALE, distanceFromOrigin - SHIP_INTERIOR_RADIUS)
+      : sphereRadius
   const scale = scaleForAngularRadiusAtDistance(
     angularRadius,
     centerDistance,
     PROJECTED_BODY_MIN_SCALE,
-    sphereRadius
+    maxScale
   )
   // Step 8: orient the mesh for a non-spinning body under the ship's viewpoint.
   const rotation = stationaryBodySceneRotation(shipVirtualRotation)

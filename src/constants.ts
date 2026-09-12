@@ -10,6 +10,12 @@ export const SIMULATION_MAX_DELTA_SECONDS = 0.1
 /** Fixed scene-space anchor for the visible ship model (center of the enclosing sphere). */
 export const SCENE_SHIP_POSITION = Vector3.create(64, 64, 64)
 
+/**
+ * Scene-space radius of the walkable ship interior around SCENE_SHIP_POSITION.
+ * Projected planets are scaled so their surface stays outside this volume.
+ */
+export const SHIP_INTERIOR_RADIUS = 10
+
 /** World units per second at mid-leg (ease-in-out averages to this). */
 export const SHIP_CRUISE_SPEED = 800
 
@@ -241,7 +247,7 @@ export const SHIP_LASER_EMISSIVE_COLOR = Color3.create(0.7, 0.15, 1)
 export const SHIP_LASER_EMISSIVE_INTENSITY = 4
 
 export const OVERCHARGE_DAMAGE_MULTIPLIER = 1.5
-export const OVERCHARGE_DURATION_SECONDS = 10
+export const OVERCHARGE_DURATION_SECONDS = 15
 
 export const OVERCHARGE_LASER_ALBEDO_COLOR = Color4.create(0.95, 0.08, 0.08, 1)
 export const OVERCHARGE_LASER_EMISSIVE_COLOR = Color3.create(1, 0.15, 0.1)
