@@ -22,6 +22,9 @@ export const Messages = {
   requestRepairBreach: Schemas.Map({
     breachId: Schemas.Int
   }),
+  requestOvercharge: Schemas.Map({
+    requestedAt: Schemas.Int64
+  }),
 
   // Server → Client
   notifyMissionStart: Schemas.Map({
@@ -71,6 +74,10 @@ export const Messages = {
         repairs: Schemas.Int
       })
     )
+  }),
+  notifyWeaponsOvercharged: Schemas.Map({
+    playerId: Schemas.String,
+    overchargedAt: Schemas.Int64
   })
 }
 

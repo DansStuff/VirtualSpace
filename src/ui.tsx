@@ -1,5 +1,6 @@
 import { Color4 } from '@dcl/sdk/math'
 import { isStateSyncronized } from '@dcl/sdk/network'
+import { getPlayer } from '@dcl/sdk/players'
 import ReactEcs, { Button, Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 import {
   SHIP_BASE_HULL_HP,
@@ -16,10 +17,14 @@ import {
   UI_ENCOUNTER_STAGE_FONT_SIZE,
   UI_ENCOUNTER_STAGE_LABEL_HEIGHT,
   UI_ENCOUNTER_STAGE_LABEL_WIDTH,
+  UI_OVERCHARGE_LABEL_FONT_SIZE,
+  UI_OVERCHARGE_LABEL_HEIGHT,
+  UI_OVERCHARGE_LABEL_MARGIN_TOP,
+  UI_OVERCHARGE_LABEL_WIDTH,
   UI_VIRTUAL_HEIGHT,
   UI_VIRTUAL_WIDTH
 } from './constants'
-import { getGameState } from './gamestate'
+import { getGameState, isWeaponsOvercharged } from './gamestate'
 import { room } from './networking/messages'
 import { lastStopId } from './path/follow'
 import { exitWeaponCamera, isTurretOccupied } from './sceneObjects'
@@ -27,11 +32,26 @@ import { setupRoundResultsUi } from './ui/roundResults'
 
 let encounterStageUntil = 0
 let encounterStageTurret = ''
+let overchargePlayerName = ''
 
 const MISSION_STATUS_COLOR = Color4.create(0.55, 0.55, 0.55, 1)
 const ENCOUNTER_STAGE_COLOR = Color4.create(1, 0.75, 0.2, 1)
 const HEALTH_BAR_BACKGROUND = Color4.Red()
 const HEALTH_BAR_FOREGROUND = Color4.Green()
+const OVERCHARGE_LABEL_COLOR = Color4.create(1, 0.28, 0.22, 1)
+
+function truncateWallet(address: string): string {
+  if (address.length <= 10) return address
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function playerDisplayName(address: string): string {
+  return getPlayer({ userId: address })?.name || truncateWallet(address)
+}
+
+function showingOverchargeLabel() {
+  return isWeaponsOvercharged() && overchargePlayerName.length > 0
+}
 
 export function markEncounterStage(turret: string) {
   encounterStageTurret = turret
@@ -61,6 +81,9 @@ function hullPercent(): number {
 export function setupUi() {
   ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: UI_VIRTUAL_WIDTH, virtualHeight: UI_VIRTUAL_HEIGHT })
   setupRoundResultsUi()
+  room.onMessage('notifyWeaponsOvercharged', (data) => {
+    overchargePlayerName = playerDisplayName(data.playerId)
+  })
 }
 
 function requestMissionStart() {
@@ -127,6 +150,29 @@ export const uiMenu = () => (
           }}
         />
       </UiEntity>
+    </UiEntity>
+
+    <UiEntity
+      uiTransform={{
+        width: '100%',
+        height: UI_OVERCHARGE_LABEL_HEIGHT,
+        positionType: 'absolute',
+        position: { top: UI_OVERCHARGE_LABEL_MARGIN_TOP, left: 0 },
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: showingOverchargeLabel() ? 'flex' : 'none'
+      }}
+    >
+      <Label
+        value={`Weapons overcharged by ${overchargePlayerName}!`}
+        fontSize={UI_OVERCHARGE_LABEL_FONT_SIZE}
+        color={OVERCHARGE_LABEL_COLOR}
+        textAlign="middle-center"
+        uiTransform={{
+          width: UI_OVERCHARGE_LABEL_WIDTH,
+          height: UI_OVERCHARGE_LABEL_HEIGHT
+        }}
+      />
     </UiEntity>
 
     <UiEntity

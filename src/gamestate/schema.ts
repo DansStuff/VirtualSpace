@@ -17,7 +17,8 @@ export const GameState = engine.defineComponent('game:State', {
   breach3: Schemas.Boolean,
   breach4: Schemas.Boolean,
   breach5: Schemas.Boolean,
-  breach6: Schemas.Boolean
+  breach6: Schemas.Boolean,
+  weaponsOvercharged: Schemas.Boolean
 })
 
 export type GameStateSnapshot = {
@@ -34,6 +35,7 @@ export type GameStateSnapshot = {
   breach4: boolean
   breach5: boolean
   breach6: boolean
+  weaponsOvercharged: boolean
 }
 
 if (isServer()) {

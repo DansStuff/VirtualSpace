@@ -11,7 +11,14 @@ import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/
 import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
 import { addRepair, resetContributions, snapshotContributions, stringifyContributions } from '../players/contributions'
 import { onPlayerConnected } from '../players/stats'
-import { applyEncounterActive, applyEncounterEnded, applyMissionStarted, repairBreach, resetGameState } from './index'
+import {
+  activateOvercharge,
+  applyEncounterActive,
+  applyEncounterEnded,
+  applyMissionStarted,
+  repairBreach,
+  resetGameState
+} from './index'
 import {
   notifyEncounterEnd,
   notifyEncounterStage,
@@ -23,6 +30,7 @@ import {
   notifyRoundResults,
   notifySaucerFired,
   notifyShipDestroyed,
+  notifyWeaponsOvercharged,
   setupServerInbox
 } from './serverRoom'
 
@@ -217,6 +225,11 @@ export function setupStateMachine(): void {
         addRepair(from)
         console.log(`[SERVER] Breach ${breachId} repaired by ${from}`)
       }
+    },
+    onOvercharge: (from) => {
+      if (!activateOvercharge()) return
+      notifyWeaponsOvercharged(from)
+      console.log(`[SERVER] Weapons overcharged by ${from}`)
     }
   })
 

@@ -240,6 +240,12 @@ export const SHIP_LASER_ALBEDO_COLOR = Color4.create(0.45, 0.05, 0.85, 1)
 export const SHIP_LASER_EMISSIVE_COLOR = Color3.create(0.7, 0.15, 1)
 export const SHIP_LASER_EMISSIVE_INTENSITY = 4
 
+export const OVERCHARGE_DAMAGE_MULTIPLIER = 1.5
+export const OVERCHARGE_DURATION_SECONDS = 10
+
+export const OVERCHARGE_LASER_ALBEDO_COLOR = Color4.create(0.95, 0.08, 0.08, 1)
+export const OVERCHARGE_LASER_EMISSIVE_COLOR = Color3.create(1, 0.15, 0.1)
+
 // MARK: Encounters
 
 export type TurretId = 'left' | 'center' | 'right'
@@ -320,3 +326,7 @@ export const UI_ENCOUNTER_STAGE_DURATION_SECONDS = 2
 export const UI_ENCOUNTER_STAGE_FONT_SIZE = 48
 export const UI_ENCOUNTER_STAGE_LABEL_WIDTH = 720
 export const UI_ENCOUNTER_STAGE_LABEL_HEIGHT = 72
+export const UI_OVERCHARGE_LABEL_WIDTH = 720
+export const UI_OVERCHARGE_LABEL_HEIGHT = 32
+export const UI_OVERCHARGE_LABEL_FONT_SIZE = 18
+export const UI_OVERCHARGE_LABEL_MARGIN_TOP = UI_HEALTH_BAR_MARGIN_TOP + UI_HEALTH_BAR_HEIGHT

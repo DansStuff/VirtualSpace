@@ -40,6 +40,7 @@ export type ServerInboxHandlers = {
   onInitialState: (playerAddress: string) => void
   onHazardTarget: (playerAddress: string, hazardId: number) => void
   onRepairBreach: (playerAddress: string, breachId: number) => void
+  onOvercharge: (playerAddress: string) => void
 }
 
 export function notifyMissionStart(): void {
@@ -91,6 +92,10 @@ export function notifyRoundResults(data: RoundResultsNotify): void {
   room.send('notifyRoundResults', data)
 }
 
+export function notifyWeaponsOvercharged(playerId: string): void {
+  room.send('notifyWeaponsOvercharged', { playerId, overchargedAt: Date.now() })
+}
+
 export function setupServerInbox(handlers: ServerInboxHandlers): void {
   room.onMessage('requestMissionStart', (_data, context) => {
     if (!context) return
@@ -115,5 +120,10 @@ export function setupServerInbox(handlers: ServerInboxHandlers): void {
   room.onMessage('requestRepairBreach', (data, context) => {
     if (!context?.from) return
     handlers.onRepairBreach(context.from, data.breachId)
+  })
+
+  room.onMessage('requestOvercharge', (_data, context) => {
+    if (!context?.from) return
+    handlers.onOvercharge(context.from)
   })
 }

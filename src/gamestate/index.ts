@@ -1,6 +1,12 @@
 import { engine, Entity } from '@dcl/sdk/ecs'
 import { isServer, syncEntity } from '@dcl/sdk/network'
-import { BREACH_REPAIR_HP, PATH_START_STOP_ID, SHIP_BASE_HULL_HP } from '../constants'
+import {
+  BREACH_REPAIR_HP,
+  OVERCHARGE_DURATION_SECONDS,
+  PATH_START_STOP_ID,
+  SHIP_BASE_HULL_HP,
+  SIMULATION_MAX_DELTA_SECONDS
+} from '../constants'
 import { isPathFinished, resumeFromStop, teleportToStop } from '../path/follow'
 import { GameState, type GameStateSnapshot } from './schema'
 
@@ -13,6 +19,7 @@ const BREACH_FIELDS = ['breach1', 'breach2', 'breach3', 'breach4', 'breach5', 'b
 type BreachField = (typeof BREACH_FIELDS)[number]
 
 let stateEntity: Entity | null = null
+let overchargeRemaining = 0
 
 export function defaultGameState(): GameStateSnapshot {
   return {
@@ -28,7 +35,8 @@ export function defaultGameState(): GameStateSnapshot {
     breach3: false,
     breach4: false,
     breach5: false,
-    breach6: false
+    breach6: false,
+    weaponsOvercharged: false
   }
 }
 
@@ -111,6 +119,7 @@ export function applyGameState(data: GameStateSnapshot): void {
   state.breach4 = data.breach4
   state.breach5 = data.breach5
   state.breach6 = data.breach6
+  state.weaponsOvercharged = data.weaponsOvercharged
 }
 
 export function applyMissionStarted(encounterId: string = PATH_START_STOP_ID): void {
@@ -133,7 +142,30 @@ export function applyEncounterEnded(encounterId: string): void {
 }
 
 export function resetGameState(): void {
+  overchargeRemaining = 0
   applyGameState(defaultGameState())
+}
+
+/** Returns false if overcharge is already running. */
+export function activateOvercharge(): boolean {
+  if (overchargeRemaining > 0) return false
+  const state = GameState.getMutable(stateEntityOrThrow())
+  if (state.weaponsOvercharged) return false
+  state.weaponsOvercharged = true
+  overchargeRemaining = OVERCHARGE_DURATION_SECONDS
+  return true
+}
+
+export function isWeaponsOvercharged(): boolean {
+  return getGameState().weaponsOvercharged
+}
+
+function OverchargeSystem(dt: number): void {
+  if (overchargeRemaining <= 0) return
+  overchargeRemaining -= Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
+  if (overchargeRemaining > 0) return
+  overchargeRemaining = 0
+  GameState.getMutable(stateEntityOrThrow()).weaponsOvercharged = false
 }
 
 export function damageShipHull(amount: number): number {
@@ -166,6 +198,7 @@ export function setupGameState(): void {
     stateEntity = engine.addEntity()
     GameState.create(stateEntity, defaultGameState())
     syncEntity(stateEntity, [GameState.componentId], GAME_STATE_SYNC_ID)
+    engine.addSystem(OverchargeSystem)
     return
   }
 

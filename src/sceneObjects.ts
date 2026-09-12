@@ -29,6 +29,7 @@ import { room } from './networking/messages'
 const consoleCameras = new Map<Entity, Entity>()
 const breachEntities = new Map<number, Entity>()
 let turretOccupied = false
+let overchargeStation: Entity | null = null
 
 export type TurretView = {
   position: Vector3
@@ -125,6 +126,30 @@ function hoverTextForConsole(name: string): string {
   return `Control ${label} Laser`
 }
 
+function initOverchargeStation(entity: Entity): void {
+  PointerEvents.create(entity, {
+    pointerEvents: [
+      {
+        eventType: PointerEventType.PET_DOWN,
+        eventInfo: {
+          button: InputAction.IA_POINTER,
+          hoverText: 'Overcharge Weapons!',
+          maxDistance: 4,
+          showFeedback: true,
+          showHighlight: true
+        }
+      }
+    ]
+  })
+}
+
+function OverchargeStationSystem(): void {
+  if (!overchargeStation || !isStateSyncronized()) return
+  if (inputSystem.getInputCommand(InputAction.IA_POINTER, PointerEventType.PET_DOWN, overchargeStation)) {
+    room.send('requestOvercharge', { requestedAt: Date.now() })
+  }
+}
+
 function initConsole(entity: Entity, name: string, camera: Entity | undefined): void {
   if (camera === undefined) return
   PointerEvents.create(entity, {
@@ -217,6 +242,7 @@ function BreachRepairSystem(): void {
 export function setupSceneObjects(): void {
   turretViews.clear()
   breachEntities.clear()
+  overchargeStation = null
 
   const weapons = new Map<string, Entity>()
   const consoles: { entity: Entity; name: string }[] = []
@@ -245,6 +271,10 @@ export function setupSceneObjects(): void {
       }
       continue
     }
+    if (name.value === EntityNames.OverchargeStation) {
+      overchargeStation = entity
+      continue
+    }
     if (isConsoleName(name.value)) {
       consoles.push({ entity, name: name.value })
     }
@@ -259,6 +289,10 @@ export function setupSceneObjects(): void {
 
   for (const entity of breachEntities.values()) {
     initBreach(entity)
+  }
+
+  if (overchargeStation) {
+    initOverchargeStation(overchargeStation)
   }
 
   const cameras = new Map<string, Entity>()
@@ -277,4 +311,5 @@ export function setupSceneObjects(): void {
   engine.addSystem(WeaponConsoleSystem)
   engine.addSystem(BreachVisibilitySystem)
   engine.addSystem(BreachRepairSystem)
+  engine.addSystem(OverchargeStationSystem)
 }

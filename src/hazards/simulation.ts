@@ -9,6 +9,7 @@ import {
   HAZARD_CONE_VERTICAL_DEGREES,
   HAZARD_DAMAGE_INTERVAL,
   HAZARD_SPAWN_DISTANCE,
+  OVERCHARGE_DAMAGE_MULTIPLIER,
   SAUCER_APPROACH_SECONDS,
   SAUCER_FIRE_INTERVAL,
   SAUCER_HOVER_DISTANCE,
@@ -17,7 +18,7 @@ import {
   type HazardKind,
   type TurretId
 } from '../constants'
-import { activateRandomBreach, damageShipHull } from '../gamestate'
+import { activateRandomBreach, damageShipHull, isWeaponsOvercharged } from '../gamestate'
 import { addDamage } from '../players/contributions'
 import { getGunnerLevel } from '../players/stats'
 import { getKnownBreachIds, getTurretView } from '../sceneObjects'
@@ -237,8 +238,9 @@ export function tick(dt: number): void {
     while (hazard.damageElapsed >= HAZARD_DAMAGE_INTERVAL) {
       hazard.damageElapsed -= HAZARD_DAMAGE_INTERVAL
       let amount = 0
+      const multiplier = isWeaponsOvercharged() ? OVERCHARGE_DAMAGE_MULTIPLIER : 1
       for (const address of hazard.targetedBy) {
-        const damage = getGunnerLevel(address)
+        const damage = Math.round(getGunnerLevel(address) * multiplier)
         addDamage(address, damage)
         amount += damage
       }

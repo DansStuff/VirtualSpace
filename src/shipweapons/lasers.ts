@@ -2,6 +2,8 @@ import { AudioSource, engine, Entity, Material, MeshRenderer, Transform, Visibil
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
+  OVERCHARGE_LASER_ALBEDO_COLOR,
+  OVERCHARGE_LASER_EMISSIVE_COLOR,
   SCENE_SHIP_POSITION,
   SHIP_LASER_ALBEDO_COLOR,
   SHIP_LASER_BASE_FIRE_RATE,
@@ -15,6 +17,7 @@ import {
   SHIP_LASER_WIDTH,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
+import { isWeaponsOvercharged } from '../gamestate'
 import { forEachLiveHazard } from '../hazards/visuals'
 import { ObjectPool } from '../objectPool'
 import { directionFromTo } from '../utilities'
@@ -34,6 +37,15 @@ const fireElapsed = new Map<Entity, number>()
 
 let laserSoundEntity: Entity
 
+function applyLaserMaterial(entity: Entity, overcharged: boolean): void {
+  Material.setPbrMaterial(entity, {
+    albedoColor: overcharged ? OVERCHARGE_LASER_ALBEDO_COLOR : SHIP_LASER_ALBEDO_COLOR,
+    emissiveColor: overcharged ? OVERCHARGE_LASER_EMISSIVE_COLOR : SHIP_LASER_EMISSIVE_COLOR,
+    emissiveIntensity: SHIP_LASER_EMISSIVE_INTENSITY,
+    castShadows: false
+  })
+}
+
 function createLaserEntity(): Entity {
   const entity = engine.addEntity()
   Transform.create(entity, {
@@ -41,12 +53,7 @@ function createLaserEntity(): Entity {
     scale: Vector3.create(SHIP_LASER_WIDTH, 1, 1)
   })
   MeshRenderer.setPlane(entity)
-  Material.setPbrMaterial(entity, {
-    albedoColor: SHIP_LASER_ALBEDO_COLOR,
-    emissiveColor: SHIP_LASER_EMISSIVE_COLOR,
-    emissiveIntensity: SHIP_LASER_EMISSIVE_INTENSITY,
-    castShadows: false
-  })
+  applyLaserMaterial(entity, false)
   VisibilityComponent.create(entity, { visible: false })
   return entity
 }
@@ -57,6 +64,7 @@ function resetLaser(entity: Entity): void {
 
 function acquireLaser(target: Entity): void {
   const entity = laserPool.acquire()
+  applyLaserMaterial(entity, isWeaponsOvercharged())
   VisibilityComponent.getMutable(entity).visible = true
   if (Transform.has(target)) {
     applyLaserPose(entity, Transform.get(target).position)
