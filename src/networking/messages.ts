@@ -67,6 +67,7 @@ export const Messages = {
   notifyRoundResults: Schemas.Map({
     won: Schemas.Boolean,
     endedAt: Schemas.Int64,
+    furthestEncounter: Schemas.String,
     contributions: Schemas.Array(
       Schemas.Map({
         playerId: Schemas.String,

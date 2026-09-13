@@ -4,7 +4,7 @@ import { getPlayer } from '@dcl/sdk/players'
 import ReactEcs, { Button, Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 import { UI_VIRTUAL_HEIGHT, UI_VIRTUAL_WIDTH } from '../constants'
 import { room } from '../networking/messages'
-import { type RoundContribution } from '../players/contributions'
+import { contributionMapFromRows, type RoundContribution } from '../players/contributions'
 
 type ResultRow = {
   playerId: string
@@ -230,10 +230,6 @@ export function setupRoundResultsUi() {
   room.onMessage('notifyRoundResults', (data) => {
     if (data.endedAt <= appliedResultsAt) return
     appliedResultsAt = data.endedAt
-    const contributions = new Map<string, RoundContribution>()
-    for (const row of data.contributions) {
-      contributions.set(row.playerId, { damage: row.damage, repairs: row.repairs })
-    }
-    showRoundResults(contributions, data.won)
+    showRoundResults(contributionMapFromRows(data.contributions), data.won)
   })
 }

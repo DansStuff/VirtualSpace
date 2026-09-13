@@ -18,5 +18,6 @@ export enum EntityNames {
   OverchargeStation = "OverchargeStation",
   RightWeapon = "RightWeapon",
   RightWeaponConsole = "RightWeaponConsole",
+  Scoreboard = "Scoreboard",
   Ship_gltf = "Ship.gltf",
 } 

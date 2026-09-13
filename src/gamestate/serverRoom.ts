@@ -31,6 +31,7 @@ export type SaucerFiredNotify = {
 export type RoundResultsNotify = {
   won: boolean
   endedAt: number
+  furthestEncounter: string
   contributions: { playerId: string; damage: number; repairs: number }[]
 }
 

@@ -351,6 +351,27 @@
             },
             "parent": 0
           }
+        },
+        "131598": {
+          "json": {
+            "position": {
+              "x": 74.69515228271484,
+              "y": 63.880001068115234,
+              "z": 69.80999755859375
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0.7071067690849304,
+              "z": 0,
+              "w": -0.7071067690849304
+            },
+            "scale": {
+              "x": 1.7023851871490479,
+              "y": 2.5199999809265137,
+              "z": 0.15823198854923248
+            },
+            "parent": 0
+          }
         }
       }
     },
@@ -460,6 +481,13 @@
             "visibleMeshesCollisionMask": 3,
             "invisibleMeshesCollisionMask": 3
           }
+        },
+        "131598": {
+          "json": {
+            "src": "assets/scene/Models/Scoreboard.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
         }
       }
     },
@@ -544,6 +572,11 @@
         "525": {
           "json": {
             "value": "OverchargeStation"
+          }
+        },
+        "131598": {
+          "json": {
+            "value": "Scoreboard"
           }
         }
       }
@@ -650,7 +683,8 @@
                   522,
                   523,
                   524,
-                  525
+                  525,
+                  131598
                 ]
               },
               {
@@ -715,6 +749,10 @@
               },
               {
                 "entity": 525,
+                "children": []
+              },
+              {
+                "entity": 131598,
                 "children": []
               }
             ]
@@ -785,6 +823,9 @@
           "json": {}
         },
         "525": {
+          "json": {}
+        },
+        "131598": {
           "json": {}
         }
       }

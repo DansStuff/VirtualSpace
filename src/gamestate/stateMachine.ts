@@ -9,7 +9,13 @@ import { createWaveEncounter, type Encounter } from '../encounters/encounter'
 import { ENCOUNTER_PARAMS, PATH_START_STOP_ID } from '../constants'
 import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/simulation'
 import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
-import { addRepair, resetContributions, snapshotContributions, stringifyContributions } from '../players/contributions'
+import {
+  addRepair,
+  recordEncounterReached,
+  resetContributions,
+  snapshotMission,
+  stringifyContributions
+} from '../players/contributions'
 import { onPlayerConnected } from '../players/stats'
 import {
   activateOvercharge,
@@ -98,6 +104,7 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
   }
 
   if (event.type === 'STOP_REACHED' && to === 'inEncounter') {
+    recordEncounterReached(event.stopId)
     activeEncounter = createWaveEncounter(event.stopId)
     applyEncounterActive(event.stopId)
     const turret = activeEncounter.currentTurret()
@@ -126,11 +133,13 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
   }
 
   if (event.type === 'SHIP_DESTROYED') {
+    const mission = snapshotMission(false)
     console.log(`[SERVER] Round contributions (loss): ${stringifyContributions()}`)
     notifyRoundResults({
-      won: false,
+      won: mission.won,
       endedAt: Date.now(),
-      contributions: snapshotContributions()
+      furthestEncounter: mission.furthestEncounter,
+      contributions: mission.contributions
     })
     resetWorld()
     notifyShipDestroyed()
@@ -138,11 +147,13 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
   }
 
   if (event.type === 'MISSION_RESET') {
+    const mission = snapshotMission(true)
     console.log(`[SERVER] Round contributions (win): ${stringifyContributions()}`)
     notifyRoundResults({
-      won: true,
+      won: mission.won,
       endedAt: Date.now(),
-      contributions: snapshotContributions()
+      furthestEncounter: mission.furthestEncounter,
+      contributions: mission.contributions
     })
     resetWorld()
     notifyNewMission()
