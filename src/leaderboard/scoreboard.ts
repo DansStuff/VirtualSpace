@@ -112,11 +112,8 @@ function rowLabelText(index: number, mission: MissionRecord | undefined): string
   return `#${index + 1} destroyed at ${mission.furthestEncounter}`
 }
 
-function applyLabelColor(text: { textColor: Color4 }, color: Color4): void {
-  text.textColor.r = color.r
-  text.textColor.g = color.g
-  text.textColor.b = color.b
-  text.textColor.a = color.a
+function applyLabelColor(text: { textColor?: Color4 }, color: Color4): void {
+  text.textColor = Color4.create(color.r, color.g, color.b, color.a)
 }
 
 function applyWeeklyMissions(missions: MissionRecord[]): void {

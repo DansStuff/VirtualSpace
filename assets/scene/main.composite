@@ -1178,9 +1178,12 @@
             "ageRating": "A",
             "categories": [],
             "author": "DanL",
-            "email": "",
             "tags": [],
             "layout": {
+              "base": {
+                "x": 0,
+                "y": 0
+              },
               "parcels": [
                 {
                   "x": 0,
@@ -1470,14 +1473,8 @@
                   "x": 7,
                   "y": 0
                 }
-              ],
-              "base": {
-                "x": 0,
-                "y": 0
-              }
+              ]
             },
-            "silenceVoiceChat": false,
-            "disablePortableExperiences": false,
             "spawnPoints": [
               {
                 "name": "SpawnArea1",
@@ -1491,11 +1488,8 @@
                     ]
                   },
                   "y": {
-                    "$case": "range",
-                    "value": [
-                      64.58999633789062,
-                      64.58999633789062
-                    ]
+                    "$case": "single",
+                    "value": 63.58000183105469
                   },
                   "z": {
                     "$case": "range",
@@ -1515,8 +1509,6 @@
             "skyboxConfig": {
               "fixedTime": 86340
             },
-            "creator": "",
-            "disableNearbyVoiceChat": false,
             "hideLandscapeTerrain": true
           }
         }
