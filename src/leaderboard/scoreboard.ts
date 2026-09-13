@@ -18,20 +18,26 @@ import {
 import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { EntityNames } from '../../assets/scene/entity-names'
 import { SCENE_SHIP_POSITION } from '../constants'
+import { room } from '../networking/messages'
 import { contributionMapFromRows, type MissionRecord } from '../players/contributions'
 import { showRoundResults } from '../ui/roundResults'
-import { DUMMY_WEEKLY_MISSIONS } from './dummyWeek'
+import { WEEKLY_TOP_N } from './week'
 
 /** Default Blender cube is 2×2×2, centered, extents ±1. Front is local +Z (Creator Hub / DCL forward). */
 const CUBE_HALF = 1
 const CUBE_SIZE = CUBE_HALF * 2
-const ROW_COUNT = 5
+const ROW_COUNT = WEEKLY_TOP_N
 const ROW_GAP = 0.06
 const POINTER_DISTANCE = 30
 const LABEL_FONT_SIZE = 1.4
+const LABEL_DEFAULT_COLOR = Color4.create(0.92, 0.93, 0.95, 1)
+const LABEL_EMPTY_COLOR = Color4.create(0.6, 0.62, 0.66, 1)
+const LABEL_LOSS_COLOR = Color4.create(1, 0.35, 0.28, 1)
 
 const rowEntities: Entity[] = []
+const rowLabels: Entity[] = []
 const rowMissions = new Map<Entity, MissionRecord>()
+let appliedBoardAt = 0
 
 function rowHeight(): number {
   return (CUBE_SIZE - ROW_GAP * (ROW_COUNT - 1)) / ROW_COUNT
@@ -41,7 +47,7 @@ function rowLocalY(index: number): number {
   return CUBE_HALF - index * (rowHeight() + ROW_GAP) - rowHeight() / 2
 }
 
-function createRow(parent: Entity, index: number, mission: MissionRecord, parentScale: Vector3): Entity {
+function createRow(parent: Entity, index: number, parentScale: Vector3): Entity {
   const height = rowHeight()
   const planeScale = Vector3.create(CUBE_SIZE, height, 1)
   const entity = engine.addEntity()
@@ -87,17 +93,50 @@ function createRow(parent: Entity, index: number, mission: MissionRecord, parent
     )
   })
   TextShape.create(label, {
-    text: `#${index + 1}  ${mission.furthestEncounter}`,
+    text: 'No Record',
     fontSize: LABEL_FONT_SIZE,
-    textColor: Color4.create(0.92, 0.93, 0.95, 1),
+    textColor: Color4.create(LABEL_EMPTY_COLOR.r, LABEL_EMPTY_COLOR.g, LABEL_EMPTY_COLOR.b, LABEL_EMPTY_COLOR.a),
     outlineColor: Color4.Black(),
     outlineWidth: 0.08,
     textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
 
   rowEntities.push(entity)
-  rowMissions.set(entity, mission)
+  rowLabels.push(label)
   return entity
+}
+
+function rowLabelText(index: number, mission: MissionRecord | undefined): string {
+  if (!mission) return 'No Record'
+  if (mission.won) return 'Victory!'
+  return `#${index + 1} destroyed at ${mission.furthestEncounter}`
+}
+
+function applyLabelColor(text: { textColor: Color4 }, color: Color4): void {
+  text.textColor.r = color.r
+  text.textColor.g = color.g
+  text.textColor.b = color.b
+  text.textColor.a = color.a
+}
+
+function applyWeeklyMissions(missions: MissionRecord[]): void {
+  for (let i = 0; i < ROW_COUNT; i++) {
+    const entity = rowEntities[i]
+    const label = rowLabels[i]
+    if (!entity || !label) continue
+    const mission = missions[i]
+    const text = TextShape.getMutable(label)
+    if (mission) {
+      rowMissions.set(entity, mission)
+    } else {
+      rowMissions.delete(entity)
+    }
+    text.text = rowLabelText(i, mission)
+    applyLabelColor(
+      text,
+      !mission ? LABEL_EMPTY_COLOR : mission.won ? LABEL_DEFAULT_COLOR : LABEL_LOSS_COLOR
+    )
+  }
 }
 
 function ScoreboardClickSystem(): void {
@@ -139,10 +178,14 @@ export function setupScoreboard(): void {
   const anchor = resolveAnchor()
 
   for (let i = 0; i < ROW_COUNT; i++) {
-    const mission = DUMMY_WEEKLY_MISSIONS[i]
-    if (!mission) continue
-    createRow(anchor.entity, i, mission, anchor.scale)
+    createRow(anchor.entity, i, anchor.scale)
   }
+
+  room.onMessage('notifyWeeklyBoard', (data) => {
+    if (data.updatedAt <= appliedBoardAt) return
+    appliedBoardAt = data.updatedAt
+    applyWeeklyMissions(data.missions)
+  })
 
   engine.addSystem(ScoreboardClickSystem)
 }

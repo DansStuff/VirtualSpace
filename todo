@@ -15,16 +15,7 @@ ui for upgrade progression
 
 
 
-
-
 scrolling toast thingy (as layered renderer for reuse)
-
-
-
-
-
-
-
 
 
 
@@ -35,41 +26,13 @@ secondary encounter stage type : saucer
   client side laser effect
   
 
-
-
 double xp
 
-
+  -store timestamp of player last playtime and determine double xp based on that.
 
 
 
 crew manifests - need to make a leaderboard
-
-  seems like everyone has there own leaderboard implementation
-  not sure if "crew manifests" is viable, would need to only trigger on victory
-  also need results screen on loss
-  same results data rendered on loss, victory, or click on leaderboard entry
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-overcharge station
-
-  interactable near back of the ship that boosts damage and changes color of lasers for a duration 
-  fairly easy to do i think
-
-
 
 
 

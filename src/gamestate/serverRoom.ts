@@ -35,6 +35,16 @@ export type RoundResultsNotify = {
   contributions: { playerId: string; damage: number; repairs: number }[]
 }
 
+export type WeeklyBoardNotify = {
+  weekId: string
+  updatedAt: number
+  missions: {
+    won: boolean
+    furthestEncounter: string
+    contributions: { playerId: string; damage: number; repairs: number }[]
+  }[]
+}
+
 export type ServerInboxHandlers = {
   onMissionStart: (playerAddress: string) => void
   onNewMission: (playerAddress: string) => void
@@ -95,6 +105,14 @@ export function notifyRoundResults(data: RoundResultsNotify): void {
 
 export function notifyWeaponsOvercharged(playerId: string): void {
   room.send('notifyWeaponsOvercharged', { playerId, overchargedAt: Date.now() })
+}
+
+export function notifyWeeklyBoard(data: WeeklyBoardNotify, to?: string): void {
+  if (to) {
+    room.send('notifyWeeklyBoard', data, { to: [to] })
+    return
+  }
+  room.send('notifyWeeklyBoard', data)
 }
 
 export function setupServerInbox(handlers: ServerInboxHandlers): void {

@@ -79,6 +79,23 @@ export const Messages = {
   notifyWeaponsOvercharged: Schemas.Map({
     playerId: Schemas.String,
     overchargedAt: Schemas.Int64
+  }),
+  notifyWeeklyBoard: Schemas.Map({
+    weekId: Schemas.String,
+    updatedAt: Schemas.Int64,
+    missions: Schemas.Array(
+      Schemas.Map({
+        won: Schemas.Boolean,
+        furthestEncounter: Schemas.String,
+        contributions: Schemas.Array(
+          Schemas.Map({
+            playerId: Schemas.String,
+            damage: Schemas.Int,
+            repairs: Schemas.Int
+          })
+        )
+      })
+    )
   })
 }
 

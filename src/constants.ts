@@ -336,3 +336,5 @@ export const UI_OVERCHARGE_LABEL_WIDTH = 720
 export const UI_OVERCHARGE_LABEL_HEIGHT = 32
 export const UI_OVERCHARGE_LABEL_FONT_SIZE = 18
 export const UI_OVERCHARGE_LABEL_MARGIN_TOP = UI_HEALTH_BAR_MARGIN_TOP + UI_HEALTH_BAR_HEIGHT
+export const UI_GUNNER_ICON_PATH = 'assets/scene/Images/gunner.png'
+export const UI_ENGINEERING_ICON_PATH = 'assets/scene/Images/engineering.png'

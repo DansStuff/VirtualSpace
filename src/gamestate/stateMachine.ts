@@ -9,6 +9,7 @@ import { createWaveEncounter, type Encounter } from '../encounters/encounter'
 import { ENCOUNTER_PARAMS, PATH_START_STOP_ID } from '../constants'
 import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/simulation'
 import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
+import { getWeeklyBoardSnapshot, recordWeeklyMission } from '../leaderboard/weeklyBoard'
 import {
   addRepair,
   recordEncounterReached,
@@ -37,6 +38,7 @@ import {
   notifySaucerFired,
   notifyShipDestroyed,
   notifyWeaponsOvercharged,
+  notifyWeeklyBoard,
   setupServerInbox
 } from './serverRoom'
 
@@ -92,6 +94,37 @@ function resetWorld(): void {
   resetPathToStart()
 }
 
+function publishWeeklyBoard(to?: string): void {
+  void getWeeklyBoardSnapshot().then((weekly) => {
+    notifyWeeklyBoard(
+      {
+        weekId: weekly.weekId,
+        updatedAt: Date.now(),
+        missions: weekly.missions
+      },
+      to
+    )
+  })
+}
+
+function finishRound(won: boolean): void {
+  const mission = snapshotMission(won)
+  console.log(`[SERVER] Round contributions (${won ? 'win' : 'loss'}): ${stringifyContributions()}`)
+  notifyRoundResults({
+    won: mission.won,
+    endedAt: Date.now(),
+    furthestEncounter: mission.furthestEncounter,
+    contributions: mission.contributions
+  })
+  void recordWeeklyMission(mission).then((weekly) => {
+    notifyWeeklyBoard({
+      weekId: weekly.weekId,
+      updatedAt: Date.now(),
+      missions: weekly.missions
+    })
+  })
+}
+
 function applyTransition(from: MissionState, to: MissionState, event: MissionEvent): void {
   console.log(`[STATE] ${from} → ${to} (${event.type})`)
 
@@ -133,28 +166,14 @@ function applyTransition(from: MissionState, to: MissionState, event: MissionEve
   }
 
   if (event.type === 'SHIP_DESTROYED') {
-    const mission = snapshotMission(false)
-    console.log(`[SERVER] Round contributions (loss): ${stringifyContributions()}`)
-    notifyRoundResults({
-      won: mission.won,
-      endedAt: Date.now(),
-      furthestEncounter: mission.furthestEncounter,
-      contributions: mission.contributions
-    })
+    finishRound(false)
     resetWorld()
     notifyShipDestroyed()
     return
   }
 
   if (event.type === 'MISSION_RESET') {
-    const mission = snapshotMission(true)
-    console.log(`[SERVER] Round contributions (win): ${stringifyContributions()}`)
-    notifyRoundResults({
-      won: mission.won,
-      endedAt: Date.now(),
-      furthestEncounter: mission.furthestEncounter,
-      contributions: mission.contributions
-    })
+    finishRound(true)
     resetWorld()
     notifyNewMission()
   }
@@ -222,6 +241,7 @@ export function setupStateMachine(): void {
     onInitialState: (from) => {
       console.log(`[SERVER] Initial state requested by ${from}`)
       onPlayerConnected(from)
+      publishWeeklyBoard(from)
       const turret = activeEncounter?.currentTurret()
       if (currentState === 'inEncounter' && turret) {
         notifyEncounterStage(turret, from)

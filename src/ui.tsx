@@ -29,6 +29,7 @@ import { room } from './networking/messages'
 import { lastStopId } from './path/follow'
 import { exitWeaponCamera, isTurretOccupied } from './sceneObjects'
 import { setupRoundResultsUi } from './ui/roundResults'
+import { setupSkillLevelsUi } from './ui/skillLevels'
 
 let encounterStageUntil = 0
 let encounterStageTurret = ''
@@ -81,6 +82,7 @@ function hullPercent(): number {
 export function setupUi() {
   ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: UI_VIRTUAL_WIDTH, virtualHeight: UI_VIRTUAL_HEIGHT })
   setupRoundResultsUi()
+  setupSkillLevelsUi()
   room.onMessage('notifyWeaponsOvercharged', (data) => {
     overchargePlayerName = playerDisplayName(data.playerId)
   })

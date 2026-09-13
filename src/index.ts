@@ -9,6 +9,7 @@ import { registerGlobalSounds } from './audio/global'
 import { ENCOUNTER_STAGE_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, PATH_START_STOP_ID, SHIP_LASER_SOUND_PATH } from './constants'
 import { setupEncounters } from './encounters/client'
 import { setupScoreboard } from './leaderboard/scoreboard'
+import { setupWeeklyBoard } from './leaderboard/weeklyBoard'
 import { setupGameState } from './gamestate'
 import { setupStateMachine } from './gamestate/stateMachine'
 import { setupHazards } from './hazards/simulation'
@@ -82,6 +83,7 @@ export function main() {
   setupEncounters()
   setupHazards()
   setupPlayers()
+  setupWeeklyBoard()
   setupSpaceObjects()
   setupShipWeapons()
   engine.addSystem(ShipPathSystem)
