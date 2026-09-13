@@ -248,10 +248,6 @@ export function setupSceneObjects(): void {
   const consoles: { entity: Entity; name: string }[] = []
 
   for (const [entity, name] of engine.getEntitiesWith(Name)) {
-    if (name.value === EntityNames.Saucer_gltf) {
-      VisibilityComponent.createOrReplace(entity, { visible: false, propagateToChildren: true })
-      continue
-    }
     if (isBreachName(name.value)) {
       const breachId = breachIdFromName(name.value)
       if (breachId === undefined) {
