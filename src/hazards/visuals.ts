@@ -18,7 +18,7 @@ import {
   Transform,
   VisibilityComponent
 } from '@dcl/sdk/ecs'
-import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   ASTEROID_ENCLOSING_SPHERE_RADIUS,
   HAZARD_AIM_CONE_HALF_ANGLE_DEGREES,
@@ -27,6 +27,13 @@ import {
   HAZARD_HIT_SHIP_SOUND_PATH,
   HAZARD_IMPACT_DISTANCE,
   HAZARD_RADIUS,
+  SAUCER_BEAM_ALBEDO_COLOR,
+  SAUCER_BEAM_EMISSIVE_COLOR,
+  SAUCER_BEAM_TARGET_OFFSET,
+  SAUCER_BEAM_TARGET_X_SPREAD,
+  SAUCER_BEAM_RETARGET_SECONDS,
+  SAUCER_BEAM_WIDTH_PULSE_AMPLITUDE,
+  SAUCER_BEAM_WIDTH_PULSE_PERIOD,
   SAUCER_HOVER_DISTANCE,
   HAZARD_RAYCAST_MAX_DISTANCE,
   HAZARD_SAUCER_MODEL_PATH,
@@ -44,6 +51,9 @@ import {
   HAZARD_TARGETING_PORTRAIT_START_ANGLE_DEGREES,
   HAZARD_TARGETING_PORTRAIT_STEP_DEGREES,
   HAZARD_TARGETING_PORTRAIT_Z,
+  SCENE_SHIP_POSITION,
+  SHIP_LASER_EMISSIVE_INTENSITY,
+  SHIP_LASER_WIDTH,
   SIMULATION_MAX_DELTA_SECONDS,
   type HazardKind
 } from '../constants'
@@ -62,6 +72,7 @@ type HazardVisuals = {
   targetingIndicator: Entity
   targetingLockedLabel: Entity
   portraitSlots: Entity[]
+  beam?: Entity
 }
 
 type SpawnedHazard = {
@@ -72,12 +83,18 @@ type SpawnedHazard = {
   targetingIndicator: Entity
   targetingLockedLabel: Entity
   portraitSlots: Entity[]
+  beam?: Entity
+  beamTarget?: Vector3
+  beamRetargetElapsed: number
   targeters: string[]
   start: Vector3
   end: Vector3
   flightTime: number
   elapsed: number
 }
+
+const worldDown = Vector3.Down()
+let beamPulseElapsed = 0
 
 let asteroidPool: ObjectPool<HazardVisuals>
 let saucerPool: ObjectPool<HazardVisuals>
@@ -88,6 +105,83 @@ function hazardPool(kind: HazardKind): ObjectPool<HazardVisuals> {
 
 function parseHazardKind(value: string): HazardKind {
   return value === 'saucer' ? 'saucer' : 'asteroid'
+}
+
+function rollSaucerBeamTarget(): Vector3 {
+  return Vector3.create(
+    SCENE_SHIP_POSITION.x + (Math.random() * 2 - 1) * SAUCER_BEAM_TARGET_X_SPREAD,
+    SCENE_SHIP_POSITION.y + SAUCER_BEAM_TARGET_OFFSET.y,
+    SCENE_SHIP_POSITION.z + SAUCER_BEAM_TARGET_OFFSET.z
+  )
+}
+
+function createSaucerBeam(): Entity {
+  const entity = engine.addEntity()
+  Transform.create(entity, {
+    position: Vector3.clone(SCENE_SHIP_POSITION),
+    scale: Vector3.create(SHIP_LASER_WIDTH, 1, 1)
+  })
+  MeshRenderer.setPlane(entity)
+  Material.setPbrMaterial(entity, {
+    albedoColor: SAUCER_BEAM_ALBEDO_COLOR,
+    emissiveColor: SAUCER_BEAM_EMISSIVE_COLOR,
+    emissiveIntensity: SHIP_LASER_EMISSIVE_INTENSITY,
+    castShadows: false
+  })
+  VisibilityComponent.create(entity, { visible: false })
+  return entity
+}
+
+/**
+ * Rotation for a plane lying along the beam: local +Y is origin→target, local +Z is
+ * world-down projected onto the plane perpendicular to the beam (visible from below).
+ */
+function beamRotation(beamDir: Vector3): Quaternion.Mutable {
+  const zAxis = Vector3.normalize(
+    Vector3.subtract(worldDown, Vector3.scale(beamDir, Vector3.dot(worldDown, beamDir)))
+  )
+  return Quaternion.lookRotation(zAxis, beamDir)
+}
+
+function pulsedBeamWidth(): number {
+  const phase = (beamPulseElapsed / SAUCER_BEAM_WIDTH_PULSE_PERIOD) * Math.PI * 2
+  return SHIP_LASER_WIDTH * (1 + SAUCER_BEAM_WIDTH_PULSE_AMPLITUDE * Math.sin(phase))
+}
+
+/** Stretch the unparented beam plane from the saucer origin to this saucer's impact point. */
+function applyBeamPose(entity: Entity, origin: Vector3, target: Vector3): void {
+  const length = Vector3.distance(origin, target)
+  const transform = Transform.getMutable(entity)
+  transform.position = Vector3.lerp(origin, target, 0.5)
+  transform.rotation = beamRotation(directionFromTo(origin, target))
+  transform.scale = Vector3.create(pulsedBeamWidth(), Math.max(length, 0.01), 1)
+}
+
+function applySaucerBeam(hazard: SpawnedHazard, dt: number): void {
+  if (hazard.beam === undefined) return
+  const hovering = hazard.kind === 'saucer' && hazard.elapsed >= hazard.flightTime
+  VisibilityComponent.getMutable(hazard.beam).visible = hovering
+  if (!hovering || !Transform.has(hazard.entity)) {
+    hazard.beamTarget = undefined
+    hazard.beamRetargetElapsed = 0
+    return
+  }
+  if (hazard.beamTarget === undefined) {
+    hazard.beamTarget = rollSaucerBeamTarget()
+    hazard.beamRetargetElapsed = 0
+  } else {
+    hazard.beamRetargetElapsed += dt
+    while (hazard.beamRetargetElapsed >= SAUCER_BEAM_RETARGET_SECONDS) {
+      hazard.beamRetargetElapsed -= SAUCER_BEAM_RETARGET_SECONDS
+      hazard.beamTarget = rollSaucerBeamTarget()
+    }
+  }
+  applyBeamPose(hazard.beam, Transform.get(hazard.entity).position, hazard.beamTarget)
+}
+
+function hideSaucerBeam(beam: Entity | undefined): void {
+  if (beam === undefined) return
+  VisibilityComponent.getMutable(beam).visible = false
 }
 
 /** Client-only incoming hazard. ProjectedBodySystem projects `ProjectedBody.position`. */
@@ -167,7 +261,8 @@ function createHazardVisuals(kind: HazardKind): HazardVisuals {
     portraitSlots.push(createPortraitSlot(targetingIndicator, i))
   }
 
-  return { kind, entity, targetingIndicator, targetingLockedLabel, portraitSlots }
+  const beam = isSaucer ? createSaucerBeam() : undefined
+  return { kind, entity, targetingIndicator, targetingLockedLabel, portraitSlots, beam }
 }
 
 function portraitPosition(index: number): Vector3 {
@@ -251,6 +346,7 @@ function resetHazard(visuals: HazardVisuals) {
     forgetTumble(visuals.entity)
   }
   hidePortraitSlots(visuals.portraitSlots)
+  hideSaucerBeam(visuals.beam)
   VisibilityComponent.getMutable(visuals.targetingIndicator).visible = false
   VisibilityComponent.getMutable(visuals.targetingLockedLabel).visible = false
   VisibilityComponent.getMutable(visuals.entity).visible = false
@@ -338,6 +434,14 @@ function HazardFlightSystem(dt: number) {
   for (const hazard of spawned) {
     hazard.elapsed += step
     applyVirtualPosition(hazard)
+  }
+}
+
+function SaucerBeamSystem(dt: number) {
+  const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
+  beamPulseElapsed += step
+  for (const hazard of spawned) {
+    applySaucerBeam(hazard, step)
   }
 }
 
@@ -438,6 +542,7 @@ export function setupHazardVisuals() {
   })
 
   engine.addSystem(HazardFlightSystem)
+  engine.addSystem(SaucerBeamSystem)
   engine.addSystem(HazardTargetSystem)
 
   room.onMessage('notifyHazardSpawn', (data) => {
@@ -455,6 +560,8 @@ export function setupHazardVisuals() {
       targetingIndicator: visuals.targetingIndicator,
       targetingLockedLabel: visuals.targetingLockedLabel,
       portraitSlots: visuals.portraitSlots,
+      beam: visuals.beam,
+      beamRetargetElapsed: 0,
       targeters: [],
       start: path.start,
       end: path.end,

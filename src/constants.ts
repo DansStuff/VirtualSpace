@@ -77,6 +77,11 @@ let DEFAULT_FLIGHT_TIME = 8
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
   'encounter-1': {
     stages: [
+      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+
+
       { kind: 'asteroid', turret: 'center', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 },
       { kind: 'asteroid', turret: 'left', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 },
       { kind: 'asteroid', turret: 'right', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 }
@@ -306,6 +311,24 @@ export const HAZARD_SAUCER_RADIUS = 5
 
 /** Virtual-space distance from the ship where a saucer stops approaching. */
 export const SAUCER_HOVER_DISTANCE = 40
+
+export const SAUCER_BEAM_ALBEDO_COLOR = Color4.create(0.05, 0.85, 0.15, 1)
+export const SAUCER_BEAM_EMISSIVE_COLOR = Color3.create(0.15, 1, 0.25)
+
+/** Scene-space offset from SCENE_SHIP_POSITION: below the floor, toward the bow (scene -Z; +Z is stern). */
+export const SAUCER_BEAM_TARGET_OFFSET = Vector3.create(0, -5, -10)
+
+/** Random X jitter around SCENE_SHIP_POSITION when a saucer beam starts. */
+export const SAUCER_BEAM_TARGET_X_SPREAD = 10
+
+/** Seconds between saucer beam impact rerolls while hovering. */
+export const SAUCER_BEAM_RETARGET_SECONDS = 1.3
+
+/** Fractional width pulse around SHIP_LASER_WIDTH (0.2 = ±20%). */
+export const SAUCER_BEAM_WIDTH_PULSE_AMPLITUDE = 0.4
+
+/** Seconds for one full width pulse cycle. */
+export const SAUCER_BEAM_WIDTH_PULSE_PERIOD = 0.225
 
 // MARK: Ship Weapons
 
