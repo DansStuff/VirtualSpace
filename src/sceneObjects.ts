@@ -1,4 +1,6 @@
 import {
+  AvatarModifierArea,
+  AvatarModifierType,
   engine,
   Entity,
   InputAction,
@@ -137,6 +139,21 @@ function hoverTextForConsole(name: string): string {
   return `Control ${label} Laser`
 }
 
+/** 8×9 parcels (16m each), tall enough to cover the ship at y=64. Centered on the parcel bounds. */
+const SCENE_PASSPORT_AREA_SIZE = Vector3.create(128, 200, 144)
+const SCENE_PASSPORT_AREA_CENTER = Vector3.create(64, 64, 72)
+
+/** Hide the explorer "Options" / passport prompt on every avatar in the scene. */
+function disablePlayerPassportPrompt(): void {
+  const entity = engine.addEntity()
+  Transform.create(entity, { position: SCENE_PASSPORT_AREA_CENTER })
+  AvatarModifierArea.create(entity, {
+    area: SCENE_PASSPORT_AREA_SIZE,
+    modifiers: [AvatarModifierType.AMT_DISABLE_PASSPORTS],
+    excludeIds: []
+  })
+}
+
 function OverchargeStationSystem(): void {
   if (!overchargeStation || !isStateSyncronized()) return
   if (inputSystem.getInputCommand(InputAction.IA_POINTER, PointerEventType.PET_DOWN, overchargeStation)) {
@@ -261,6 +278,7 @@ export function setupSceneObjects(): void {
 
   if (isServer()) return
 
+  disablePlayerPassportPrompt()
   PointerLock.createOrReplace(engine.CameraEntity, { isPointerLocked: false })
 
   for (const entity of breachEntities.values()) {
