@@ -24,20 +24,50 @@ import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { directionFromTo } from '../utilities'
 import { setupHazardVisuals } from './visuals'
 
-type LiveHazard = {
+type HazardBase = {
   hazardId: number
   encounterId: string
-  kind: HazardKind
   position: Vector3
+  hp: number
+  targetedBy: Set<string>
+  damageElapsed: number
+}
+
+type LiveAsteroid = HazardBase & {
+  kind: 'asteroid'
   flightElapsed: number
   flightTime: number
-  hp: number
-  hullDamage: number
-  fireInterval: number
-  damageElapsed: number
-  fireElapsed: number
-  targetedBy: Set<string>
+  impactDamage: number
 }
+
+type LiveSaucer = HazardBase & {
+  kind: 'saucer'
+  approachElapsed: number
+  approachTime: number
+  fireElapsed: number
+  fireInterval: number
+  shotDamage: number
+}
+
+type LiveHazard = LiveAsteroid | LiveSaucer
+
+type SpawnAsteroidOpts = {
+  kind: 'asteroid'
+  turret: TurretId
+  flightTime: number
+  hp: number
+  impactDamage: number
+}
+
+type SpawnSaucerOpts = {
+  kind: 'saucer'
+  turret: TurretId
+  hp: number
+  fireInterval: number
+  shotDamage: number
+}
+
+type SpawnHazardOpts = SpawnAsteroidOpts | SpawnSaucerOpts
 
 export type HazardNotifies = {
   notifyHazardSpawn: (data: {
@@ -82,12 +112,19 @@ function directionInTurretView(turret: TurretId): Vector3 {
   return Vector3.rotate(Vector3.normalize(sceneDir), shipVirtualRotation)
 }
 
+function remainingFlightTime(hazard: LiveHazard): number {
+  if (hazard.kind === 'asteroid') {
+    return Math.max(0, hazard.flightTime - hazard.flightElapsed)
+  }
+  return Math.max(0, hazard.approachTime - hazard.approachElapsed)
+}
+
 function hazardSpawnMessage(hazard: LiveHazard) {
   return {
     hazardId: hazard.hazardId,
     encounterId: hazard.encounterId,
     position: hazard.position,
-    flightTime: Math.max(0, hazard.flightTime - hazard.flightElapsed),
+    flightTime: remainingFlightTime(hazard),
     kind: hazard.kind
   }
 }
@@ -154,7 +191,9 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   clearHazardLockers(hazard)
   liveHazards.splice(index, 1)
   if (hitShip) {
-    damageShipHull(hazard.hullDamage)
+    if (hazard.kind === 'asteroid') {
+      damageShipHull(hazard.impactDamage)
+    }
     const breachId = activateRandomBreach(getKnownBreachIds())
     if (breachId !== null) {
       console.log(`[SERVER] Breach ${breachId} opened`)
@@ -165,66 +204,69 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
   return true
 }
 
-export function spawn(
-  encounterId: string,
-  opts: {
-    kind: HazardKind
-    turret: TurretId
-    flightTime: number
-    hp: number
-    hullDamage: number
-    fireInterval?: number
-  }
-): number {
-  const position = Vector3.add(shipVirtualPosition, Vector3.scale(directionInTurretView(opts.turret), HAZARD_SPAWN_DISTANCE))
-  const hazard: LiveHazard = {
+function nextBase(encounterId: string, position: Vector3, hp: number): HazardBase {
+  return {
     hazardId: nextHazardId++,
     encounterId,
-    kind: opts.kind,
     position,
-    flightElapsed: 0,
-    flightTime: opts.kind === 'saucer' ? SAUCER_APPROACH_SECONDS : opts.flightTime,
-    hp: opts.hp,
-    hullDamage: opts.hullDamage,
-    fireInterval: opts.fireInterval ?? 0,
-    damageElapsed: 0,
-    fireElapsed: 0,
-    targetedBy: new Set()
+    hp,
+    targetedBy: new Set(),
+    damageElapsed: 0
   }
+}
+
+export function spawn(encounterId: string, opts: SpawnHazardOpts): number {
+  const position = Vector3.add(shipVirtualPosition, Vector3.scale(directionInTurretView(opts.turret), HAZARD_SPAWN_DISTANCE))
+  const base = nextBase(encounterId, position, opts.hp)
+  const hazard: LiveHazard =
+    opts.kind === 'asteroid'
+      ? {
+          ...base,
+          kind: 'asteroid',
+          flightElapsed: 0,
+          flightTime: opts.flightTime,
+          impactDamage: opts.impactDamage
+        }
+      : {
+          ...base,
+          kind: 'saucer',
+          approachElapsed: 0,
+          approachTime: SAUCER_APPROACH_SECONDS,
+          fireElapsed: 0,
+          fireInterval: opts.fireInterval,
+          shotDamage: opts.shotDamage
+        }
   liveHazards.push(hazard)
   notifies?.notifyHazardSpawn(hazardSpawnMessage(hazard))
   return hazard.hazardId
 }
 
-export function tick(dt: number): void {
-  const expiredIds: number[] = []
-  for (const hazard of liveHazards) {
-    hazard.flightElapsed += dt
-    if (hazard.kind === 'asteroid' && hazard.flightElapsed >= hazard.flightTime) {
-      expiredIds.push(hazard.hazardId)
-    }
+function tickAsteroid(hazard: LiveAsteroid, dt: number): number | null {
+  hazard.flightElapsed += dt
+  if (hazard.flightElapsed >= hazard.flightTime) {
+    return hazard.hazardId
   }
-  for (const hazardId of expiredIds) {
-    destroyHazard(hazardId, true)
-  }
+  return null
+}
 
-  for (const hazard of liveHazards) {
-    if (hazard.kind !== 'saucer') continue
-    if (hazard.flightElapsed < hazard.flightTime) continue
-    if (hazard.fireInterval <= 0) continue
-    hazard.fireElapsed += dt
-    while (hazard.fireElapsed >= hazard.fireInterval) {
-      hazard.fireElapsed -= hazard.fireInterval
-      damageShipHull(hazard.hullDamage)
-      const dir = directionFromTo(shipVirtualPosition, hazard.position)
-      notifies?.notifySaucerFired({
-        hazardId: hazard.hazardId,
-        position: Vector3.add(shipVirtualPosition, Vector3.scale(dir, SAUCER_HOVER_DISTANCE))
-      })
-      console.log(`[SERVER] Saucer ${hazard.hazardId} fired`)
-    }
+function tickSaucer(hazard: LiveSaucer, dt: number): void {
+  hazard.approachElapsed += dt
+  if (hazard.approachElapsed < hazard.approachTime) return
+  if (hazard.fireInterval <= 0) return
+  hazard.fireElapsed += dt
+  while (hazard.fireElapsed >= hazard.fireInterval) {
+    hazard.fireElapsed -= hazard.fireInterval
+    damageShipHull(hazard.shotDamage)
+    const dir = directionFromTo(shipVirtualPosition, hazard.position)
+    notifies?.notifySaucerFired({
+      hazardId: hazard.hazardId,
+      position: Vector3.add(shipVirtualPosition, Vector3.scale(dir, SAUCER_HOVER_DISTANCE))
+    })
+    console.log(`[SERVER] Saucer ${hazard.hazardId} fired`)
   }
+}
 
+function tickTargetedDamage(dt: number): void {
   const lockedIds: number[] = []
   for (const hazard of liveHazards) {
     if (hazard.targetedBy.size > 0) {
@@ -250,6 +292,23 @@ export function tick(dt: number): void {
       if (!damageHazard(hazardId, amount)) break
     }
   }
+}
+
+export function tick(dt: number): void {
+  const expiredIds: number[] = []
+  for (const hazard of liveHazards) {
+    if (hazard.kind === 'asteroid') {
+      const expiredId = tickAsteroid(hazard, dt)
+      if (expiredId !== null) expiredIds.push(expiredId)
+    } else {
+      tickSaucer(hazard, dt)
+    }
+  }
+  for (const hazardId of expiredIds) {
+    destroyHazard(hazardId, true)
+  }
+
+  tickTargetedDamage(dt)
 }
 
 export function hasLive(): boolean {

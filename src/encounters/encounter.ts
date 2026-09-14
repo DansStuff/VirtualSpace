@@ -83,10 +83,9 @@ class WaveEncounter implements Encounter {
       const hazardId = spawn(this.id, {
         kind: 'saucer',
         turret: stage.turret,
-        flightTime: 0,
         hp: stage.saucerHp,
-        hullDamage: stage.saucerShotDamage,
-        fireInterval: stage.saucerFireInterval
+        fireInterval: stage.saucerFireInterval,
+        shotDamage: stage.saucerShotDamage
       })
       this.spawnedThisStage = 1
       console.log(`[SERVER] Encounter ${this.id} stage ${this.stageIndex} spawned saucer ${hazardId}`)
@@ -102,7 +101,7 @@ class WaveEncounter implements Encounter {
         turret: stage.turret,
         flightTime: stage.flightTime,
         hp: stage.asteroidHp,
-        hullDamage: stage.asteroidDamage
+        impactDamage: stage.asteroidDamage
       })
       this.spawnedThisStage += 1
       console.log(
