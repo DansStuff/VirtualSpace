@@ -1,22 +1,31 @@
 import { engine, Entity, Schemas } from '@dcl/sdk/ecs'
 import { isServer, syncEntity } from '@dcl/sdk/network'
 import { AUTH_SERVER_PEER_ID } from '@dcl/sdk/network/message-bus-sync'
+import { SKILL_MAX_LEVEL, SKILL_XP_GROWTH, SKILL_XP_LEVEL_1 } from '../constants'
 
 export const PlayerStats = engine.defineComponent('game:PlayerStats', {
   playerId: Schemas.String,
   gunnerLevel: Schemas.Int,
-  engineeringLevel: Schemas.Int
+  engineeringLevel: Schemas.Int,
+  gunnerXp: Schemas.Int,
+  engineeringXp: Schemas.Int
 })
 
 export type PlayerStatsSnapshot = {
   playerId: string
   gunnerLevel: number
   engineeringLevel: number
+  gunnerXp: number
+  engineeringXp: number
 }
+
+export type SkillId = 'gunner' | 'engineering'
 
 export const DEFAULT_PLAYER_STATS: Omit<PlayerStatsSnapshot, 'playerId'> = {
   gunnerLevel: 1,
-  engineeringLevel: 1
+  engineeringLevel: 1,
+  gunnerXp: 0,
+  engineeringXp: 0
 }
 
 const STATS_STORAGE_KEY = 'stats'
@@ -38,8 +47,44 @@ function defaultSnapshot(playerId: string): PlayerStatsSnapshot {
   return {
     playerId,
     gunnerLevel: DEFAULT_PLAYER_STATS.gunnerLevel,
-    engineeringLevel: DEFAULT_PLAYER_STATS.engineeringLevel
+    engineeringLevel: DEFAULT_PLAYER_STATS.engineeringLevel,
+    gunnerXp: DEFAULT_PLAYER_STATS.gunnerXp,
+    engineeringXp: DEFAULT_PLAYER_STATS.engineeringXp
   }
+}
+
+export function xpToNextLevel(level: number): number {
+  if (level >= SKILL_MAX_LEVEL) return 0
+  return Math.round(SKILL_XP_LEVEL_1 * Math.pow(SKILL_XP_GROWTH, level - 1))
+}
+
+export function skillProgress(level: number, xp: number): number {
+  if (level >= SKILL_MAX_LEVEL) return 1
+  const need = xpToNextLevel(level)
+  if (need <= 0) return 0
+  return Math.max(0, Math.min(1, xp / need))
+}
+
+function clampLevel(value: number): number {
+  return Math.max(1, Math.min(SKILL_MAX_LEVEL, Math.floor(value)))
+}
+
+function clampXp(value: number): number {
+  return Math.max(0, Math.floor(value))
+}
+
+function applyXp(level: number, xp: number, amount: number): { level: number; xp: number } {
+  if (level >= SKILL_MAX_LEVEL) return { level: SKILL_MAX_LEVEL, xp: 0 }
+  let nextLevel = level
+  let nextXp = xp + amount
+  while (nextLevel < SKILL_MAX_LEVEL) {
+    const need = xpToNextLevel(nextLevel)
+    if (nextXp < need) break
+    nextXp -= need
+    nextLevel += 1
+  }
+  if (nextLevel >= SKILL_MAX_LEVEL) return { level: SKILL_MAX_LEVEL, xp: 0 }
+  return { level: nextLevel, xp: nextXp }
 }
 
 function findPlayerStatsEntity(playerAddress: string): Entity | null {
@@ -83,20 +128,34 @@ function getOrCreatePlayerEntity(playerAddress: string): Entity {
   return entity
 }
 
+function parseLevel(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null
+  return clampLevel(value)
+}
+
+function parseXp(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+  return clampXp(value)
+}
+
 function parseStoredStats(raw: string | undefined | null): Omit<PlayerStatsSnapshot, 'playerId'> | null {
   if (!raw) return null
   try {
-    const parsed = JSON.parse(raw) as { gunnerLevel?: unknown; engineeringLevel?: unknown }
-    const gunnerLevel =
-      typeof parsed.gunnerLevel === 'number' && Number.isFinite(parsed.gunnerLevel)
-        ? Math.max(0, Math.floor(parsed.gunnerLevel))
-        : null
-    const engineeringLevel =
-      typeof parsed.engineeringLevel === 'number' && Number.isFinite(parsed.engineeringLevel)
-        ? Math.max(0, Math.floor(parsed.engineeringLevel))
-        : null
+    const parsed = JSON.parse(raw) as {
+      gunnerLevel?: unknown
+      engineeringLevel?: unknown
+      gunnerXp?: unknown
+      engineeringXp?: unknown
+    }
+    const gunnerLevel = parseLevel(parsed.gunnerLevel)
+    const engineeringLevel = parseLevel(parsed.engineeringLevel)
     if (gunnerLevel === null || engineeringLevel === null) return null
-    return { gunnerLevel, engineeringLevel }
+    return {
+      gunnerLevel,
+      engineeringLevel,
+      gunnerXp: parseXp(parsed.gunnerXp),
+      engineeringXp: parseXp(parsed.engineeringXp)
+    }
   } catch {
     return null
   }
@@ -119,8 +178,20 @@ export function getEngineeringLevel(playerAddress: string): number {
 function storedStatsPayload(stats: Omit<PlayerStatsSnapshot, 'playerId'>): string {
   return JSON.stringify({
     gunnerLevel: stats.gunnerLevel,
-    engineeringLevel: stats.engineeringLevel
+    engineeringLevel: stats.engineeringLevel,
+    gunnerXp: stats.gunnerXp,
+    engineeringXp: stats.engineeringXp
   })
+}
+
+async function persistPlayerStats(playerAddress: string): Promise<void> {
+  if (!isServer()) return
+  const stats = getPlayerStats(playerAddress)
+  const { Storage } = await import('@dcl/sdk/server')
+  const saved = await Storage.player.set(playerAddress, STATS_STORAGE_KEY, storedStatsPayload(stats))
+  if (!saved) {
+    console.log(`[SERVER] PlayerStats persist failed for ${playerAddress}`)
+  }
 }
 
 async function loadPlayerStats(playerAddress: string): Promise<void> {
@@ -141,6 +212,8 @@ async function loadPlayerStats(playerAddress: string): Promise<void> {
     if (!mutable) return
     mutable.gunnerLevel = loaded.gunnerLevel
     mutable.engineeringLevel = loaded.engineeringLevel
+    mutable.gunnerXp = loaded.gunnerXp
+    mutable.engineeringXp = loaded.engineeringXp
     return
   }
 
@@ -149,6 +222,25 @@ async function loadPlayerStats(playerAddress: string): Promise<void> {
   if (!saved) {
     console.log(`[SERVER] PlayerStats seed failed for ${playerAddress}`)
   }
+}
+
+export function awardSkillXp(playerAddress: string, skill: SkillId, amount: number): void {
+  if (!isServer() || amount <= 0) return
+  const entity = getOrCreatePlayerEntity(playerAddress)
+  const mutable = PlayerStats.getMutableOrNull(entity)
+  if (!mutable) return
+
+  if (skill === 'gunner') {
+    const next = applyXp(mutable.gunnerLevel, mutable.gunnerXp, amount)
+    mutable.gunnerLevel = next.level
+    mutable.gunnerXp = next.xp
+  } else {
+    const next = applyXp(mutable.engineeringLevel, mutable.engineeringXp, amount)
+    mutable.engineeringLevel = next.level
+    mutable.engineeringXp = next.xp
+  }
+
+  void persistPlayerStats(playerAddress)
 }
 
 export function onPlayerConnected(playerAddress: string): void {

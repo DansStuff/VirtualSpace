@@ -1,7 +1,6 @@
 import { engine, Entity } from '@dcl/sdk/ecs'
 import { isServer, syncEntity } from '@dcl/sdk/network'
 import {
-  BREACH_REPAIR_HP,
   OVERCHARGE_DURATION_SECONDS,
   PATH_START_STOP_ID,
   SHIP_BASE_HULL_HP,
@@ -71,13 +70,14 @@ export function activateRandomBreach(knownIds: number[]): number | null {
 }
 
 /** Hide a breach and restore hull HP. No-op (and no HP) if already repaired. */
-export function repairBreach(id: number): boolean {
+export function repairBreach(id: number, hullRestored: number): boolean {
   const field = breachField(id)
   if (!field) return false
   const state = GameState.getMutable(stateEntityOrThrow())
   if (!state[field]) return false
   state[field] = false
-  state.hullHp = Math.min(SHIP_BASE_HULL_HP, state.hullHp + BREACH_REPAIR_HP)
+  const heal = Math.max(0, Math.floor(hullRestored))
+  state.hullHp = Math.min(SHIP_BASE_HULL_HP, state.hullHp + heal)
   return true
 }
 

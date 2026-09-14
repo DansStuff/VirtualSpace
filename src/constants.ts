@@ -42,8 +42,8 @@ export type EncounterParams = {
 /** Starting hull hit points. The HUD bar is hullHp / this value. */
 export const SHIP_BASE_HULL_HP = 100
 
-/** Hull HP restored the first time a breach is repaired. Later repairs of the same breach are no-ops. */
-export const BREACH_REPAIR_HP = 10
+/** Hull HP restored per engineering level when a breach is repaired. Level 1 = 5, then +5 each level. */
+export const ENGINEERING_REPAIR_HP_PER_LEVEL = 5
 
 /** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */
 export const SHIP_LASER_BASE_FIRE_RATE = 1.5
@@ -62,6 +62,15 @@ export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5
 
 export const OVERCHARGE_DAMAGE_MULTIPLIER = 1.5
 export const OVERCHARGE_DURATION_SECONDS = 15
+
+export const SKILL_MAX_LEVEL = 10
+/** XP required to go from level 1 to 2. Each later level costs SKILL_XP_GROWTH times the previous. */
+export const SKILL_XP_LEVEL_1 = 100
+export const SKILL_XP_GROWTH = 1.2
+/** Gunner XP granted each damage tick while locked on a hazard. */
+export const SKILL_XP_PER_GUNNER_HIT = 5
+/** Engineering XP granted for each successful breach repair. */
+export const SKILL_XP_PER_REPAIR = 40
 
 /** Seconds after a stage signal before the first spawn. */
 export const ENCOUNTER_STAGE_TELEGRAPH_SECONDS = 2

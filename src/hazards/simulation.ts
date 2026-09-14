@@ -12,13 +12,14 @@ import {
   OVERCHARGE_DAMAGE_MULTIPLIER,
   SAUCER_APPROACH_SECONDS,
   SAUCER_HOVER_DISTANCE,
+  SKILL_XP_PER_GUNNER_HIT,
   TURRET_SPAWN_FRUSTUM,
   type HazardKind,
   type TurretId
 } from '../constants'
 import { activateRandomBreach, damageShipHull, isWeaponsOvercharged } from '../gamestate'
 import { addDamage } from '../players/contributions'
-import { getGunnerLevel } from '../players/stats'
+import { awardSkillXp, getGunnerLevel } from '../players/stats'
 import { getKnownBreachIds, getTurretView } from '../sceneObjects'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
 import { directionFromTo } from '../utilities'
@@ -291,6 +292,9 @@ function tickTargetedDamage(dt: number): void {
       for (const address of hazard.targetedBy) {
         const damage = Math.round(getGunnerLevel(address) * multiplier)
         addDamage(address, damage)
+        if (damage > 0) {
+          awardSkillXp(address, 'gunner', SKILL_XP_PER_GUNNER_HIT)
+        }
         amount += damage
       }
       if (amount <= 0) break
