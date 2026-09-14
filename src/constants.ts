@@ -356,11 +356,11 @@ export const SHIP_LASER_SOUND_PATH = 'assets/scene/Sounds/laser1.mp3'
 export const SHIP_LASER_POOL_SIZE = 16
 
 export const SHIP_LASER_ALBEDO_COLOR = Color4.create(0.45, 0.05, 0.85, 1)
-export const SHIP_LASER_EMISSIVE_COLOR = Color3.create(0.7, 0.15, 1)
+export const SHIP_LASER_EMISSIVE_COLOR = Color3.create(0.45, 0.05, 0.85)
 export const SHIP_LASER_EMISSIVE_INTENSITY = 4
 
 export const OVERCHARGE_LASER_ALBEDO_COLOR = Color4.create(0.95, 0.08, 0.08, 1)
-export const OVERCHARGE_LASER_EMISSIVE_COLOR = Color3.create(1, 0.15, 0.1)
+export const OVERCHARGE_LASER_EMISSIVE_COLOR = Color3.create(0.95, 0.08, 0.08)
 
 // MARK: Encounters
 
