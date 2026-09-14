@@ -149,6 +149,13 @@ function clearHazardLockers(hazard: LiveHazard) {
   hazard.targetedBy.clear()
 }
 
+function openRandomBreach(): void {
+  const breachId = activateRandomBreach(getKnownBreachIds())
+  if (breachId !== null) {
+    console.log(`[SERVER] Breach ${breachId} opened`)
+  }
+}
+
 function damageHazard(hazardId: number, amount: number): boolean {
   const hazard = liveHazards.find((h) => h.hazardId === hazardId)
   if (!hazard) return false
@@ -194,10 +201,7 @@ export function destroyHazard(hazardId: number, hitShip: boolean): boolean {
     if (hazard.kind === 'asteroid') {
       damageShipHull(hazard.impactDamage)
     }
-    const breachId = activateRandomBreach(getKnownBreachIds())
-    if (breachId !== null) {
-      console.log(`[SERVER] Breach ${breachId} opened`)
-    }
+    openRandomBreach()
   }
   notifies?.notifyHazardDestroyed({ hazardId, hitShip })
   console.log(`[SERVER] Hazard ${hazardId} destroyed (${hitShip ? 'hit ship' : 'shot'})`)
@@ -257,6 +261,7 @@ function tickSaucer(hazard: LiveSaucer, dt: number): void {
   while (hazard.fireElapsed >= hazard.fireInterval) {
     hazard.fireElapsed -= hazard.fireInterval
     damageShipHull(hazard.shotDamage)
+    openRandomBreach()
     const dir = directionFromTo(shipVirtualPosition, hazard.position)
     notifies?.notifySaucerFired({
       hazardId: hazard.hazardId,
