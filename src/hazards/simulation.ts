@@ -11,9 +11,7 @@ import {
   HAZARD_SPAWN_DISTANCE,
   OVERCHARGE_DAMAGE_MULTIPLIER,
   SAUCER_APPROACH_SECONDS,
-  SAUCER_FIRE_INTERVAL,
   SAUCER_HOVER_DISTANCE,
-  SAUCER_SHOT_DAMAGE,
   TURRET_SPAWN_FRUSTUM,
   type HazardKind,
   type TurretId
@@ -35,6 +33,7 @@ type LiveHazard = {
   flightTime: number
   hp: number
   hullDamage: number
+  fireInterval: number
   damageElapsed: number
   fireElapsed: number
   targetedBy: Set<string>
@@ -174,6 +173,7 @@ export function spawn(
     flightTime: number
     hp: number
     hullDamage: number
+    fireInterval?: number
   }
 ): number {
   const position = Vector3.add(shipVirtualPosition, Vector3.scale(directionInTurretView(opts.turret), HAZARD_SPAWN_DISTANCE))
@@ -186,6 +186,7 @@ export function spawn(
     flightTime: opts.kind === 'saucer' ? SAUCER_APPROACH_SECONDS : opts.flightTime,
     hp: opts.hp,
     hullDamage: opts.hullDamage,
+    fireInterval: opts.fireInterval ?? 0,
     damageElapsed: 0,
     fireElapsed: 0,
     targetedBy: new Set()
@@ -210,10 +211,11 @@ export function tick(dt: number): void {
   for (const hazard of liveHazards) {
     if (hazard.kind !== 'saucer') continue
     if (hazard.flightElapsed < hazard.flightTime) continue
+    if (hazard.fireInterval <= 0) continue
     hazard.fireElapsed += dt
-    while (hazard.fireElapsed >= SAUCER_FIRE_INTERVAL) {
-      hazard.fireElapsed -= SAUCER_FIRE_INTERVAL
-      damageShipHull(SAUCER_SHOT_DAMAGE)
+    while (hazard.fireElapsed >= hazard.fireInterval) {
+      hazard.fireElapsed -= hazard.fireInterval
+      damageShipHull(hazard.hullDamage)
       const dir = directionFromTo(shipVirtualPosition, hazard.position)
       notifies?.notifySaucerFired({
         hazardId: hazard.hazardId,

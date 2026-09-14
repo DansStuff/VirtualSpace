@@ -85,7 +85,8 @@ class WaveEncounter implements Encounter {
         turret: stage.turret,
         flightTime: 0,
         hp: stage.saucerHp,
-        hullDamage: 0
+        hullDamage: stage.saucerShotDamage,
+        fireInterval: stage.saucerFireInterval
       })
       this.spawnedThisStage = 1
       console.log(`[SERVER] Encounter ${this.id} stage ${this.stageIndex} spawned saucer ${hazardId}`)
