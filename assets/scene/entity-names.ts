@@ -20,4 +20,7 @@ export enum EntityNames {
   RightWeaponConsole = "RightWeaponConsole",
   Scoreboard = "Scoreboard",
   Ship_gltf = "Ship.gltf",
+  TutArrow_gltf = "TutArrow.gltf",
+  TutArrow_gltf_2 = "TutArrow.gltf_2",
+  TutArrow_gltf_3 = "TutArrow.gltf_3",
 } 

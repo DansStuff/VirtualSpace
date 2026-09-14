@@ -32,11 +32,14 @@ import { room } from './networking/messages'
 
 const CURSOR_MAX_DISTANCE = 4
 const PROXIMITY_RADIUS = 3
+const CONSOLE_TUT_ARROW_TAG = 'ConsoleTutArrow'
+const RESERVED_ENTITY_SLOT = 512
 
 const consoleCameras = new Map<Entity, Entity>()
 const breachEntities = new Map<number, Entity>()
 let turretOccupied = false
 let overchargeStation: Entity | null = null
+let consoleTutArrowsRemoved = false
 
 export type TurretView = {
   position: Vector3
@@ -194,6 +197,20 @@ function occupyWeaponCamera(camera: Entity): void {
   hideMobileControls()
   freezePlayer()
   turretOccupied = true
+  removeConsoleTutArrows()
+}
+
+function removeConsoleTutArrows(): void {
+  if (consoleTutArrowsRemoved) return
+  consoleTutArrowsRemoved = true
+  const toRemove: Entity[] = []
+  for (const entity of engine.getEntitiesByTag(CONSOLE_TUT_ARROW_TAG)) {
+    if ((entity & 0xffff) < RESERVED_ENTITY_SLOT) continue
+    toRemove.push(entity)
+  }
+  for (const entity of toRemove) {
+    engine.removeEntity(entity)
+  }
 }
 
 export function exitWeaponCamera(): void {
@@ -240,6 +257,7 @@ export function setupSceneObjects(): void {
   turretViews.clear()
   breachEntities.clear()
   overchargeStation = null
+  consoleTutArrowsRemoved = false
 
   const weapons = new Map<string, Entity>()
   const consoles: { entity: Entity; name: string }[] = []

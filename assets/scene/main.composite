@@ -352,6 +352,69 @@
             "parent": 0
           }
         },
+        "528": {
+          "json": {
+            "position": {
+              "x": 71.22013092041016,
+              "y": 64.3380355834961,
+              "z": 57.44602966308594
+            },
+            "rotation": {
+              "x": 0,
+              "y": -0.45881709456443787,
+              "z": 0,
+              "w": 0.8885307312011719
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "529": {
+          "json": {
+            "position": {
+              "x": 57.00812530517578,
+              "y": 64.25,
+              "z": 57.421817779541016
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0.41413381695747375,
+              "z": 0,
+              "w": 0.9102159738540649
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "66063": {
+          "json": {
+            "position": {
+              "x": 64,
+              "y": 64.3380355834961,
+              "z": 53
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
         "131598": {
           "json": {
             "position": {
@@ -371,6 +434,59 @@
               "w": -0.7071067690849304
             },
             "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Animator",
+      "jsonSchema": {
+        "type": "object",
+        "properties": {},
+        "serializationType": "protocol-buffer",
+        "protocolBuffer": "PBAnimator"
+      },
+      "data": {
+        "528": {
+          "json": {
+            "states": [
+              {
+                "clip": "Point",
+                "playing": true,
+                "weight": 1,
+                "speed": 1.399999976158142,
+                "loop": true,
+                "shouldReset": false
+              }
+            ]
+          }
+        },
+        "529": {
+          "json": {
+            "states": [
+              {
+                "clip": "Point",
+                "playing": true,
+                "weight": 1,
+                "speed": 1.399999976158142,
+                "loop": true,
+                "shouldReset": false
+              }
+            ]
+          }
+        },
+        "66063": {
+          "json": {
+            "states": [
+              {
+                "clip": "Point",
+                "playing": true,
+                "weight": 1,
+                "speed": 1.399999976158142,
+                "loop": true,
+                "shouldReset": false
+              }
+            ]
           }
         }
       }
@@ -482,6 +598,27 @@
             "invisibleMeshesCollisionMask": 3
           }
         },
+        "528": {
+          "json": {
+            "src": "assets/scene/Models/TutArrow.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "529": {
+          "json": {
+            "src": "assets/scene/Models/TutArrow.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "66063": {
+          "json": {
+            "src": "assets/scene/Models/TutArrow.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
         "131598": {
           "json": {
             "src": "assets/scene/Models/Scoreboard.gltf",
@@ -574,6 +711,21 @@
             "value": "OverchargeStation"
           }
         },
+        "528": {
+          "json": {
+            "value": "TutArrow.gltf_2"
+          }
+        },
+        "529": {
+          "json": {
+            "value": "TutArrow.gltf_3"
+          }
+        },
+        "66063": {
+          "json": {
+            "value": "TutArrow.gltf"
+          }
+        },
         "131598": {
           "json": {
             "value": "Scoreboard"
@@ -618,7 +770,29 @@
               "Tag Group 1",
               "Tag Group 2",
               "Tag Group 3",
-              "Tag Group 4"
+              "Tag Group 4",
+              "ConsoleTutArrow"
+            ]
+          }
+        },
+        "528": {
+          "json": {
+            "tags": [
+              "ConsoleTutArrow"
+            ]
+          }
+        },
+        "529": {
+          "json": {
+            "tags": [
+              "ConsoleTutArrow"
+            ]
+          }
+        },
+        "66063": {
+          "json": {
+            "tags": [
+              "ConsoleTutArrow"
             ]
           }
         }
@@ -684,7 +858,10 @@
                   523,
                   524,
                   525,
-                  131598
+                  131598,
+                  66063,
+                  528,
+                  529
                 ]
               },
               {
@@ -753,6 +930,18 @@
               },
               {
                 "entity": 131598,
+                "children": []
+              },
+              {
+                "entity": 66063,
+                "children": []
+              },
+              {
+                "entity": 528,
+                "children": []
+              },
+              {
+                "entity": 529,
                 "children": []
               }
             ]
@@ -823,6 +1012,15 @@
           "json": {}
         },
         "525": {
+          "json": {}
+        },
+        "528": {
+          "json": {}
+        },
+        "529": {
+          "json": {}
+        },
+        "66063": {
           "json": {}
         },
         "131598": {
