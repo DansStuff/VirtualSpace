@@ -359,16 +359,16 @@
               "y": 63.880001068115234,
               "z": 69.80999755859375
             },
+            "scale": {
+              "x": 1.7023851871490479,
+              "y": 2.5199999809265137,
+              "z": 0.15823198854923248
+            },
             "rotation": {
               "x": 0,
               "y": 0.7071067690849304,
               "z": 0,
               "w": -0.7071067690849304
-            },
-            "scale": {
-              "x": 1.7023851871490479,
-              "y": 2.5199999809265137,
-              "z": 0.15823198854923248
             },
             "parent": 0
           }
@@ -1178,12 +1178,9 @@
             "ageRating": "A",
             "categories": [],
             "author": "DanL",
+            "email": "",
             "tags": [],
             "layout": {
-              "base": {
-                "x": 0,
-                "y": 0
-              },
               "parcels": [
                 {
                   "x": 0,
@@ -1473,8 +1470,14 @@
                   "x": 7,
                   "y": 0
                 }
-              ]
+              ],
+              "base": {
+                "x": 0,
+                "y": 0
+              }
             },
+            "silenceVoiceChat": false,
+            "disablePortableExperiences": false,
             "spawnPoints": [
               {
                 "name": "SpawnArea1",
@@ -1488,8 +1491,11 @@
                     ]
                   },
                   "y": {
-                    "$case": "single",
-                    "value": 63.58000183105469
+                    "$case": "range",
+                    "value": [
+                      63.58000183105469,
+                      63.58000183105469
+                    ]
                   },
                   "z": {
                     "$case": "range",
@@ -1509,6 +1515,8 @@
             "skyboxConfig": {
               "fixedTime": 86340
             },
+            "creator": "",
+            "disableNearbyVoiceChat": false,
             "hideLandscapeTerrain": true
           }
         }

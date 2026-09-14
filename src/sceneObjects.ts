@@ -4,6 +4,7 @@ import {
   InputAction,
   InputModifier,
   inputSystem,
+  InteractionType,
   MainCamera,
   Name,
   PointerEvents,
@@ -16,6 +17,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer, isStateSyncronized } from '@dcl/sdk/network'
+import { getPlatform, isMobile } from '@dcl/sdk/platform'
 import { EntityNames } from '../assets/scene/entity-names'
 import {
   WEAPON_CAMERA_FOV_DEGREES,
@@ -25,6 +27,9 @@ import {
 } from './constants'
 import { getGameState, isBreachActive } from './gamestate'
 import { room } from './networking/messages'
+
+const CURSOR_MAX_DISTANCE = 4
+const PROXIMITY_RADIUS = 3
 
 const consoleCameras = new Map<Entity, Entity>()
 const breachEntities = new Map<number, Entity>()
@@ -74,22 +79,28 @@ function isWeaponName(name: string): boolean {
   return name.endsWith('Weapon')
 }
 
-function initBreach(entity: Entity): void {
-  VisibilityComponent.createOrReplace(entity, { visible: false, propagateToChildren: true })
-  PointerEvents.create(entity, {
+function attachInteractEvent(entity: Entity, hoverText: string): void {
+  const useProximity = isMobile()
+  PointerEvents.createOrReplace(entity, {
     pointerEvents: [
       {
         eventType: PointerEventType.PET_DOWN,
         eventInfo: {
           button: InputAction.IA_POINTER,
-          hoverText: 'Repair Breach!',
-          maxDistance: 4,
+          hoverText,
           showFeedback: true,
-          showHighlight: true
-        }
+          showHighlight: true,
+          maxDistance: useProximity ? PROXIMITY_RADIUS : CURSOR_MAX_DISTANCE,
+          ...(useProximity ? { maxPlayerDistance: PROXIMITY_RADIUS } : {})
+        },
+        interactionType: useProximity ? InteractionType.PROXIMITY : InteractionType.CURSOR
       }
     ]
   })
+}
+
+function initBreach(entity: Entity): void {
+  VisibilityComponent.createOrReplace(entity, { visible: false, propagateToChildren: true })
 }
 
 /** Weapon GLTFs face -Z; VirtualCamera looks along +Z. */
@@ -126,23 +137,6 @@ function hoverTextForConsole(name: string): string {
   return `Control ${label} Laser`
 }
 
-function initOverchargeStation(entity: Entity): void {
-  PointerEvents.create(entity, {
-    pointerEvents: [
-      {
-        eventType: PointerEventType.PET_DOWN,
-        eventInfo: {
-          button: InputAction.IA_POINTER,
-          hoverText: 'Overcharge Weapons!',
-          maxDistance: 4,
-          showFeedback: true,
-          showHighlight: true
-        }
-      }
-    ]
-  })
-}
-
 function OverchargeStationSystem(): void {
   if (!overchargeStation || !isStateSyncronized()) return
   if (inputSystem.getInputCommand(InputAction.IA_POINTER, PointerEventType.PET_DOWN, overchargeStation)) {
@@ -150,22 +144,8 @@ function OverchargeStationSystem(): void {
   }
 }
 
-function initConsole(entity: Entity, name: string, camera: Entity | undefined): void {
+function initConsole(entity: Entity, camera: Entity | undefined): void {
   if (camera === undefined) return
-  PointerEvents.create(entity, {
-    pointerEvents: [
-      {
-        eventType: PointerEventType.PET_DOWN,
-        eventInfo: {
-          button: InputAction.IA_POINTER,
-          hoverText: hoverTextForConsole(name),
-          maxDistance: 4,
-          showFeedback: true,
-          showHighlight: true
-        }
-      }
-    ]
-  })
   consoleCameras.set(entity, camera)
 }
 
@@ -287,10 +267,6 @@ export function setupSceneObjects(): void {
     initBreach(entity)
   }
 
-  if (overchargeStation) {
-    initOverchargeStation(overchargeStation)
-  }
-
   const cameras = new Map<string, Entity>()
   for (const [name] of weapons) {
     const turretId = turretIdFromWeaponName(name)
@@ -301,9 +277,26 @@ export function setupSceneObjects(): void {
 
   for (const console of consoles) {
     const weaponName = console.name.replace(/Console$/, '')
-    initConsole(console.entity, console.name, cameras.get(weaponName))
+    initConsole(console.entity, cameras.get(weaponName))
   }
 
+  function attachSceneObjectPointerEvents(): void {
+    if (getPlatform() === null) return
+    engine.removeSystem(attachSceneObjectPointerEvents)
+
+    for (const entity of breachEntities.values()) {
+      attachInteractEvent(entity, 'Repair Breach!')
+    }
+    if (overchargeStation) {
+      attachInteractEvent(overchargeStation, 'Overcharge Weapons!')
+    }
+    for (const console of consoles) {
+      if (!consoleCameras.has(console.entity)) continue
+      attachInteractEvent(console.entity, hoverTextForConsole(console.name))
+    }
+  }
+
+  engine.addSystem(attachSceneObjectPointerEvents)
   engine.addSystem(WeaponConsoleSystem)
   engine.addSystem(BreachVisibilitySystem)
   engine.addSystem(BreachRepairSystem)
