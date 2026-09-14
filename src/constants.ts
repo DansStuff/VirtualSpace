@@ -5,6 +5,129 @@ import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 /** Clamp for per-frame `dt` so a hitch cannot jump the sim too far. */
 export const SIMULATION_MAX_DELTA_SECONDS = 0.1
 
+// MARK: Difficulty
+// Combat, survivability, and encounter pacing. Presentation and sim stay in the sections below.
+
+export type TurretId = 'left' | 'center' | 'right'
+
+export type HazardKind = 'asteroid' | 'saucer'
+
+export type AsteroidEncounterStage = {
+  kind: 'asteroid'
+  turret: TurretId
+  hazardCount: number
+  /** Seconds each asteroid exists before it hits the ship (unless shot). */
+  flightTime: number
+  asteroidHp: number
+  /** Hull damage dealt when an asteroid reaches the ship. */
+  asteroidDamage: number
+}
+
+export type SaucerEncounterStage = {
+  kind: 'saucer'
+  turret: TurretId
+  saucerHp: number
+  /** Seconds between saucer shots. First shot waits one full interval after approach. */
+  saucerFireInterval: number
+  /** Hull damage dealt by each saucer shot. */
+  saucerShotDamage: number
+}
+
+export type EncounterStage = AsteroidEncounterStage | SaucerEncounterStage
+
+export type EncounterParams = {
+  stages: EncounterStage[]
+}
+
+/** Starting hull hit points. The HUD bar is hullHp / this value. */
+export const SHIP_BASE_HULL_HP = 100
+
+/** Hull HP restored the first time a breach is repaired. Later repairs of the same breach are no-ops. */
+export const BREACH_REPAIR_HP = 10
+
+/** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */
+export const SHIP_LASER_BASE_FIRE_RATE = 1.5
+
+/** Target-count clamp for shot frequency. 1 player = base rate; 5+ players = 5× base. */
+export const SHIP_LASER_MAX_TARGETERS = 5
+
+/** Seconds between damage ticks on a locked asteroid. First hit waits one full interval. */
+export const HAZARD_DAMAGE_INTERVAL = 0.5
+
+/** Aim-assist cone half-angle (degrees) for click-to-target. */
+export const HAZARD_AIM_CONE_HALF_ANGLE_DEGREES = 6
+
+/** Minimum time between successful target-lock requests. */
+export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5
+
+export const OVERCHARGE_DAMAGE_MULTIPLIER = 1.5
+export const OVERCHARGE_DURATION_SECONDS = 15
+
+/** Seconds after a stage signal before the first spawn. */
+export const ENCOUNTER_STAGE_TELEGRAPH_SECONDS = 2
+
+/** Seconds between hazard spawns during an encounter. */
+export const HAZARD_SPAWN_INTERVAL = 2
+
+/** Seconds to fly from HAZARD_SPAWN_DISTANCE to SAUCER_HOVER_DISTANCE. */
+export const SAUCER_APPROACH_SECONDS = 2
+
+let DEFAULT_FLIGHT_TIME = 8
+
+export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
+  'encounter-1': {
+    stages: [
+      { kind: 'asteroid', turret: 'center', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 }
+    ]
+  },
+  'encounter-2': {
+    stages: [
+      { kind: 'asteroid', turret: 'center', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, asteroidHp: 6, asteroidDamage: 10 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, asteroidHp: 6, asteroidDamage: 10 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, asteroidHp: 6, asteroidDamage: 10 }
+    ]
+  },
+  'encounter-3': {
+    stages: [
+      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 }
+    ]
+  },
+  'encounter-4': {
+    stages: [
+      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, asteroidHp: 8, asteroidDamage: 10 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, asteroidHp: 8, asteroidDamage: 10 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, asteroidHp: 8, asteroidDamage: 10 }
+    ]
+  },
+  'encounter-5': {
+    stages: [
+      { kind: 'saucer', turret: 'right', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 10 },
+      { kind: 'saucer', turret: 'left', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 10 },
+    ]
+  },
+  'encounter-6': {
+    stages: [
+      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 }
+    ]
+  },
+  'encounter-7': {
+    stages: [
+      { kind: 'saucer', turret: 'center', saucerHp: 100, saucerFireInterval: 2, saucerShotDamage: 10 },
+    ]
+  }
+}
+
 // MARK: Ship
 
 /** Fixed scene-space anchor for the visible ship model (center of the enclosing sphere). */
@@ -38,12 +161,6 @@ export const SHIP_ROLL_SMOOTH = 2
 
 /** Extra yaw so virtual forward matches a Y flip of the ship GLTF. Applied after bank. */
 export const SHIP_MODEL_YAW_DEGREES = 180
-
-/** Starting hull hit points. The HUD bar is hullHp / this value. */
-export const SHIP_BASE_HULL_HP = 100
-
-/** Hull HP restored the first time a breach is repaired. Later repairs of the same breach are no-ops. */
-export const BREACH_REPAIR_HP = 10
 
 // MARK: Path
 
@@ -136,9 +253,6 @@ export const HAZARD_ASTEROID_POOL_SIZE = 10
 /** Virtual-space radius of an incoming asteroid (models are authored at radius 1). */
 export const HAZARD_RADIUS = 4
 
-/** Seconds between hazard spawns during an encounter. */
-export const HAZARD_SPAWN_INTERVAL = 2
-
 /** Virtual-space distance ahead of the ship to place a spawned hazard. */
 export const HAZARD_SPAWN_DISTANCE = 240
 
@@ -148,20 +262,11 @@ export const HAZARD_IMPACT_DISTANCE = 8
 /** Upward-only spawn pitch, degrees above the turret look axis. Sampled from 0 to this value. */
 export const HAZARD_CONE_VERTICAL_DEGREES = 20
 
-/** Seconds between damage ticks on a locked asteroid. First hit waits one full interval. */
-export const HAZARD_DAMAGE_INTERVAL = 0.5
-
 /** Local tumble rate applied on top of celestial orientation. */
 export const HAZARD_SPIN_DEGREES_PER_SECOND = 60
 
 /** Max scene-space distance for the click-to-target aim cone. */
 export const HAZARD_RAYCAST_MAX_DISTANCE = 40
-
-/** Aim-assist cone half-angle (degrees) for click-to-target. */
-export const HAZARD_AIM_CONE_HALF_ANGLE_DEGREES = 6
-
-/** Minimum time between successful target-lock requests. */
-export const HAZARD_TARGET_COOLDOWN_SECONDS = 0.5
 
 /** Uniform scale of the billboard crosshair parented to a hazard. */
 export const HAZARD_TARGETING_INDICATOR_SCALE = 4
@@ -202,15 +307,6 @@ export const HAZARD_SAUCER_RADIUS = 5
 /** Virtual-space distance from the ship where a saucer stops approaching. */
 export const SAUCER_HOVER_DISTANCE = 40
 
-/** Seconds to fly from HAZARD_SPAWN_DISTANCE to SAUCER_HOVER_DISTANCE. */
-export const SAUCER_APPROACH_SECONDS = 2
-
-/** Seconds between saucer shots. First shot waits one full interval after approach. */
-export const SAUCER_FIRE_INTERVAL = 3
-
-/** Hull damage dealt by each saucer shot. */
-export const SAUCER_SHOT_DAMAGE = 10
-
 // MARK: Ship Weapons
 
 /** How long a laser plane stays visible after each shot. */
@@ -233,12 +329,6 @@ export const WEAPON_CAMERA_FOV_DEGREES = 60
 
 export const SHIP_LASER_SOUND_PATH = 'assets/scene/Sounds/laser1.mp3'
 
-/** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */
-export const SHIP_LASER_BASE_FIRE_RATE = 1.5
-
-/** Target-count clamp for shot frequency. 1 player = base rate; 5+ players = 5× base. */
-export const SHIP_LASER_MAX_TARGETERS = 5
-
 /** Pre-warmed laser plane entities. The pool grows if this is exhausted. */
 export const SHIP_LASER_POOL_SIZE = 16
 
@@ -246,71 +336,16 @@ export const SHIP_LASER_ALBEDO_COLOR = Color4.create(0.45, 0.05, 0.85, 1)
 export const SHIP_LASER_EMISSIVE_COLOR = Color3.create(0.7, 0.15, 1)
 export const SHIP_LASER_EMISSIVE_INTENSITY = 4
 
-export const OVERCHARGE_DAMAGE_MULTIPLIER = 1.5
-export const OVERCHARGE_DURATION_SECONDS = 15
-
 export const OVERCHARGE_LASER_ALBEDO_COLOR = Color4.create(0.95, 0.08, 0.08, 1)
 export const OVERCHARGE_LASER_EMISSIVE_COLOR = Color3.create(1, 0.15, 0.1)
 
 // MARK: Encounters
-
-export type TurretId = 'left' | 'center' | 'right'
 
 /** Horizontal spawn frustum around a cached gun look. Vertical uses HAZARD_CONE_VERTICAL_DEGREES. */
 export const TURRET_SPAWN_FRUSTUM = {
   /** 16:9 @ 60 vFOV is ~91; 80 keeps rocks off the bezel. */
   horizontalFovDegrees: 80,
   inset: 0.55
-}
-
-/** Seconds after a stage signal before the first spawn. */
-export const ENCOUNTER_STAGE_TELEGRAPH_SECONDS = 2
-
-export type HazardKind = 'asteroid' | 'saucer'
-
-export type AsteroidEncounterStage = {
-  kind: 'asteroid'
-  turret: TurretId
-  hazardCount: number
-  /** Seconds each asteroid exists before it hits the ship (unless shot). */
-  flightTime: number
-  asteroidHp: number
-  /** Hull damage dealt when an asteroid reaches the ship. */
-  asteroidDamage: number
-}
-
-export type SaucerEncounterStage = {
-  kind: 'saucer'
-  turret: TurretId
-  saucerHp: number
-}
-
-export type EncounterStage = AsteroidEncounterStage | SaucerEncounterStage
-
-export type EncounterParams = {
-  stages: EncounterStage[]
-}
-
-function defaultEncounterStages(): AsteroidEncounterStage[] {
-  return [
-    { kind: 'asteroid', turret: 'left', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-    { kind: 'asteroid', turret: 'right', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 },
-    { kind: 'asteroid', turret: 'center', hazardCount: 2, flightTime: 8, asteroidHp: 6, asteroidDamage: 10 }
-  ]
-}
-
-export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
-  'encounter-1': {
-    stages: [
-      { kind: 'saucer', turret: 'center', saucerHp: 12 }
-    ]
-  },
-  'encounter-2': { stages: defaultEncounterStages() },
-  'encounter-3': { stages: defaultEncounterStages() },
-  'encounter-4': { stages: defaultEncounterStages() },
-  'encounter-5': { stages: defaultEncounterStages() },
-  'encounter-6': { stages: defaultEncounterStages() },
-  'encounter-7': { stages: defaultEncounterStages() }
 }
 
 export const ENCOUNTER_STAGE_SOUND_PATH = 'assets/scene/Sounds/fail1.mp3'
