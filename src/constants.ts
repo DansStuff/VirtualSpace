@@ -36,8 +36,10 @@ export type EncounterParams = {
 /** Starting hull hit points. The HUD bar is hullHp / this value. */
 export const SHIP_BASE_HULL_HP = 100
 
-/** Hull HP restored per engineering level when a breach is repaired. Level 1 = 5, then +5 each level. */
-export const ENGINEERING_REPAIR_HP_PER_LEVEL = 5
+/** Hull HP restored by a level 1 engineer when a breach is repaired. */
+export const ENGINEERING_REPAIR_BASE_HP = 5
+/** Extra hull HP restored per engineering level above 1. Level 2 = 6, level 10 = 14. */
+export const ENGINEERING_REPAIR_HP_PER_LEVEL = 1
 
 /** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */
 export const SHIP_LASER_BASE_FIRE_RATE = 1.5
@@ -64,6 +66,11 @@ export const BASE_SAUCER_DAMAGE = 10
 
 export function gunnerShotDamage(level: number): number {
   return GUNNER_BASE_DAMAGE + (level - 1) * GUNNER_DAMAGE_PER_LEVEL
+}
+
+/** Hull HP restored when a breach is repaired. Level 1 = 5, then +1 each level. */
+export function engineeringRepairHp(level: number): number {
+  return ENGINEERING_REPAIR_BASE_HP + (level - 1) * ENGINEERING_REPAIR_HP_PER_LEVEL
 }
 
 /** Per-gunner damage scale from connected player count. Total DPS grows like sqrt(n). */

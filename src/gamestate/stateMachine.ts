@@ -6,7 +6,7 @@
 import { engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 import { createWaveEncounter, type Encounter } from '../encounters/encounter'
-import { ENCOUNTER_PARAMS, ENGINEERING_REPAIR_HP_PER_LEVEL, PATH_START_STOP_ID, SKILL_XP_PER_REPAIR } from '../constants'
+import { ENCOUNTER_PARAMS, engineeringRepairHp, PATH_START_STOP_ID, SKILL_XP_PER_REPAIR } from '../constants'
 import { setPlayerTarget, configureHazardNotifies, resetLive } from '../hazards/simulation'
 import { isPathFinished, resetPathToStart, resumeFromStop, setOnStopReached } from '../path/follow'
 import { getWeeklyBoardSnapshot, recordWeeklyMission } from '../leaderboard/weeklyBoard'
@@ -252,7 +252,7 @@ export function setupStateMachine(): void {
       setPlayerTarget(from, hazardId)
     },
     onRepairBreach: (from, breachId) => {
-      const heal = getEngineeringLevel(from) * ENGINEERING_REPAIR_HP_PER_LEVEL
+      const heal = engineeringRepairHp(getEngineeringLevel(from))
       if (repairBreach(breachId, heal)) {
         addRepair(from)
         awardSkillXp(from, 'engineering', SKILL_XP_PER_REPAIR)
