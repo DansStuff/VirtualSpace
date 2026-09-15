@@ -8,6 +8,8 @@ import {
   UI_HEALTH_BAR_HEIGHT,
   UI_HEALTH_BAR_MARGIN_TOP,
   UI_HEALTH_BAR_WIDTH,
+  UI_BACK_TO_SHIP_BUTTON_FONT_SIZE,
+  UI_BACK_TO_SHIP_BUTTON_SIZE,
   UI_MISSION_BUTTON_FONT_SIZE,
   UI_MISSION_BUTTON_HEIGHT,
   UI_MISSION_BUTTON_MARGIN_BOTTOM,
@@ -213,19 +215,6 @@ export const uiMenu = () => (
         }}
       />
       <Button
-        value="Back to ship"
-        variant="primary"
-        fontSize={UI_MISSION_BUTTON_FONT_SIZE}
-        color={Color4.White()}
-        uiTransform={{
-          width: UI_MISSION_BUTTON_WIDTH,
-          height: UI_MISSION_BUTTON_HEIGHT,
-          margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
-          display: isTurretOccupied() ? 'flex' : 'none'
-        }}
-        onMouseDown={requestLeaveTurret}
-      />
-      <Button
         value="Restart"
         variant="primary"
         fontSize={UI_MISSION_BUTTON_FONT_SIZE}
@@ -239,6 +228,25 @@ export const uiMenu = () => (
         onMouseDown={requestNewMission}
       />
     </UiEntity>
+
+    <Button
+      value="Back to ship"
+      variant="primary"
+      fontSize={UI_BACK_TO_SHIP_BUTTON_FONT_SIZE}
+      color={Color4.White()}
+      textAlign="middle-center"
+      uiTransform={{
+        width: UI_BACK_TO_SHIP_BUTTON_SIZE,
+        height: UI_BACK_TO_SHIP_BUTTON_SIZE,
+        positionType: 'absolute',
+        position: {
+          bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM,
+          right: UI_MISSION_BUTTON_MARGIN_BOTTOM
+        },
+        display: isTurretOccupied() ? 'flex' : 'none'
+      }}
+      onMouseDown={requestLeaveTurret}
+    />
 
     <UiEntity
       uiTransform={{

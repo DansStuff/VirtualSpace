@@ -14,6 +14,7 @@ import {
   SAUCER_HOVER_DISTANCE,
   SKILL_XP_PER_GUNNER_HIT,
   TURRET_SPAWN_FRUSTUM,
+  gunnerShotDamage,
   type HazardKind,
   type TurretId
 } from '../constants'
@@ -290,7 +291,7 @@ function tickTargetedDamage(dt: number): void {
       let amount = 0
       const multiplier = isWeaponsOvercharged() ? OVERCHARGE_DAMAGE_MULTIPLIER : 1
       for (const address of hazard.targetedBy) {
-        const damage = Math.round(getGunnerLevel(address) * multiplier)
+        const damage = Math.round(gunnerShotDamage(getGunnerLevel(address)) * multiplier)
         addDamage(address, damage)
         if (damage > 0) {
           awardSkillXp(address, 'gunner', SKILL_XP_PER_GUNNER_HIT)

@@ -113,14 +113,14 @@ function SkillLevelsUi() {
           UI_GUNNER_ICON_PATH,
           'Gunner',
           stats.gunnerLevel,
-          skillProgress(stats.gunnerLevel, stats.gunnerXp),
+          skillProgress(stats.gunnerLevel, stats.gunnerXp, 'gunner'),
           'gunner'
         )}
         {SkillRow(
           UI_ENGINEERING_ICON_PATH,
           'Engineering',
           stats.engineeringLevel,
-          skillProgress(stats.engineeringLevel, stats.engineeringXp),
+          skillProgress(stats.engineeringLevel, stats.engineeringXp, 'engineering'),
           'engineering'
         )}
       </UiEntity>

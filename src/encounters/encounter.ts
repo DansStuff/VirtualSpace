@@ -4,6 +4,10 @@
  * by the machine.
  */
 import {
+  BASE_ASTEROID_DAMAGE,
+  BASE_ASTEROID_HP,
+  BASE_SAUCER_DAMAGE,
+  BASE_SAUCER_HP,
   ENCOUNTER_PARAMS,
   ENCOUNTER_STAGE_TELEGRAPH_SECONDS,
   HAZARD_SPAWN_INTERVAL,
@@ -83,9 +87,9 @@ class WaveEncounter implements Encounter {
       const hazardId = spawn(this.id, {
         kind: 'saucer',
         turret: stage.turret,
-        hp: stage.saucerHp,
+        hp: BASE_SAUCER_HP * stage.hpMultiplier,
         fireInterval: stage.saucerFireInterval,
-        shotDamage: stage.saucerShotDamage
+        shotDamage: Math.round(BASE_SAUCER_DAMAGE * stage.damageMultiplier)
       })
       this.spawnedThisStage = 1
       console.log(`[SERVER] Encounter ${this.id} stage ${this.stageIndex} spawned saucer ${hazardId}`)
@@ -100,8 +104,8 @@ class WaveEncounter implements Encounter {
         kind: 'asteroid',
         turret: stage.turret,
         flightTime: stage.flightTime,
-        hp: stage.asteroidHp,
-        impactDamage: stage.asteroidDamage
+        hp: BASE_ASTEROID_HP * stage.hpMultiplier,
+        impactDamage: Math.round(BASE_ASTEROID_DAMAGE * stage.damageMultiplier)
       })
       this.spawnedThisStage += 1
       console.log(

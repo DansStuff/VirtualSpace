@@ -18,19 +18,21 @@ export type AsteroidEncounterStage = {
   hazardCount: number
   /** Seconds each asteroid exists before it hits the ship (unless shot). */
   flightTime: number
-  asteroidHp: number
-  /** Hull damage dealt when an asteroid reaches the ship. */
-  asteroidDamage: number
+  /** Multiplier on BASE_ASTEROID_HP. */
+  hpMultiplier: number
+  /** Multiplier on BASE_ASTEROID_DAMAGE. */
+  damageMultiplier: number
 }
 
 export type SaucerEncounterStage = {
   kind: 'saucer'
   turret: TurretId
-  saucerHp: number
+  /** Multiplier on BASE_SAUCER_HP. */
+  hpMultiplier: number
   /** Seconds between saucer shots. First shot waits one full interval after approach. */
   saucerFireInterval: number
-  /** Hull damage dealt by each saucer shot. */
-  saucerShotDamage: number
+  /** Multiplier on BASE_SAUCER_DAMAGE. */
+  damageMultiplier: number
 }
 
 export type EncounterStage = AsteroidEncounterStage | SaucerEncounterStage
@@ -51,8 +53,26 @@ export const SHIP_LASER_BASE_FIRE_RATE = 1.5
 /** Target-count clamp for shot frequency. 1 player = base rate; 5+ players = 5× base. */
 export const SHIP_LASER_MAX_TARGETERS = 5
 
-/** Seconds between damage ticks on a locked asteroid. First hit waits one full interval. */
+/** Seconds between damage ticks on a locked hazard. First hit waits one full interval. */
 export const HAZARD_DAMAGE_INTERVAL = 0.5
+
+/** Damage dealt by a level 1 gunner each damage tick. */
+export const GUNNER_BASE_DAMAGE = 10
+/** Extra damage per gunner level above 1. Level 2 = 12, level 10 = 28. */
+export const GUNNER_DAMAGE_PER_LEVEL = 2
+
+/** HP of an asteroid at hpMultiplier 1. Level 1 TTK is 5s (10 ticks × 10 damage). */
+export const BASE_ASTEROID_HP = 100
+/** Hull damage when an asteroid reaches the ship at damageMultiplier 1. */
+export const BASE_ASTEROID_DAMAGE = 10
+/** HP of a saucer at hpMultiplier 1. Level 1 TTK is 6s (12 ticks × 10 damage). */
+export const BASE_SAUCER_HP = 120
+/** Hull damage per saucer shot at damageMultiplier 1. */
+export const BASE_SAUCER_DAMAGE = 10
+
+export function gunnerShotDamage(level: number): number {
+  return GUNNER_BASE_DAMAGE + (level - 1) * GUNNER_DAMAGE_PER_LEVEL
+}
 
 /** Aim-assist cone half-angle (degrees) for click-to-target. */
 export const HAZARD_AIM_CONE_HALF_ANGLE_DEGREES = 6
@@ -64,9 +84,12 @@ export const OVERCHARGE_DAMAGE_MULTIPLIER = 1.5
 export const OVERCHARGE_DURATION_SECONDS = 15
 
 export const SKILL_MAX_LEVEL = 10
-/** XP required to go from level 1 to 2. Each later level costs SKILL_XP_GROWTH times the previous. */
-export const SKILL_XP_LEVEL_1 = 100
-export const SKILL_XP_GROWTH = 1.2
+/** XP to go from gunner 1 to 2. Later levels cost GUNNER_XP_GROWTH times the previous. */
+export const GUNNER_XP_LEVEL_1 = 200
+export const GUNNER_XP_GROWTH = 2
+/** XP to go from engineering 1 to 2. Later levels cost ENGINEERING_XP_GROWTH times the previous. */
+export const ENGINEERING_XP_LEVEL_1 = 160
+export const ENGINEERING_XP_GROWTH = 1.5
 /** Gunner XP granted each damage tick while locked on a hazard. */
 export const SKILL_XP_PER_GUNNER_HIT = 5
 /** Engineering XP granted for each successful breach repair. */
@@ -86,58 +109,59 @@ let DEFAULT_FLIGHT_TIME = 8
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
   'encounter-1': {
     stages: [
-      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
-      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
-      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
+      //{ kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
+      //{ kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
+      //{ kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
 
 
-      { kind: 'asteroid', turret: 'center', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, asteroidHp: 6, asteroidDamage: 5 }
+
+      { kind: 'asteroid', turret: 'center', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, hpMultiplier: 1, damageMultiplier: 0.5 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, hpMultiplier: 1, damageMultiplier: 0.5 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, hpMultiplier: 1, damageMultiplier: 0.5 }
     ]
   },
   'encounter-2': {
     stages: [
-      { kind: 'asteroid', turret: 'center', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, asteroidHp: 6, asteroidDamage: 10 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, asteroidHp: 6, asteroidDamage: 10 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, asteroidHp: 6, asteroidDamage: 10 }
+      { kind: 'asteroid', turret: 'center', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, hpMultiplier: 1, damageMultiplier: 1 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, hpMultiplier: 1, damageMultiplier: 1 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, hpMultiplier: 1, damageMultiplier: 1 }
     ]
   },
   'encounter-3': {
     stages: [
-      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
-      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
-      { kind: 'saucer', turret: 'center', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 }
+      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
+      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
+      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 }
     ]
   },
   'encounter-4': {
     stages: [
-      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, asteroidHp: 8, asteroidDamage: 10 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, asteroidHp: 8, asteroidDamage: 10 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, asteroidHp: 8, asteroidDamage: 10 }
+      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, hpMultiplier: 1, damageMultiplier: 1 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, hpMultiplier: 1, damageMultiplier: 1 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, hpMultiplier: 1, damageMultiplier: 1 }
     ]
   },
   'encounter-5': {
     stages: [
-      { kind: 'saucer', turret: 'right', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 10 },
-      { kind: 'saucer', turret: 'left', saucerHp: 12, saucerFireInterval: 2, saucerShotDamage: 10 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 10 },
+      { kind: 'saucer', turret: 'right', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1 },
+      { kind: 'saucer', turret: 'left', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1 },
     ]
   },
   'encounter-6': {
     stages: [
-      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, asteroidHp: 8, asteroidDamage: 15 }
+      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 }
     ]
   },
   'encounter-7': {
     stages: [
-      { kind: 'saucer', turret: 'center', saucerHp: 100, saucerFireInterval: 2, saucerShotDamage: 10 },
+      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
     ]
   }
 }
@@ -384,12 +408,15 @@ export const ENCOUNTER_STAGE_SOUND_PATH = 'assets/scene/Sounds/fail1.mp3'
 
 // MARK: UI
 
+
 export const UI_VIRTUAL_WIDTH = 1920
 export const UI_VIRTUAL_HEIGHT = 1080
 export const UI_MISSION_BUTTON_FONT_SIZE = 22
 export const UI_MISSION_BUTTON_WIDTH = 280
 export const UI_MISSION_BUTTON_HEIGHT = 64
 export const UI_MISSION_BUTTON_MARGIN_BOTTOM = 80
+export const UI_BACK_TO_SHIP_BUTTON_SIZE = 200
+export const UI_BACK_TO_SHIP_BUTTON_FONT_SIZE = 36
 export const UI_MISSION_STATUS_LABEL_WIDTH = 560
 export const UI_HEALTH_BAR_WIDTH = 480
 export const UI_HEALTH_BAR_HEIGHT = 36

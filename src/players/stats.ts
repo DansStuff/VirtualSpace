@@ -1,7 +1,7 @@
 import { engine, Entity, Schemas } from '@dcl/sdk/ecs'
 import { isServer, syncEntity } from '@dcl/sdk/network'
 import { AUTH_SERVER_PEER_ID } from '@dcl/sdk/network/message-bus-sync'
-import { SKILL_MAX_LEVEL, SKILL_XP_GROWTH, SKILL_XP_LEVEL_1 } from '../constants'
+import { ENGINEERING_XP_GROWTH, ENGINEERING_XP_LEVEL_1, GUNNER_XP_GROWTH, GUNNER_XP_LEVEL_1, SKILL_MAX_LEVEL } from '../constants'
 
 export const PlayerStats = engine.defineComponent('game:PlayerStats', {
   playerId: Schemas.String,
@@ -53,14 +53,22 @@ function defaultSnapshot(playerId: string): PlayerStatsSnapshot {
   }
 }
 
-export function xpToNextLevel(level: number): number {
-  if (level >= SKILL_MAX_LEVEL) return 0
-  return Math.round(SKILL_XP_LEVEL_1 * Math.pow(SKILL_XP_GROWTH, level - 1))
+function xpBase(skill: SkillId): number {
+  return skill === 'gunner' ? GUNNER_XP_LEVEL_1 : ENGINEERING_XP_LEVEL_1
 }
 
-export function skillProgress(level: number, xp: number): number {
+function xpGrowth(skill: SkillId): number {
+  return skill === 'gunner' ? GUNNER_XP_GROWTH : ENGINEERING_XP_GROWTH
+}
+
+export function xpToNextLevel(level: number, skill: SkillId): number {
+  if (level >= SKILL_MAX_LEVEL) return 0
+  return Math.round(xpBase(skill) * Math.pow(xpGrowth(skill), level - 1))
+}
+
+export function skillProgress(level: number, xp: number, skill: SkillId): number {
   if (level >= SKILL_MAX_LEVEL) return 1
-  const need = xpToNextLevel(level)
+  const need = xpToNextLevel(level, skill)
   if (need <= 0) return 0
   return Math.max(0, Math.min(1, xp / need))
 }
@@ -73,12 +81,12 @@ function clampXp(value: number): number {
   return Math.max(0, Math.floor(value))
 }
 
-function applyXp(level: number, xp: number, amount: number): { level: number; xp: number } {
+function applyXp(level: number, xp: number, amount: number, skill: SkillId): { level: number; xp: number } {
   if (level >= SKILL_MAX_LEVEL) return { level: SKILL_MAX_LEVEL, xp: 0 }
   let nextLevel = level
   let nextXp = xp + amount
   while (nextLevel < SKILL_MAX_LEVEL) {
-    const need = xpToNextLevel(nextLevel)
+    const need = xpToNextLevel(nextLevel, skill)
     if (nextXp < need) break
     nextXp -= need
     nextLevel += 1
@@ -231,11 +239,11 @@ export function awardSkillXp(playerAddress: string, skill: SkillId, amount: numb
   if (!mutable) return
 
   if (skill === 'gunner') {
-    const next = applyXp(mutable.gunnerLevel, mutable.gunnerXp, amount)
+    const next = applyXp(mutable.gunnerLevel, mutable.gunnerXp, amount, 'gunner')
     mutable.gunnerLevel = next.level
     mutable.gunnerXp = next.xp
   } else {
-    const next = applyXp(mutable.engineeringLevel, mutable.engineeringXp, amount)
+    const next = applyXp(mutable.engineeringLevel, mutable.engineeringXp, amount, 'engineering')
     mutable.engineeringLevel = next.level
     mutable.engineeringXp = next.xp
   }
