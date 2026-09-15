@@ -12,6 +12,7 @@ import {
   ENCOUNTER_STAGE_TELEGRAPH_SECONDS,
   HAZARD_SPAWN_INTERVAL,
   SIMULATION_MAX_DELTA_SECONDS,
+  type EncounterParams,
   type EncounterStage
 } from '../constants'
 import { getGameState } from '../gamestate'
@@ -31,28 +32,28 @@ export function createWaveEncounter(stopId: string): Encounter {
   if (params === undefined || params.stages.length === 0) {
     throw new Error(`No encounter stages for stop ${stopId}`)
   }
-  return new WaveEncounter(stopId, params.stages)
+  return new WaveEncounter(stopId, params)
 }
 
 class WaveEncounter implements Encounter {
   readonly id: string
-  private readonly stages: EncounterStage[]
+  private readonly params: EncounterParams
   private stageIndex = 0
   private stageElapsed = 0
   private spawnedThisStage = 0
 
-  constructor(id: string, stages: EncounterStage[]) {
+  constructor(id: string, params: EncounterParams) {
     this.id = id
-    this.stages = stages
+    this.params = params
     clearLive()
   }
 
   currentTurret(): string | null {
-    return this.stages[this.stageIndex]?.turret ?? null
+    return this.params.stages[this.stageIndex]?.turret ?? null
   }
 
   tick(dt: number): EncounterTickResult {
-    const stage = this.stages[this.stageIndex]
+    const stage = this.params.stages[this.stageIndex]
     if (!stage) return 'cleared'
 
     const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
@@ -67,7 +68,7 @@ class WaveEncounter implements Encounter {
     }
 
     if (this.stageFullySpawned(stage) && !hasLive()) {
-      if (this.stageIndex + 1 < this.stages.length) {
+      if (this.stageIndex + 1 < this.params.stages.length) {
         this.stageIndex += 1
         this.stageElapsed = 0
         this.spawnedThisStage = 0
@@ -87,9 +88,8 @@ class WaveEncounter implements Encounter {
       const hazardId = spawn(this.id, {
         kind: 'saucer',
         turret: stage.turret,
-        hp: BASE_SAUCER_HP * stage.hpMultiplier,
-        fireInterval: stage.saucerFireInterval,
-        shotDamage: Math.round(BASE_SAUCER_DAMAGE * stage.damageMultiplier)
+        hp: BASE_SAUCER_HP * this.params.hpMultiplier,
+        shotDamage: Math.round(BASE_SAUCER_DAMAGE * this.params.damageMultiplier)
       })
       this.spawnedThisStage = 1
       console.log(`[SERVER] Encounter ${this.id} stage ${this.stageIndex} spawned saucer ${hazardId}`)
@@ -103,9 +103,8 @@ class WaveEncounter implements Encounter {
       const hazardId = spawn(this.id, {
         kind: 'asteroid',
         turret: stage.turret,
-        flightTime: stage.flightTime,
-        hp: BASE_ASTEROID_HP * stage.hpMultiplier,
-        impactDamage: Math.round(BASE_ASTEROID_DAMAGE * stage.damageMultiplier)
+        hp: BASE_ASTEROID_HP * this.params.hpMultiplier,
+        impactDamage: Math.round(BASE_ASTEROID_DAMAGE * this.params.damageMultiplier)
       })
       this.spawnedThisStage += 1
       console.log(

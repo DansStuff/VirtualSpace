@@ -16,28 +16,20 @@ export type AsteroidEncounterStage = {
   kind: 'asteroid'
   turret: TurretId
   hazardCount: number
-  /** Seconds each asteroid exists before it hits the ship (unless shot). */
-  flightTime: number
-  /** Multiplier on BASE_ASTEROID_HP. */
-  hpMultiplier: number
-  /** Multiplier on BASE_ASTEROID_DAMAGE. */
-  damageMultiplier: number
 }
 
 export type SaucerEncounterStage = {
   kind: 'saucer'
   turret: TurretId
-  /** Multiplier on BASE_SAUCER_HP. */
-  hpMultiplier: number
-  /** Seconds between saucer shots. First shot waits one full interval after approach. */
-  saucerFireInterval: number
-  /** Multiplier on BASE_SAUCER_DAMAGE. */
-  damageMultiplier: number
 }
 
 export type EncounterStage = AsteroidEncounterStage | SaucerEncounterStage
 
 export type EncounterParams = {
+  /** Multiplier on BASE_ASTEROID_HP / BASE_SAUCER_HP for every hazard in this encounter. */
+  hpMultiplier: number
+  /** Multiplier on BASE_ASTEROID_DAMAGE / BASE_SAUCER_DAMAGE for every hazard in this encounter. */
+  damageMultiplier: number
   stages: EncounterStage[]
 }
 
@@ -61,13 +53,13 @@ export const GUNNER_BASE_DAMAGE = 10
 /** Extra damage per gunner level above 1. Level 2 = 12, level 10 = 28. */
 export const GUNNER_DAMAGE_PER_LEVEL = 2
 
-/** HP of an asteroid at hpMultiplier 1. Level 1 TTK is 5s (10 ticks × 10 damage). */
+/** HP of an asteroid at encounter hpMultiplier 1. Level 1 TTK is 5s (10 ticks × 10 damage). */
 export const BASE_ASTEROID_HP = 100
-/** Hull damage when an asteroid reaches the ship at damageMultiplier 1. */
+/** Hull damage when an asteroid reaches the ship at encounter damageMultiplier 1. */
 export const BASE_ASTEROID_DAMAGE = 10
-/** HP of a saucer at hpMultiplier 1. Level 1 TTK is 6s (12 ticks × 10 damage). */
+/** HP of a saucer at encounter hpMultiplier 1. Level 1 TTK is 6s (12 ticks × 10 damage). */
 export const BASE_SAUCER_HP = 120
-/** Hull damage per saucer shot at damageMultiplier 1. */
+/** Hull damage per saucer shot at encounter damageMultiplier 1. */
 export const BASE_SAUCER_DAMAGE = 10
 
 export function gunnerShotDamage(level: number): number {
@@ -103,65 +95,76 @@ export const HAZARD_SPAWN_INTERVAL = 2
 
 /** Seconds to fly from HAZARD_SPAWN_DISTANCE to SAUCER_HOVER_DISTANCE. */
 export const SAUCER_APPROACH_SECONDS = 2
-
-let DEFAULT_FLIGHT_TIME = 8
+/** Seconds between saucer shots. First shot waits one full interval after approach. */
+export const SAUCER_FIRE_INTERVAL = 2
+/** Seconds an asteroid exists before it hits the ship (unless shot). */
+export const ASTEROID_FLIGHT_TIME = 8
 
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
   'encounter-1': {
+    hpMultiplier: 1,
+    damageMultiplier: 1,
     stages: [
-      //{ kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
-      //{ kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
-      //{ kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
 
-
-
-      { kind: 'asteroid', turret: 'center', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, hpMultiplier: 1, damageMultiplier: 0.5 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, hpMultiplier: 1, damageMultiplier: 0.5 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 2, flightTime: DEFAULT_FLIGHT_TIME + 2, hpMultiplier: 1, damageMultiplier: 0.5 }
+      { kind: 'asteroid', turret: 'center', hazardCount: 2 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 2 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 2 }
     ]
   },
   'encounter-2': {
+    hpMultiplier: 1.33,
+    damageMultiplier: 1.17,
     stages: [
-      { kind: 'asteroid', turret: 'center', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, hpMultiplier: 1, damageMultiplier: 1 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, hpMultiplier: 1, damageMultiplier: 1 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME, hpMultiplier: 1, damageMultiplier: 1 }
+      { kind: 'asteroid', turret: 'center', hazardCount: 4 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 4 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 4 }
     ]
   },
   'encounter-3': {
+    hpMultiplier: 1.67,
+    damageMultiplier: 1.33,
     stages: [
-      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
-      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
-      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 }
+      { kind: 'saucer', turret: 'center' },
+      { kind: 'saucer', turret: 'center' },
+      { kind: 'saucer', turret: 'center' }
     ]
   },
   'encounter-4': {
+    hpMultiplier: 2,
+    damageMultiplier: 1.5,
     stages: [
-      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, hpMultiplier: 1, damageMultiplier: 1 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, hpMultiplier: 1, damageMultiplier: 1 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 4, flightTime: DEFAULT_FLIGHT_TIME - 1, hpMultiplier: 1, damageMultiplier: 1 }
+      { kind: 'asteroid', turret: 'right', hazardCount: 4 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 4 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 4 }
     ]
   },
   'encounter-5': {
+    hpMultiplier: 2.33,
+    damageMultiplier: 1.67,
     stages: [
-      { kind: 'saucer', turret: 'right', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1 },
-      { kind: 'saucer', turret: 'left', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1 },
+      { kind: 'saucer', turret: 'right' },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6 },
+      { kind: 'saucer', turret: 'left' },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6 },
     ]
   },
   'encounter-6': {
+    hpMultiplier: 2.67,
+    damageMultiplier: 1.83,
     stages: [
-      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 },
-      { kind: 'asteroid', turret: 'center', hazardCount: 6, flightTime: DEFAULT_FLIGHT_TIME - 2, hpMultiplier: 1, damageMultiplier: 1.5 }
+      { kind: 'asteroid', turret: 'left', hazardCount: 6 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 6 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 6 },
+      { kind: 'asteroid', turret: 'right', hazardCount: 6 },
+      { kind: 'asteroid', turret: 'center', hazardCount: 6 }
     ]
   },
   'encounter-7': {
+    hpMultiplier: 8,
+    damageMultiplier: 2,
     stages: [
-      { kind: 'saucer', turret: 'center', hpMultiplier: 1, saucerFireInterval: 2, damageMultiplier: 1 },
+      { kind: 'saucer', turret: 'center' },
     ]
   }
 }

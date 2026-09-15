@@ -10,7 +10,9 @@ import {
   HAZARD_DAMAGE_INTERVAL,
   HAZARD_SPAWN_DISTANCE,
   OVERCHARGE_DAMAGE_MULTIPLIER,
+  ASTEROID_FLIGHT_TIME,
   SAUCER_APPROACH_SECONDS,
+  SAUCER_FIRE_INTERVAL,
   SAUCER_HOVER_DISTANCE,
   SKILL_XP_PER_GUNNER_HIT,
   TURRET_SPAWN_FRUSTUM,
@@ -56,7 +58,6 @@ type LiveHazard = LiveAsteroid | LiveSaucer
 type SpawnAsteroidOpts = {
   kind: 'asteroid'
   turret: TurretId
-  flightTime: number
   hp: number
   impactDamage: number
 }
@@ -65,7 +66,6 @@ type SpawnSaucerOpts = {
   kind: 'saucer'
   turret: TurretId
   hp: number
-  fireInterval: number
   shotDamage: number
 }
 
@@ -230,7 +230,7 @@ export function spawn(encounterId: string, opts: SpawnHazardOpts): number {
           ...base,
           kind: 'asteroid',
           flightElapsed: 0,
-          flightTime: opts.flightTime,
+          flightTime: ASTEROID_FLIGHT_TIME,
           impactDamage: opts.impactDamage
         }
       : {
@@ -239,7 +239,7 @@ export function spawn(encounterId: string, opts: SpawnHazardOpts): number {
           approachElapsed: 0,
           approachTime: SAUCER_APPROACH_SECONDS,
           fireElapsed: 0,
-          fireInterval: opts.fireInterval,
+          fireInterval: SAUCER_FIRE_INTERVAL,
           shotDamage: opts.shotDamage
         }
   liveHazards.push(hazard)
