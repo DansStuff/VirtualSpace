@@ -3,6 +3,7 @@
  * Does not call `room`; the state machine installs notify callbacks at setup.
  * Client visuals are in visuals.ts.
  */
+import { engine, PlayerIdentityData } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
@@ -17,6 +18,7 @@ import {
   SKILL_XP_PER_GUNNER_HIT,
   TURRET_SPAWN_FRUSTUM,
   gunnerShotDamage,
+  playerCountDamageMultiplier,
   type HazardKind,
   type TurretId
 } from '../constants'
@@ -273,6 +275,10 @@ function tickSaucer(hazard: LiveSaucer, dt: number): void {
   }
 }
 
+function connectedPlayerCount(): number {
+  return Array.from(engine.getEntitiesWith(PlayerIdentityData)).length
+}
+
 function tickTargetedDamage(dt: number): void {
   const lockedIds: number[] = []
   for (const hazard of liveHazards) {
@@ -283,6 +289,8 @@ function tickTargetedDamage(dt: number): void {
       hazard.damageElapsed = 0
     }
   }
+  if (lockedIds.length === 0) return
+  const crowdScale = playerCountDamageMultiplier(connectedPlayerCount())
   for (const hazardId of lockedIds) {
     const hazard = liveHazards.find((h) => h.hazardId === hazardId)
     if (!hazard) continue
@@ -291,7 +299,7 @@ function tickTargetedDamage(dt: number): void {
       let amount = 0
       const multiplier = isWeaponsOvercharged() ? OVERCHARGE_DAMAGE_MULTIPLIER : 1
       for (const address of hazard.targetedBy) {
-        const damage = Math.round(gunnerShotDamage(getGunnerLevel(address)) * multiplier)
+        const damage = Math.round(gunnerShotDamage(getGunnerLevel(address)) * multiplier * crowdScale)
         addDamage(address, damage)
         if (damage > 0) {
           awardSkillXp(address, 'gunner', SKILL_XP_PER_GUNNER_HIT)

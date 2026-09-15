@@ -66,6 +66,11 @@ export function gunnerShotDamage(level: number): number {
   return GUNNER_BASE_DAMAGE + (level - 1) * GUNNER_DAMAGE_PER_LEVEL
 }
 
+/** Per-gunner damage scale from connected player count. Total DPS grows like sqrt(n). */
+export function playerCountDamageMultiplier(playerCount: number): number {
+  return 1 / Math.cbrt(Math.max(1, playerCount))
+}
+
 /** Aim-assist cone half-angle (degrees) for click-to-target. */
 export const HAZARD_AIM_CONE_HALF_ANGLE_DEGREES = 6
 
