@@ -14,6 +14,7 @@ import {
   SHIP_LASER_ORIGIN_OFFSET,
   SHIP_LASER_POOL_SIZE,
   SHIP_LASER_SOUND_PATH,
+  SHIP_LASER_SOUND_VOICES,
   SHIP_LASER_WIDTH,
   SIMULATION_MAX_DELTA_SECONDS
 } from '../constants'
@@ -35,7 +36,8 @@ let laserPool: ObjectPool<Entity>
 const active: ActiveLaser[] = []
 const fireElapsed = new Map<Entity, number>()
 
-let laserSoundEntity: Entity
+const laserSoundEntities: Entity[] = []
+let laserSoundIndex = 0
 
 function applyLaserMaterial(entity: Entity, overcharged: boolean): void {
   Material.setPbrMaterial(entity, {
@@ -70,7 +72,7 @@ function acquireLaser(target: Entity): void {
     applyLaserPose(entity, Transform.get(target).position)
   }
   active.push({ entity, target, remaining: SHIP_LASER_LIFETIME_SECONDS })
-  AudioSource.playSound(laserSoundEntity, SHIP_LASER_SOUND_PATH, true)
+  playLaserSound()
 }
 
 function releaseLaser(index: number): void {
@@ -153,15 +155,30 @@ function createLaserSoundEntity(): Entity {
   AudioSource.create(entity, {
     audioClipUrl: SHIP_LASER_SOUND_PATH,
     playing: false,
-    loop: false
+    loop: false,
+    volume: 1
   })
   return entity
+}
+
+function playLaserSound(): void {
+  const entity = laserSoundEntities[laserSoundIndex]
+  laserSoundIndex = (laserSoundIndex + 1) % laserSoundEntities.length
+  AudioSource.createOrReplace(entity, {
+    audioClipUrl: SHIP_LASER_SOUND_PATH,
+    playing: true,
+    loop: false,
+    volume: 1,
+    currentTime: 0
+  })
 }
 
 export function setupShipWeapons() {
   if (isServer()) return
 
-  laserSoundEntity = createLaserSoundEntity()
+  for (let i = 0; i < SHIP_LASER_SOUND_VOICES; i++) {
+    laserSoundEntities.push(createLaserSoundEntity())
+  }
   laserPool = new ObjectPool({
     create: createLaserEntity,
     reset: resetLaser,

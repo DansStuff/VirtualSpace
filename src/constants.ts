@@ -110,7 +110,7 @@ export const SAUCER_APPROACH_SECONDS = 2
 /** Seconds between saucer shots. First shot waits one full interval after approach. */
 export const SAUCER_FIRE_INTERVAL = 2
 /** Seconds an asteroid exists before it hits the ship (unless shot). */
-export const ASTEROID_FLIGHT_TIME = 8
+export const ASTEROID_FLIGHT_TIME = 9
 
 export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
   'encounter-1': {
@@ -127,18 +127,18 @@ export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
     hpMultiplier: 1.33,
     damageMultiplier: 1.17,
     stages: [
-      { kind: 'asteroid', turret: 'center', hazardCount: 4 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 4 },
-      { kind: 'asteroid', turret: 'right', hazardCount: 4 }
+      { kind: 'saucer', turret: 'center' },
+      { kind: 'saucer', turret: 'right' },
+      { kind: 'saucer', turret: 'left' }
     ]
   },
   'encounter-3': {
     hpMultiplier: 1.67,
     damageMultiplier: 1.33,
     stages: [
-      { kind: 'saucer', turret: 'center' },
-      { kind: 'saucer', turret: 'center' },
-      { kind: 'saucer', turret: 'center' }
+      { kind: 'asteroid', turret: 'right', hazardCount: 4 },
+      { kind: 'asteroid', turret: 'left', hazardCount: 4 },
+      { kind: 'saucer', turret: 'right' },
     ]
   },
   'encounter-4': {
@@ -146,7 +146,7 @@ export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
     damageMultiplier: 1.5,
     stages: [
       { kind: 'asteroid', turret: 'right', hazardCount: 4 },
-      { kind: 'asteroid', turret: 'left', hazardCount: 4 },
+      { kind: 'saucer', turret: 'left' },
       { kind: 'asteroid', turret: 'right', hazardCount: 4 }
     ]
   },
@@ -399,6 +399,9 @@ export const WEAPON_CAMERA_TRANSITION_SECONDS = 0.5
 export const WEAPON_CAMERA_FOV_DEGREES = 60
 
 export const SHIP_LASER_SOUND_PATH = 'assets/scene/Sounds/laser1.mp3'
+
+/** Concurrent laser one-shots. One AudioSource cannot restart while still playing. */
+export const SHIP_LASER_SOUND_VOICES = 16
 
 /** Pre-warmed laser plane entities. The pool grows if this is exhausted. */
 export const SHIP_LASER_POOL_SIZE = 16
