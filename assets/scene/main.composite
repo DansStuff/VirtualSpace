@@ -359,16 +359,16 @@
               "y": 64.3380355834961,
               "z": 57.44602966308594
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0,
               "y": -0.45881709456443787,
               "z": 0,
               "w": 0.8885307312011719
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -380,16 +380,16 @@
               "y": 64.25,
               "z": 57.421817779541016
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0,
               "y": 0.41413381695747375,
               "z": 0,
               "w": 0.9102159738540649
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -401,16 +401,16 @@
               "y": 64.3380355834961,
               "z": 53
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -559,36 +559,36 @@
         "520": {
           "json": {
             "src": "assets/scene/Models/Breach.gltf",
-            "visibleMeshesCollisionMask": 1,
-            "invisibleMeshesCollisionMask": 3
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 1
           }
         },
         "521": {
           "json": {
             "src": "assets/scene/Models/Breach.gltf",
-            "visibleMeshesCollisionMask": 1,
-            "invisibleMeshesCollisionMask": 3
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 1
           }
         },
         "522": {
           "json": {
             "src": "assets/scene/Models/Breach.gltf",
-            "visibleMeshesCollisionMask": 1,
-            "invisibleMeshesCollisionMask": 3
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 1
           }
         },
         "523": {
           "json": {
             "src": "assets/scene/Models/Breach.gltf",
-            "visibleMeshesCollisionMask": 1,
-            "invisibleMeshesCollisionMask": 3
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 1
           }
         },
         "524": {
           "json": {
             "src": "assets/scene/Models/Breach.gltf",
-            "visibleMeshesCollisionMask": 1,
-            "invisibleMeshesCollisionMask": 3
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 1
           }
         },
         "525": {

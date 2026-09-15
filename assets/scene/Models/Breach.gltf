@@ -12,7 +12,8 @@
 			"name":"Scene",
 			"nodes":[
 				0,
-				1
+				1,
+				2
 			]
 		}
 	],
@@ -35,6 +36,10 @@
 				1.2741811275482178,
 				0.12458872050046921
 			]
+		},
+		{
+			"mesh":2,
+			"name":"Beach_collider"
 		}
 	],
 	"materials":[
@@ -126,6 +131,19 @@
 					},
 					"indices":11,
 					"material":2
+				}
+			]
+		},
+		{
+			"name":"Cube.013",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":12,
+						"NORMAL":13,
+						"TEXCOORD_0":14
+					},
+					"indices":15
 				}
 			]
 		}
@@ -232,6 +250,40 @@
 			"componentType":5123,
 			"count":360,
 			"type":"SCALAR"
+		},
+		{
+			"bufferView":12,
+			"componentType":5126,
+			"count":24,
+			"max":[
+				2.0998687744140625,
+				0.2611781656742096,
+				1.0489015579223633
+			],
+			"min":[
+				-1.7875244617462158,
+				-0.06117817014455795,
+				-0.9510985016822815
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":13,
+			"componentType":5126,
+			"count":24,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":14,
+			"componentType":5126,
+			"count":24,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":15,
+			"componentType":5123,
+			"count":36,
+			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
@@ -306,11 +358,35 @@
 			"byteLength":720,
 			"byteOffset":18880,
 			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":288,
+			"byteOffset":19600,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":288,
+			"byteOffset":19888,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":192,
+			"byteOffset":20176,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":72,
+			"byteOffset":20368,
+			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":19600,
+			"byteLength":20440,
 			"uri":"Breach.bin"
 		}
 	]

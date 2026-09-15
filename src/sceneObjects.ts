@@ -1,8 +1,10 @@
 import {
   AvatarModifierArea,
   AvatarModifierType,
+  ColliderLayer,
   engine,
   Entity,
+  GltfContainer,
   InputAction,
   InputModifier,
   inputSystem,
@@ -40,6 +42,7 @@ const breachEntities = new Map<number, Entity>()
 let turretOccupied = false
 let overchargeStation: Entity | null = null
 let consoleTutArrowsRemoved = false
+let breachPointerEventsReady = false
 
 export type TurretView = {
   position: Vector3
@@ -104,8 +107,24 @@ function attachInteractEvent(entity: Entity, hoverText: string): void {
   })
 }
 
+function setBreachPointerCollider(entity: Entity, enabled: boolean): void {
+  const gltf = GltfContainer.getMutableOrNull(entity)
+  if (!gltf) return
+  gltf.invisibleMeshesCollisionMask = enabled ? ColliderLayer.CL_POINTER : ColliderLayer.CL_NONE
+}
+
+function setBreachInteractable(entity: Entity, interactable: boolean): void {
+  setBreachPointerCollider(entity, interactable)
+  if (interactable) {
+    attachInteractEvent(entity, 'Repair Breach!')
+  } else {
+    PointerEvents.deleteFrom(entity)
+  }
+}
+
 function initBreach(entity: Entity): void {
   VisibilityComponent.createOrReplace(entity, { visible: false, propagateToChildren: true })
+  setBreachPointerCollider(entity, false)
 }
 
 /** Weapon GLTFs face -Z; VirtualCamera looks along +Z. */
@@ -234,11 +253,22 @@ function WeaponConsoleSystem(): void {
 
 function BreachVisibilitySystem(): void {
   const state = getGameState()
+  const platformReady = getPlatform() !== null
+  const attachPointerEventsNow = platformReady && !breachPointerEventsReady
+  if (attachPointerEventsNow) breachPointerEventsReady = true
+
   for (const [id, entity] of breachEntities) {
     const visible = isBreachActive(state, id)
     const current = VisibilityComponent.getOrNull(entity)
-    if (current && current.visible === visible) continue
-    VisibilityComponent.createOrReplace(entity, { visible, propagateToChildren: true })
+    const visibilityChanged = !current || current.visible !== visible
+    if (visibilityChanged) {
+      VisibilityComponent.createOrReplace(entity, { visible, propagateToChildren: true })
+    }
+    if (platformReady && (visibilityChanged || attachPointerEventsNow)) {
+      setBreachInteractable(entity, visible)
+    } else if (visibilityChanged) {
+      setBreachPointerCollider(entity, visible)
+    }
   }
 }
 
@@ -258,6 +288,7 @@ export function setupSceneObjects(): void {
   breachEntities.clear()
   overchargeStation = null
   consoleTutArrowsRemoved = false
+  breachPointerEventsReady = false
 
   const weapons = new Map<string, Entity>()
   const consoles: { entity: Entity; name: string }[] = []
@@ -320,9 +351,6 @@ export function setupSceneObjects(): void {
     if (getPlatform() === null) return
     engine.removeSystem(attachSceneObjectPointerEvents)
 
-    for (const entity of breachEntities.values()) {
-      attachInteractEvent(entity, 'Repair Breach!')
-    }
     if (overchargeStation) {
       attachInteractEvent(overchargeStation, 'Overcharge Weapons!')
     }
