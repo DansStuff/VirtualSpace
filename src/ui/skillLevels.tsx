@@ -9,29 +9,39 @@ import {
   UI_GUNNER_ICON_PATH,
   UI_HUD_EDGE_PADDING_X,
   UI_HUD_EDGE_PADDING_Y,
+  UI_SKILL_ICON_MARGIN_RIGHT,
+  UI_SKILL_ICON_WIDTH,
+  UI_SKILL_LABEL_WIDTH,
+  UI_SKILL_LEVEL_WIDTH,
   UI_SKILL_PANEL_EMPTY_ROWS,
-  UI_SKILL_PANEL_HEIGHT,
   UI_SKILL_PANEL_PADDING_X,
   UI_SKILL_PANEL_PADDING_Y,
   UI_SKILL_PANEL_ROW_HEIGHT,
+  UI_SKILL_PANEL_ROW_MARGIN,
   UI_SKILL_PANEL_TITLE_FONT_SIZE,
   UI_SKILL_PANEL_TITLE_HEIGHT,
-  UI_SKILL_PANEL_WIDTH
+  UI_SKILL_PANEL_WIDTH,
+  UI_SKILL_TEXT_ROW_HEIGHT,
+  UI_SKILL_XP_BAR_HEIGHT,
+  UI_SKILL_XP_BAR_MARGIN_TOP
 } from '../constants'
 import { DEFAULT_PLAYER_STATS, getPlayerStats, skillProgress } from '../players/stats'
 import { GreenPixelFrame } from './greenPixelFrame'
-
-const ICON_SIZE = 36
-const LABEL_WIDTH = 150
-const TEXT_ROW_HEIGHT = 36
-const LEVEL_WIDTH = 48
-const XP_BAR_HEIGHT = 4
 
 const XP_BAR_TRACK = Color4.create(0.03, 0.04, 0.03, 1)
 const XP_BAR_FILL = Color4.Green()
 
 function EmptySkillRow(key: string) {
-  return <UiEntity key={key} uiTransform={{ width: '100%', height: UI_SKILL_PANEL_ROW_HEIGHT }} />
+  return (
+    <UiEntity
+      key={key}
+      uiTransform={{
+        width: '100%',
+        height: UI_SKILL_PANEL_ROW_HEIGHT,
+        margin: { bottom: UI_SKILL_PANEL_ROW_MARGIN }
+      }}
+    />
+  )
 }
 
 function emptySkillRows() {
@@ -56,22 +66,23 @@ function SkillRow(iconSrc: string, label: string, level: number, progress: numbe
         width: '100%',
         height: UI_SKILL_PANEL_ROW_HEIGHT,
         flexDirection: 'column',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        margin: { bottom: UI_SKILL_PANEL_ROW_MARGIN }
       }}
     >
         <UiEntity
           uiTransform={{
             width: '100%',
-            height: TEXT_ROW_HEIGHT,
+            height: UI_SKILL_TEXT_ROW_HEIGHT,
             flexDirection: 'row',
             alignItems: 'center'
           }}
         >
         <UiEntity
           uiTransform={{
-            width: ICON_SIZE,
-            height: ICON_SIZE,
-            margin: { right: 12 }
+            width: UI_SKILL_ICON_WIDTH,
+            height: '100%',
+            margin: { right: UI_SKILL_ICON_MARGIN_RIGHT }
           }}
           uiBackground={{
             color: UI_TINT,
@@ -85,7 +96,7 @@ function SkillRow(iconSrc: string, label: string, level: number, progress: numbe
           fontSize={18}
           color={UI_TINT}
           textAlign="middle-left"
-          uiTransform={{ width: LABEL_WIDTH, height: TEXT_ROW_HEIGHT }}
+          uiTransform={{ width: UI_SKILL_LABEL_WIDTH, height: '100%' }}
         />
         <Label
           value={boldUi(`${level}`)}
@@ -93,11 +104,15 @@ function SkillRow(iconSrc: string, label: string, level: number, progress: numbe
           fontSize={22}
           color={UI_TINT}
           textAlign="middle-right"
-          uiTransform={{ width: LEVEL_WIDTH, height: TEXT_ROW_HEIGHT }}
+          uiTransform={{ width: UI_SKILL_LEVEL_WIDTH, height: '100%' }}
         />
       </UiEntity>
       <UiEntity
-        uiTransform={{ width: '100%', height: XP_BAR_HEIGHT, margin: { top: 2 } }}
+        uiTransform={{
+          width: '100%',
+          height: UI_SKILL_XP_BAR_HEIGHT,
+          margin: { top: UI_SKILL_XP_BAR_MARGIN_TOP }
+        }}
         uiBackground={{ color: XP_BAR_TRACK }}
       >
         <UiEntity
@@ -116,22 +131,22 @@ export function SkillLevelsHud() {
     <GreenPixelFrame
       uiTransform={{
         width: UI_SKILL_PANEL_WIDTH,
-        height: UI_SKILL_PANEL_HEIGHT,
+        height: 'auto',
         positionType: 'absolute',
         position: { top: UI_HUD_EDGE_PADDING_Y, right: UI_HUD_EDGE_PADDING_X },
-        flexDirection: 'column',
-        justifyContent: 'center',
-        pointerFilter: 'none'
+        flexDirection: 'column'
       }}
     >
         <UiEntity
           uiTransform={{
             width: '100%',
-            height: '100%',
             flexDirection: 'column',
-            justifyContent: 'flex-start',
-            padding: { left: UI_SKILL_PANEL_PADDING_X, right: UI_SKILL_PANEL_PADDING_X, top: UI_SKILL_PANEL_PADDING_Y, bottom: UI_SKILL_PANEL_PADDING_Y },
-            pointerFilter: 'none'
+            padding: {
+              left: UI_SKILL_PANEL_PADDING_X,
+              right: UI_SKILL_PANEL_PADDING_X,
+              top: UI_SKILL_PANEL_PADDING_Y,
+              bottom: UI_SKILL_PANEL_PADDING_Y
+            }
           }}
         >
           <Label
@@ -140,7 +155,11 @@ export function SkillLevelsHud() {
             fontSize={UI_SKILL_PANEL_TITLE_FONT_SIZE}
             color={UI_TINT}
             textAlign="middle-left"
-            uiTransform={{ width: '100%', height: UI_SKILL_PANEL_TITLE_HEIGHT }}
+            uiTransform={{
+              width: '100%',
+              height: UI_SKILL_PANEL_TITLE_HEIGHT,
+              margin: { bottom: UI_SKILL_PANEL_ROW_MARGIN }
+            }}
           />
           {SkillRow(
             UI_GUNNER_ICON_PATH,

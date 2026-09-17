@@ -31,17 +31,22 @@ import {
 } from './constants'
 import { getGameState, isBreachActive } from './gamestate'
 import { room } from './networking/messages'
+import { Spinner, SpinSystem } from './spinner'
 
 const CURSOR_MAX_DISTANCE = 4
 const PROXIMITY_RADIUS = 3
-const CONSOLE_TUT_ARROW_TAG = 'ConsoleTutArrow'
-const RESERVED_ENTITY_SLOT = 512
 
 const consoleCameras = new Map<Entity, Entity>()
+const consoleTurrets = new Map<Entity, TurretId>()
 const breachEntities = new Map<number, Entity>()
+const consoleTutArrows = new Map<TurretId, Entity>()
 let turretOccupied = false
+let occupiedTurret: TurretId | null = null
+let activeConsoleArrowTurret: string | null = null
 let overchargeStation: Entity | null = null
-let consoleTutArrowsRemoved = false
+let missionTable: Entity | null = null
+let missionTableText: Entity | null = null
+let missionStartArrow: Entity | null = null
 let breachPointerEventsReady = false
 
 export type TurretView = {
@@ -60,6 +65,13 @@ function turretIdFromWeaponName(name: string): TurretId | undefined {
   if (name === 'LeftWeapon') return 'left'
   if (name === 'CenterWeapon') return 'center'
   if (name === 'RightWeapon') return 'right'
+  return undefined
+}
+
+function turretIdFromConsoleArrowName(name: string): TurretId | undefined {
+  if (name === EntityNames.LeftConsoleArrow) return 'left'
+  if (name === EntityNames.CenterConsoleArrow) return 'center'
+  if (name === EntityNames.RightConsoleArrow) return 'right'
   return undefined
 }
 
@@ -183,9 +195,39 @@ function OverchargeStationSystem(): void {
   }
 }
 
-function initConsole(entity: Entity, camera: Entity | undefined): void {
-  if (camera === undefined) return
+function disableMissionTable(): void {
+  if (!missionTable) return
+  PointerEvents.deleteFrom(missionTable)
+}
+
+function setEntityVisible(entity: Entity | null, visible: boolean): void {
+  if (!entity) return
+  const current = VisibilityComponent.getOrNull(entity)
+  if (current && current.visible === visible) return
+  VisibilityComponent.createOrReplace(entity, { visible, propagateToChildren: true })
+}
+
+function MissionTableSystem(): void {
+  const started = getGameState().missionStarted
+  setEntityVisible(missionTableText, started)
+  setEntityVisible(missionStartArrow, !started)
+
+  if (!missionTable || !PointerEvents.getOrNull(missionTable)) return
+  if (started) {
+    disableMissionTable()
+    return
+  }
+  if (!isStateSyncronized()) return
+  if (inputSystem.getInputCommand(InputAction.IA_POINTER, PointerEventType.PET_DOWN, missionTable)) {
+    room.send('requestMissionStart', { requestedAt: Date.now() })
+    disableMissionTable()
+  }
+}
+
+function initConsole(entity: Entity, camera: Entity | undefined, turret: TurretId | undefined): void {
+  if (camera === undefined || turret === undefined) return
   consoleCameras.set(entity, camera)
+  consoleTurrets.set(entity, turret)
 }
 
 function hideMobileControls(): void {
@@ -210,26 +252,25 @@ function unfreezePlayer(): void {
   InputModifier.deleteFrom(engine.PlayerEntity)
 }
 
-function occupyWeaponCamera(camera: Entity): void {
+function applyConsoleArrowVisibility(): void {
+  for (const [id, entity] of consoleTutArrows) {
+    setEntityVisible(entity, id === activeConsoleArrowTurret && id !== occupiedTurret)
+  }
+}
+
+function occupyWeaponCamera(camera: Entity, turret: TurretId): void {
   MainCamera.getOrCreateMutable(engine.CameraEntity).virtualCameraEntity = camera
   PointerLock.getMutable(engine.CameraEntity).isPointerLocked = false
   hideMobileControls()
   freezePlayer()
   turretOccupied = true
-  removeConsoleTutArrows()
+  occupiedTurret = turret
+  applyConsoleArrowVisibility()
 }
 
-function removeConsoleTutArrows(): void {
-  if (consoleTutArrowsRemoved) return
-  consoleTutArrowsRemoved = true
-  const toRemove: Entity[] = []
-  for (const entity of engine.getEntitiesByTag(CONSOLE_TUT_ARROW_TAG)) {
-    if ((entity & 0xffff) < RESERVED_ENTITY_SLOT) continue
-    toRemove.push(entity)
-  }
-  for (const entity of toRemove) {
-    engine.removeEntity(entity)
-  }
+export function setActiveConsoleArrow(turret: string | null): void {
+  activeConsoleArrowTurret = turret
+  applyConsoleArrowVisibility()
 }
 
 export function exitWeaponCamera(): void {
@@ -237,6 +278,8 @@ export function exitWeaponCamera(): void {
   showMobileControls()
   unfreezePlayer()
   turretOccupied = false
+  occupiedTurret = null
+  applyConsoleArrowVisibility()
 }
 
 export function isTurretOccupied(): boolean {
@@ -246,7 +289,9 @@ export function isTurretOccupied(): boolean {
 function WeaponConsoleSystem(): void {
   for (const [consoleEntity, camera] of consoleCameras) {
     if (inputSystem.getInputCommand(InputAction.IA_POINTER, PointerEventType.PET_DOWN, consoleEntity)) {
-      occupyWeaponCamera(camera)
+      const turret = consoleTurrets.get(consoleEntity)
+      if (!turret) continue
+      occupyWeaponCamera(camera, turret)
     }
   }
 }
@@ -287,7 +332,15 @@ export function setupSceneObjects(): void {
   turretViews.clear()
   breachEntities.clear()
   overchargeStation = null
-  consoleTutArrowsRemoved = false
+  missionTable = null
+  missionTableText = null
+  missionStartArrow = null
+  consoleCameras.clear()
+  consoleTurrets.clear()
+  consoleTutArrows.clear()
+  occupiedTurret = null
+  activeConsoleArrowTurret = null
+  turretOccupied = false
   breachPointerEventsReady = false
 
   const weapons = new Map<string, Entity>()
@@ -317,6 +370,23 @@ export function setupSceneObjects(): void {
       overchargeStation = entity
       continue
     }
+    if (name.value === EntityNames.MissionTable) {
+      missionTable = entity
+      continue
+    }
+    if (name.value === EntityNames.MissionTableText) {
+      missionTableText = entity
+      continue
+    }
+    if (name.value === EntityNames.MissionStartArrow) {
+      missionStartArrow = entity
+      continue
+    }
+    const arrowTurret = turretIdFromConsoleArrowName(name.value)
+    if (arrowTurret) {
+      consoleTutArrows.set(arrowTurret, entity)
+      continue
+    }
     if (isConsoleName(name.value)) {
       consoles.push({ entity, name: name.value })
     }
@@ -334,6 +404,14 @@ export function setupSceneObjects(): void {
     initBreach(entity)
   }
 
+  const missionStarted = getGameState().missionStarted
+  setEntityVisible(missionTableText, missionStarted)
+  setEntityVisible(missionStartArrow, !missionStarted)
+  setActiveConsoleArrow(null)
+  if (missionTableText) {
+    Spinner.create(missionTableText)
+  }
+
   const cameras = new Map<string, Entity>()
   for (const [name] of weapons) {
     const turretId = turretIdFromWeaponName(name)
@@ -344,7 +422,7 @@ export function setupSceneObjects(): void {
 
   for (const console of consoles) {
     const weaponName = console.name.replace(/Console$/, '')
-    initConsole(console.entity, cameras.get(weaponName))
+    initConsole(console.entity, cameras.get(weaponName), turretIdFromWeaponName(weaponName))
   }
 
   function attachSceneObjectPointerEvents(): void {
@@ -353,6 +431,9 @@ export function setupSceneObjects(): void {
 
     if (overchargeStation) {
       attachInteractEvent(overchargeStation, 'Overcharge Weapons!')
+    }
+    if (missionTable) {
+      attachInteractEvent(missionTable, 'Start Mission')
     }
     for (const console of consoles) {
       if (!consoleCameras.has(console.entity)) continue
@@ -365,4 +446,6 @@ export function setupSceneObjects(): void {
   engine.addSystem(BreachVisibilitySystem)
   engine.addSystem(BreachRepairSystem)
   engine.addSystem(OverchargeStationSystem)
+  engine.addSystem(MissionTableSystem)
+  engine.addSystem(SpinSystem)
 }

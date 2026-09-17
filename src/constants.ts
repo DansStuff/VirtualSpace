@@ -429,75 +429,68 @@ export const ENCOUNTER_STAGE_SOUND_PATH = 'assets/scene/Sounds/fail1.mp3'
 export const UI_VIRTUAL_WIDTH = 1920
 export const UI_VIRTUAL_HEIGHT = 1080
 
-function uiPct(px: number, of: number): `${number}%` {
-  return `${(px / of) * 100}%` as `${number}%`
-}
-
-function uiW(px: number): `${number}%` {
-  return uiPct(px, UI_VIRTUAL_WIDTH)
-}
-
-function uiH(px: number): `${number}%` {
-  return uiPct(px, UI_VIRTUAL_HEIGHT)
-}
-
 export const UI_FONT = 'monospace' as const
 
 export function boldUi(value: string): string {
   return `<b>${value}</b>`
 }
 export const UI_TINT = Color4.create(0x33 / 255, 0xdb / 255, 0, 1)
+export const UI_HUD_EDGE_PADDING_X = '2%'
+export const UI_HUD_EDGE_PADDING_Y = '7%'
 
-const HUD_EDGE_PADDING_PX = 80
-const RIGHT_PANE_WIDTH_PX = 350
-const MISSION_BUTTON_WIDTH_PX = 350
-const MISSION_BUTTON_HEIGHT_PX = 100
-const HEALTH_BAR_WIDTH_PX = 480 * 1.2
-const HEALTH_BAR_HEIGHT_PX = 36 * 1.2
-const SKILL_PANEL_ROW_HEIGHT_PX = 50
-const SKILL_PANEL_PADDING_PX = 25
-const SKILL_PANEL_TITLE_HEIGHT_PX = 36
-export const UI_SKILL_PANEL_EMPTY_ROWS = 5
-const SKILL_PANEL_HEIGHT_PX =
-  SKILL_PANEL_TITLE_HEIGHT_PX +
-  SKILL_PANEL_ROW_HEIGHT_PX * (2 + UI_SKILL_PANEL_EMPTY_ROWS) +
-  SKILL_PANEL_PADDING_PX * 2
-
-export const UI_HUD_EDGE_PADDING_X = uiW(HUD_EDGE_PADDING_PX)
-export const UI_HUD_EDGE_PADDING_Y = uiH(HUD_EDGE_PADDING_PX)
+// Mission start / restart
 export const UI_MISSION_BUTTON_FONT_SIZE = 22
-export const UI_MISSION_BUTTON_WIDTH = uiW(MISSION_BUTTON_WIDTH_PX)
-export const UI_MISSION_BUTTON_HEIGHT = uiH(MISSION_BUTTON_HEIGHT_PX)
-export const UI_BACK_TO_SHIP_BUTTON_WIDTH = uiW(RIGHT_PANE_WIDTH_PX)
-export const UI_BACK_TO_SHIP_BUTTON_HEIGHT = uiH(RIGHT_PANE_WIDTH_PX)
+export const UI_MISSION_BUTTON_WIDTH = '18%'
+export const UI_MISSION_BUTTON_HEIGHT = '9%'
+export const UI_MISSION_BUTTON_LEFT = '41%'
+export const UI_MISSION_STATUS_LABEL_WIDTH = '29%'
+export const UI_MISSION_STATUS_LABEL_LEFT = '35%'
+
+// Exit camera
+export const UI_BACK_TO_SHIP_BUTTON_WIDTH = '20%'
+export const UI_BACK_TO_SHIP_BUTTON_HEIGHT = '32%'
 export const UI_BACK_TO_SHIP_BUTTON_FONT_SIZE = 36
-export const UI_MISSION_STATUS_LABEL_WIDTH = uiW(560)
-export const UI_HEALTH_BAR_WIDTH = uiW(HEALTH_BAR_WIDTH_PX)
-export const UI_HEALTH_BAR_HEIGHT = uiH(HEALTH_BAR_HEIGHT_PX)
+
+// Hull bar
+export const UI_HEALTH_BAR_WIDTH = '30%'
+export const UI_HEALTH_BAR_HEIGHT = '4%'
 export const UI_HEALTH_BAR_FONT_SIZE = 18
+
+// Encounter stage banner
 export const UI_ENCOUNTER_STAGE_DURATION_SECONDS = 2
 export const UI_ENCOUNTER_STAGE_FONT_SIZE = 48
-export const UI_ENCOUNTER_STAGE_LABEL_WIDTH = uiW(720)
-export const UI_ENCOUNTER_STAGE_LABEL_HEIGHT = uiH(72)
-export const UI_OVERCHARGE_LABEL_WIDTH = uiW(720)
-export const UI_OVERCHARGE_LABEL_HEIGHT = uiH(32)
+export const UI_ENCOUNTER_STAGE_LABEL_WIDTH = '38%'
+export const UI_ENCOUNTER_STAGE_LABEL_HEIGHT = '7%'
+
+// Overcharge label
+export const UI_OVERCHARGE_LABEL_WIDTH = '38%'
+export const UI_OVERCHARGE_LABEL_HEIGHT = '3%'
 export const UI_OVERCHARGE_LABEL_FONT_SIZE = 18
-export const UI_OVERCHARGE_LABEL_MARGIN_TOP = uiH(HUD_EDGE_PADDING_PX + HEALTH_BAR_HEIGHT_PX)
-export const UI_SKILL_PANEL_WIDTH = uiW(RIGHT_PANE_WIDTH_PX)
-export const UI_SKILL_PANEL_HEIGHT = uiH(SKILL_PANEL_HEIGHT_PX)
-export const UI_SKILL_PANEL_ROW_HEIGHT = uiPct(SKILL_PANEL_ROW_HEIGHT_PX, SKILL_PANEL_HEIGHT_PX)
-export const UI_SKILL_PANEL_PADDING_X = uiPct(SKILL_PANEL_PADDING_PX, RIGHT_PANE_WIDTH_PX)
-export const UI_SKILL_PANEL_PADDING_Y = uiPct(SKILL_PANEL_PADDING_PX, SKILL_PANEL_HEIGHT_PX)
-export const UI_SKILL_PANEL_TITLE_HEIGHT = uiPct(SKILL_PANEL_TITLE_HEIGHT_PX, SKILL_PANEL_HEIGHT_PX)
+export const UI_OVERCHARGE_LABEL_MARGIN_TOP = '11%'
+
+// Skills panel
+export const UI_SKILL_PANEL_EMPTY_ROWS = 3
+export const UI_SKILL_PANEL_WIDTH = UI_BACK_TO_SHIP_BUTTON_WIDTH
+export const UI_SKILL_PANEL_ROW_HEIGHT = '5vh'
+export const UI_SKILL_PANEL_ROW_MARGIN = '2vh'
+export const UI_SKILL_PANEL_PADDING_X = '7%'
+export const UI_SKILL_PANEL_PADDING_Y = '2vh'
+export const UI_SKILL_PANEL_TITLE_HEIGHT = '3vh'
 export const UI_SKILL_PANEL_TITLE_FONT_SIZE = 22
+export const UI_SKILL_TEXT_ROW_HEIGHT = '72%'
+export const UI_SKILL_ICON_WIDTH = '12%'
+export const UI_SKILL_ICON_MARGIN_RIGHT = '4%'
+export const UI_SKILL_LABEL_WIDTH = '50%'
+export const UI_SKILL_LEVEL_WIDTH = '16%'
+export const UI_SKILL_XP_BAR_HEIGHT = '16%'
+export const UI_SKILL_XP_BAR_MARGIN_TOP = '4%'
 export const UI_GUNNER_ICON_PATH = 'assets/scene/Images/gunner.png'
 export const UI_ENGINEERING_ICON_PATH = 'assets/scene/Images/engineering.png'
+
+// Green pixel frame / buttons
 export const UI_GREEN_PIXEL_FRAME_PATH = 'assets/scene/Images/green_pixel_frame_9.png'
 export const UI_GREEN_PIXEL_FRAME_SLICES = { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 }
-
 export const UI_GREEN_PIXEL_FRAME_FILL = Color4.create(0.1, 0.2, 0.2, 0.8)
 export const UI_GREEN_PIXEL_BUTTON_HOVER_FILL = Color4.create(0.15, 0.5, 0.25, 0.8)
-
 export const UI_GREEN_PIXEL_BUTTON_HOVER_INSET = 8
-export const UI_TURRET_OVERLAY_COLOR = Color4.create(0.05, 0.55, 0.15, 0.04)
 

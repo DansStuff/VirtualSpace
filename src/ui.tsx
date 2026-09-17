@@ -1,4 +1,3 @@
-import { engine } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { isStateSyncronized } from '@dcl/sdk/network'
 import { getPlayer } from '@dcl/sdk/players'
@@ -16,9 +15,11 @@ import {
   UI_BACK_TO_SHIP_BUTTON_WIDTH,
   UI_MISSION_BUTTON_FONT_SIZE,
   UI_MISSION_BUTTON_HEIGHT,
+  UI_MISSION_BUTTON_LEFT,
   UI_HUD_EDGE_PADDING_X,
   UI_HUD_EDGE_PADDING_Y,
   UI_MISSION_BUTTON_WIDTH,
+  UI_MISSION_STATUS_LABEL_LEFT,
   UI_MISSION_STATUS_LABEL_WIDTH,
   UI_ENCOUNTER_STAGE_DURATION_SECONDS,
   UI_ENCOUNTER_STAGE_FONT_SIZE,
@@ -28,10 +29,8 @@ import {
   UI_OVERCHARGE_LABEL_HEIGHT,
   UI_OVERCHARGE_LABEL_MARGIN_TOP,
   UI_OVERCHARGE_LABEL_WIDTH,
-  UI_TURRET_OVERLAY_COLOR,
   UI_VIRTUAL_HEIGHT,
-  UI_VIRTUAL_WIDTH,
-  WEAPON_CAMERA_TRANSITION_SECONDS
+  UI_VIRTUAL_WIDTH
 } from './constants'
 import { getGameState, isWeaponsOvercharged } from './gamestate'
 import { room } from './networking/messages'
@@ -44,7 +43,6 @@ import { SkillLevelsHud } from './ui/skillLevels'
 let encounterStageUntil = 0
 let encounterStageTurret = ''
 let overchargePlayerName = ''
-let turretOverlayOpacity = 0
 
 const HEALTH_BAR_BACKGROUND = Color4.Red()
 const HEALTH_BAR_FOREGROUND = Color4.Green()
@@ -87,18 +85,9 @@ function hullPercent(): number {
   return (getGameState().hullHp / SHIP_BASE_HULL_HP) * 100
 }
 
-function TurretOverlayFadeSystem(dt: number) {
-  if (isTurretOccupied()) {
-    turretOverlayOpacity = Math.min(1, turretOverlayOpacity + dt / WEAPON_CAMERA_TRANSITION_SECONDS)
-  } else if (turretOverlayOpacity > 0) {
-    turretOverlayOpacity = Math.max(0, turretOverlayOpacity - dt / WEAPON_CAMERA_TRANSITION_SECONDS)
-  }
-}
-
 export function setupUi() {
   ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: UI_VIRTUAL_WIDTH, virtualHeight: UI_VIRTUAL_HEIGHT })
   setupRoundResultsUi()
-  engine.addSystem(TurretOverlayFadeSystem)
   room.onMessage('notifyWeaponsOvercharged', (data) => {
     overchargePlayerName = playerDisplayName(data.playerId)
   })
@@ -122,7 +111,10 @@ function inMissionHud() {
   return getGameState().missionStarted && !showRestart()
 }
 
-export const uiMenu = () => (
+
+export const uiMenu = () => {
+
+  return (
   <UiEntity
     uiTransform={{
       width: '100%',
@@ -130,19 +122,6 @@ export const uiMenu = () => (
       pointerFilter: 'none'
     }}
   >
-    <UiEntity
-      uiTransform={{
-        width: '100%',
-        height: '100%',
-        positionType: 'absolute',
-        position: { top: 0, left: 0 },
-        display: turretOverlayOpacity > 0 ? 'flex' : 'none',
-        opacity: turretOverlayOpacity,
-        pointerFilter: 'none',
-        zIndex: 0
-      }}
-      uiBackground={{ color: UI_TURRET_OVERLAY_COLOR }}
-    />
     <UiEntity
       uiTransform={{
         width: '100%',
@@ -212,53 +191,6 @@ export const uiMenu = () => (
       />
     </UiEntity>
 
-    <UiEntity
-      uiTransform={{
-        width: '100%',
-        height: UI_MISSION_BUTTON_HEIGHT,
-        positionType: 'absolute',
-        position: { bottom: UI_HUD_EDGE_PADDING_Y, left: 0 },
-        justifyContent: 'center',
-        alignItems: 'center',
-        pointerFilter: 'none',
-        zIndex: 2
-      }}
-    >
-      <GreenPixelButton
-        value="Start Mission"
-        fontSize={UI_MISSION_BUTTON_FONT_SIZE}
-        uiTransform={{
-          width: UI_MISSION_BUTTON_WIDTH,
-          height: '100%',
-          display: getGameState().missionStarted || showRestart() ? 'none' : 'flex'
-        }}
-        onMouseDown={requestMissionStart}
-      />
-      <Label
-        value={boldUi('Mission in progress: join the fight!')}
-        font={UI_FONT}
-        fontSize={UI_MISSION_BUTTON_FONT_SIZE}
-        color={UI_TINT}
-        textAlign="middle-center"
-        uiTransform={{
-          width: UI_MISSION_STATUS_LABEL_WIDTH,
-          height: '100%',
-          display: inMissionHud() && !isTurretOccupied() ? 'flex' : 'none',
-          pointerFilter: 'none'
-        }}
-      />
-      <GreenPixelButton
-        value="Restart"
-        fontSize={UI_MISSION_BUTTON_FONT_SIZE}
-        uiTransform={{
-          width: UI_MISSION_BUTTON_WIDTH,
-          height: '100%',
-          display: showRestart() ? 'flex' : 'none'
-        }}
-        onMouseDown={requestNewMission}
-      />
-    </UiEntity>
-
     <GreenPixelButton
       value="Exit Camera"
       fontSize={UI_BACK_TO_SHIP_BUTTON_FONT_SIZE}
@@ -276,6 +208,7 @@ export const uiMenu = () => (
       onMouseDown={requestLeaveTurret}
     />
 
+    {showingEncounterStage() ? (
     <UiEntity
       uiTransform={{
         width: '100%',
@@ -283,9 +216,7 @@ export const uiMenu = () => (
         positionType: 'absolute',
         position: { top: 0, left: 0 },
         justifyContent: 'center',
-        alignItems: 'center',
-        display: showingEncounterStage() ? 'flex' : 'none',
-        pointerFilter: 'none'
+        alignItems: 'center'
       }}
     >
       <Label
@@ -300,7 +231,9 @@ export const uiMenu = () => (
         }}
       />
     </UiEntity>
+    ) : null}
     <SkillLevelsHud />
     <RoundResultsUi />
   </UiEntity>
-)
+  )
+}

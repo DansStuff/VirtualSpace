@@ -336,18 +336,18 @@
             "position": {
               "x": 64,
               "y": 62.25,
-              "z": 72.25
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
+              "z": 73.5
             },
             "rotation": {
               "x": 0.13052618503570557,
               "y": 0,
               "z": 0,
               "w": 0.9914448857307434
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -390,6 +390,69 @@
               "y": 0.41413381695747375,
               "z": 0,
               "w": 0.9102159738540649
+            },
+            "parent": 0
+          }
+        },
+        "530": {
+          "json": {
+            "position": {
+              "x": 64,
+              "y": 60.5,
+              "z": 64
+            },
+            "scale": {
+              "x": 2.0999999046325684,
+              "y": 2.0999999046325684,
+              "z": 2.0999999046325684
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "parent": 0
+          }
+        },
+        "531": {
+          "json": {
+            "position": {
+              "x": 64,
+              "y": 62,
+              "z": 64
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1.899999976158142,
+              "y": 1.899999976158142,
+              "z": 1.899999976158142
+            },
+            "parent": 0
+          }
+        },
+        "532": {
+          "json": {
+            "position": {
+              "x": 64,
+              "y": 60.5,
+              "z": 64
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 2.0999999046325684,
+              "y": 2.0999999046325684,
+              "z": 2.0999999046325684
             },
             "parent": 0
           }
@@ -462,6 +525,20 @@
           }
         },
         "529": {
+          "json": {
+            "states": [
+              {
+                "clip": "Point",
+                "playing": true,
+                "weight": 1,
+                "speed": 1.399999976158142,
+                "loop": true,
+                "shouldReset": false
+              }
+            ]
+          }
+        },
+        "531": {
           "json": {
             "states": [
               {
@@ -612,6 +689,27 @@
             "invisibleMeshesCollisionMask": 3
           }
         },
+        "530": {
+          "json": {
+            "src": "assets/scene/Models/MissionTable.gltf",
+            "visibleMeshesCollisionMask": 3,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "531": {
+          "json": {
+            "src": "assets/scene/Models/TutArrow.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "532": {
+          "json": {
+            "src": "assets/scene/Models/MissionTableText.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
         "66063": {
           "json": {
             "src": "assets/scene/Models/TutArrow.gltf",
@@ -713,17 +811,32 @@
         },
         "528": {
           "json": {
-            "value": "TutArrow.gltf_2"
+            "value": "LeftConsoleArrow"
           }
         },
         "529": {
           "json": {
-            "value": "TutArrow.gltf_3"
+            "value": "RightConsoleArrow"
+          }
+        },
+        "530": {
+          "json": {
+            "value": "MissionTable"
+          }
+        },
+        "531": {
+          "json": {
+            "value": "MissionStartArrow"
+          }
+        },
+        "532": {
+          "json": {
+            "value": "MissionTableText"
           }
         },
         "66063": {
           "json": {
-            "value": "TutArrow.gltf"
+            "value": "CenterConsoleArrow"
           }
         },
         "131598": {
@@ -777,23 +890,22 @@
         },
         "528": {
           "json": {
-            "tags": [
-              "ConsoleTutArrow"
-            ]
+            "tags": []
           }
         },
         "529": {
           "json": {
-            "tags": [
-              "ConsoleTutArrow"
-            ]
+            "tags": []
+          }
+        },
+        "531": {
+          "json": {
+            "tags": []
           }
         },
         "66063": {
           "json": {
-            "tags": [
-              "ConsoleTutArrow"
-            ]
+            "tags": []
           }
         }
       }
@@ -860,8 +972,11 @@
                   525,
                   131598,
                   66063,
+                  531,
                   528,
-                  529
+                  529,
+                  530,
+                  532
                 ]
               },
               {
@@ -943,6 +1058,18 @@
               {
                 "entity": 529,
                 "children": []
+              },
+              {
+                "entity": 530,
+                "children": []
+              },
+              {
+                "entity": 531,
+                "children": []
+              },
+              {
+                "entity": 532,
+                "children": []
               }
             ]
           }
@@ -1018,6 +1145,15 @@
           "json": {}
         },
         "529": {
+          "json": {}
+        },
+        "530": {
+          "json": {}
+        },
+        "531": {
+          "json": {}
+        },
+        "532": {
           "json": {}
         },
         "66063": {

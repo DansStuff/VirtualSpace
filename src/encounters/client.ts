@@ -8,6 +8,7 @@ import { ENCOUNTER_STAGE_SOUND_PATH } from '../constants'
 import { despawnEncounter } from '../hazards/visuals'
 import { room } from '../networking/messages'
 import { currentStopId, markEncounterComplete, resumeFromStop } from '../path/follow'
+import { setActiveConsoleArrow } from '../sceneObjects'
 import { markEncounterStage } from '../ui'
 
 export function setupEncounters() {
@@ -20,11 +21,13 @@ export function setupEncounters() {
     appliedStageAt = data.startedAt
     console.log(`[CLIENT] Encounter stage: ${data.turret}`)
     markEncounterStage(data.turret)
+    setActiveConsoleArrow(data.turret)
     playGlobalSound(ENCOUNTER_STAGE_SOUND_PATH)
   })
 
   room.onMessage('notifyEncounterEnd', (data) => {
     console.log(`[CLIENT] Encounter ended: ${data.encounterId}`)
+    setActiveConsoleArrow(null)
     markEncounterComplete(data.encounterId)
     despawnEncounter(data.encounterId)
     if (currentStopId() === data.encounterId) {

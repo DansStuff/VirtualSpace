@@ -17,7 +17,7 @@ import { despawnAllHazards } from './hazards/visuals'
 import { room } from './networking/messages'
 import { currentStopId, resetPathToStart, resumeFromStop, ShipPathSystem } from './path/follow'
 import { setupPlayers } from './players/stats'
-import { exitWeaponCamera, setupSceneObjects } from './sceneObjects'
+import { exitWeaponCamera, setActiveConsoleArrow, setupSceneObjects } from './sceneObjects'
 import { setupSpaceObjects } from './spaceobjects/planets'
 import { setupShipWeapons } from './shipweapons/lasers'
 import { setupUi } from './ui'
@@ -32,6 +32,7 @@ function setupClientRoom() {
     resetPathToStart()
     despawnAllHazards()
     exitWeaponCamera()
+    setActiveConsoleArrow(null)
   }
 
   room.onMessage('notifyMissionStart', (data) => {

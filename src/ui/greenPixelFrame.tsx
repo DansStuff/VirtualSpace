@@ -1,5 +1,4 @@
 import { Color4 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 import ReactEcs, { UiEntity, type UiTransformProps } from '@dcl/sdk/react-ecs'
 import {
   UI_FONT,
@@ -26,6 +25,13 @@ export function GreenPixelFrame(props: {
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   fillColor?: Color4
+  uiText?: {
+    value: string
+    fontSize: number
+    color?: Color4
+    textAlign?: 'middle-center'
+    font?: 'sans-serif' | 'serif' | 'monospace'
+  }
 }) {
   const inset = UI_GREEN_PIXEL_BUTTON_HOVER_INSET
   const clickable = !!(props.onMouseDown || props.onMouseEnter || props.onMouseLeave)
@@ -46,6 +52,17 @@ export function GreenPixelFrame(props: {
           uiBackground={{ color: props.fillColor ?? UI_GREEN_PIXEL_FRAME_FILL }}
         />
       </UiEntity>
+      {props.uiText ? (
+        <UiEntity
+          uiTransform={{
+            width: '100%',
+            height: '100%',
+            positionType: 'absolute',
+            position: { top: 0, left: 0 }
+          }}
+          uiText={props.uiText}
+        />
+      ) : null}
       <UiEntity
         uiTransform={{
           width: '100%',
@@ -78,47 +95,25 @@ export function GreenPixelButton(props: {
 }) {
   const id = props.value
   const hovered = hoveredGreenPixelButton === id
-  const mobile = isMobile()
 
   return (
     <GreenPixelFrame
-      uiTransform={{
-        ...props.uiTransform,
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}
+      uiTransform={props.uiTransform}
       fillColor={hovered ? UI_GREEN_PIXEL_BUTTON_HOVER_FILL : UI_GREEN_PIXEL_FRAME_FILL}
+      uiText={{
+        value: boldUi(props.value),
+        fontSize: props.fontSize,
+        color: props.color ?? UI_TINT,
+        textAlign: 'middle-center',
+        font: UI_FONT
+      }}
       onMouseDown={props.onMouseDown}
-      onMouseEnter={
-        mobile
-          ? undefined
-          : () => {
-              hoveredGreenPixelButton = id
-            }
-      }
-      onMouseLeave={
-        mobile
-          ? undefined
-          : () => {
-              if (hoveredGreenPixelButton === id) hoveredGreenPixelButton = null
-            }
-      }
-    >
-      <UiEntity
-        uiTransform={{
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerFilter: 'none'
-        }}
-        uiText={{
-          value: boldUi(props.value),
-          fontSize: props.fontSize,
-          color: props.color ?? UI_TINT,
-          textAlign: 'middle-center',
-          font: UI_FONT
-        }}
-      />
-    </GreenPixelFrame>
+      onMouseEnter={() => {
+        hoveredGreenPixelButton = id
+      }}
+      onMouseLeave={() => {
+        if (hoveredGreenPixelButton === id) hoveredGreenPixelButton = null
+      }}
+    />
   )
 }
