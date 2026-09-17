@@ -457,6 +457,69 @@
             "parent": 0
           }
         },
+        "533": {
+          "json": {
+            "position": {
+              "x": 67.75,
+              "y": 60.25,
+              "z": 64
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1.5707000494003296,
+              "y": 1.5707000494003296,
+              "z": 1.5707000494003296
+            },
+            "parent": 0
+          }
+        },
+        "534": {
+          "json": {
+            "position": {
+              "x": 60,
+              "y": 60.25,
+              "z": 64
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0.99920254945755,
+              "z": 0,
+              "w": -0.039928145706653595
+            },
+            "scale": {
+              "x": 1.5707000494003296,
+              "y": 1.5707000494003296,
+              "z": 1.5707000494003296
+            },
+            "parent": 0
+          }
+        },
+        "535": {
+          "json": {
+            "position": {
+              "x": 64,
+              "y": 60.25,
+              "z": 60.5
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0.7071067690849304,
+              "z": 0,
+              "w": 0.7071067690849304
+            },
+            "scale": {
+              "x": 1.5707000494003296,
+              "y": 1.5707000494003296,
+              "z": 1.5707000494003296
+            },
+            "parent": 0
+          }
+        },
         "66063": {
           "json": {
             "position": {
@@ -710,6 +773,27 @@
             "invisibleMeshesCollisionMask": 3
           }
         },
+        "533": {
+          "json": {
+            "src": "assets/scene/Models/Chair.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "534": {
+          "json": {
+            "src": "assets/scene/Models/Chair.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
+        "535": {
+          "json": {
+            "src": "assets/scene/Models/Chair.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
         "66063": {
           "json": {
             "src": "assets/scene/Models/TutArrow.gltf",
@@ -832,6 +916,21 @@
         "532": {
           "json": {
             "value": "MissionTableText"
+          }
+        },
+        "533": {
+          "json": {
+            "value": "Chair.gltf"
+          }
+        },
+        "534": {
+          "json": {
+            "value": "Chair.gltf_2"
+          }
+        },
+        "535": {
+          "json": {
+            "value": "Chair.gltf_3"
           }
         },
         "66063": {
@@ -976,7 +1075,10 @@
                   528,
                   529,
                   530,
-                  532
+                  532,
+                  533,
+                  534,
+                  535
                 ]
               },
               {
@@ -1070,6 +1172,18 @@
               {
                 "entity": 532,
                 "children": []
+              },
+              {
+                "entity": 533,
+                "children": []
+              },
+              {
+                "entity": 534,
+                "children": []
+              },
+              {
+                "entity": 535,
+                "children": []
               }
             ]
           }
@@ -1154,6 +1268,15 @@
           "json": {}
         },
         "532": {
+          "json": {}
+        },
+        "533": {
+          "json": {}
+        },
+        "534": {
+          "json": {}
+        },
+        "535": {
           "json": {}
         },
         "66063": {

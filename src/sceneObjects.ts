@@ -200,6 +200,12 @@ function disableMissionTable(): void {
   PointerEvents.deleteFrom(missionTable)
 }
 
+function enableMissionTable(): void {
+  if (!missionTable || getPlatform() === null) return
+  if (PointerEvents.getOrNull(missionTable)) return
+  attachInteractEvent(missionTable, 'Start Mission')
+}
+
 function setEntityVisible(entity: Entity | null, visible: boolean): void {
   if (!entity) return
   const current = VisibilityComponent.getOrNull(entity)
@@ -212,12 +218,13 @@ function MissionTableSystem(): void {
   setEntityVisible(missionTableText, started)
   setEntityVisible(missionStartArrow, !started)
 
-  if (!missionTable || !PointerEvents.getOrNull(missionTable)) return
+  if (!missionTable) return
   if (started) {
     disableMissionTable()
     return
   }
-  if (!isStateSyncronized()) return
+  enableMissionTable()
+  if (!isStateSyncronized() || !PointerEvents.getOrNull(missionTable)) return
   if (inputSystem.getInputCommand(InputAction.IA_POINTER, PointerEventType.PET_DOWN, missionTable)) {
     room.send('requestMissionStart', { requestedAt: Date.now() })
     disableMissionTable()
