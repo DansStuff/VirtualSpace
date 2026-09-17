@@ -1,23 +1,22 @@
-import { engine } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
-import ReactEcs, { Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
+import ReactEcs, { Label, UiEntity } from '@dcl/sdk/react-ecs'
 import {
   UI_ENGINEERING_ICON_PATH,
   UI_FONT,
   UI_TINT,
   boldUi,
   UI_GUNNER_ICON_PATH,
-  UI_HUD_EDGE_PADDING,
+  UI_HUD_EDGE_PADDING_X,
+  UI_HUD_EDGE_PADDING_Y,
   UI_SKILL_PANEL_EMPTY_ROWS,
   UI_SKILL_PANEL_HEIGHT,
-  UI_SKILL_PANEL_PADDING,
+  UI_SKILL_PANEL_PADDING_X,
+  UI_SKILL_PANEL_PADDING_Y,
   UI_SKILL_PANEL_ROW_HEIGHT,
   UI_SKILL_PANEL_TITLE_FONT_SIZE,
   UI_SKILL_PANEL_TITLE_HEIGHT,
-  UI_SKILL_PANEL_WIDTH,
-  UI_VIRTUAL_HEIGHT,
-  UI_VIRTUAL_WIDTH
+  UI_SKILL_PANEL_WIDTH
 } from '../constants'
 import { DEFAULT_PLAYER_STATS, getPlayerStats, skillProgress } from '../players/stats'
 import { GreenPixelFrame } from './greenPixelFrame'
@@ -110,28 +109,29 @@ function SkillRow(iconSrc: string, label: string, level: number, progress: numbe
   )
 }
 
-function SkillLevelsUi() {
+export function SkillLevelsHud() {
   const stats = localSkillLevels()
 
   return (
-    <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
-      <GreenPixelFrame
-        uiTransform={{
-          width: UI_SKILL_PANEL_WIDTH,
-          height: UI_SKILL_PANEL_HEIGHT,
-          positionType: 'absolute',
-          position: { top: UI_HUD_EDGE_PADDING, right: UI_HUD_EDGE_PADDING },
-          flexDirection: 'column',
-          justifyContent: 'center'
-        }}
-      >
+    <GreenPixelFrame
+      uiTransform={{
+        width: UI_SKILL_PANEL_WIDTH,
+        height: UI_SKILL_PANEL_HEIGHT,
+        positionType: 'absolute',
+        position: { top: UI_HUD_EDGE_PADDING_Y, right: UI_HUD_EDGE_PADDING_X },
+        flexDirection: 'column',
+        justifyContent: 'center',
+        pointerFilter: 'none'
+      }}
+    >
         <UiEntity
           uiTransform={{
             width: '100%',
             height: '100%',
             flexDirection: 'column',
             justifyContent: 'flex-start',
-            padding: { left: UI_SKILL_PANEL_PADDING, right: UI_SKILL_PANEL_PADDING, top: UI_SKILL_PANEL_PADDING, bottom: UI_SKILL_PANEL_PADDING }
+            padding: { left: UI_SKILL_PANEL_PADDING_X, right: UI_SKILL_PANEL_PADDING_X, top: UI_SKILL_PANEL_PADDING_Y, bottom: UI_SKILL_PANEL_PADDING_Y },
+            pointerFilter: 'none'
           }}
         >
           <Label
@@ -159,14 +159,5 @@ function SkillLevelsUi() {
           {emptySkillRows()}
         </UiEntity>
       </GreenPixelFrame>
-    </UiEntity>
   )
-}
-
-export function setupSkillLevelsUi() {
-  const owner = engine.addEntity()
-  ReactEcsRenderer.addUiRenderer(owner, SkillLevelsUi, {
-    virtualWidth: UI_VIRTUAL_WIDTH,
-    virtualHeight: UI_VIRTUAL_HEIGHT
-  })
 }

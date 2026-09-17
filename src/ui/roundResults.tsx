@@ -1,8 +1,7 @@
-import { engine } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
-import ReactEcs, { Button, Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
-import { UI_FONT, UI_TINT, UI_VIRTUAL_HEIGHT, UI_VIRTUAL_WIDTH, boldUi } from '../constants'
+import ReactEcs, { Button, Label, UiEntity } from '@dcl/sdk/react-ecs'
+import { UI_FONT, UI_TINT, boldUi } from '../constants'
 import { room } from '../networking/messages'
 import { contributionMapFromRows, type RoundContribution } from '../players/contributions'
 
@@ -118,10 +117,8 @@ function ResultRowView(row: ResultRow, key: string) {
   )
 }
 
-function RoundResultsUi() {
-  if (!visible) {
-    return <UiEntity uiTransform={{ width: '100%', height: '100%' }} />
-  }
+export function RoundResultsUi() {
+  if (!visible) return null
 
   return (
     <UiEntity
@@ -224,12 +221,6 @@ function RoundResultsUi() {
 }
 
 export function setupRoundResultsUi() {
-  const owner = engine.addEntity()
-  ReactEcsRenderer.addUiRenderer(owner, RoundResultsUi, {
-    virtualWidth: UI_VIRTUAL_WIDTH,
-    virtualHeight: UI_VIRTUAL_HEIGHT
-  })
-
   let appliedResultsAt = 0
   room.onMessage('notifyRoundResults', (data) => {
     if (data.endedAt <= appliedResultsAt) return

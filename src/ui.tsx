@@ -12,10 +12,12 @@ import {
   UI_HEALTH_BAR_HEIGHT,
   UI_HEALTH_BAR_WIDTH,
   UI_BACK_TO_SHIP_BUTTON_FONT_SIZE,
-  UI_BACK_TO_SHIP_BUTTON_SIZE,
+  UI_BACK_TO_SHIP_BUTTON_HEIGHT,
+  UI_BACK_TO_SHIP_BUTTON_WIDTH,
   UI_MISSION_BUTTON_FONT_SIZE,
   UI_MISSION_BUTTON_HEIGHT,
-  UI_HUD_EDGE_PADDING,
+  UI_HUD_EDGE_PADDING_X,
+  UI_HUD_EDGE_PADDING_Y,
   UI_MISSION_BUTTON_WIDTH,
   UI_MISSION_STATUS_LABEL_WIDTH,
   UI_ENCOUNTER_STAGE_DURATION_SECONDS,
@@ -36,8 +38,8 @@ import { room } from './networking/messages'
 import { lastStopId } from './path/follow'
 import { exitWeaponCamera, isTurretOccupied } from './sceneObjects'
 import { GreenPixelButton } from './ui/greenPixelFrame'
-import { setupRoundResultsUi } from './ui/roundResults'
-import { setupSkillLevelsUi } from './ui/skillLevels'
+import { RoundResultsUi, setupRoundResultsUi } from './ui/roundResults'
+import { SkillLevelsHud } from './ui/skillLevels'
 
 let encounterStageUntil = 0
 let encounterStageTurret = ''
@@ -96,7 +98,6 @@ function TurretOverlayFadeSystem(dt: number) {
 export function setupUi() {
   ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: UI_VIRTUAL_WIDTH, virtualHeight: UI_VIRTUAL_HEIGHT })
   setupRoundResultsUi()
-  setupSkillLevelsUi()
   engine.addSystem(TurretOverlayFadeSystem)
   room.onMessage('notifyWeaponsOvercharged', (data) => {
     overchargePlayerName = playerDisplayName(data.playerId)
@@ -125,7 +126,8 @@ export const uiMenu = () => (
   <UiEntity
     uiTransform={{
       width: '100%',
-      height: '100%'
+      height: '100%',
+      pointerFilter: 'none'
     }}
   >
     <UiEntity
@@ -136,7 +138,8 @@ export const uiMenu = () => (
         position: { top: 0, left: 0 },
         display: turretOverlayOpacity > 0 ? 'flex' : 'none',
         opacity: turretOverlayOpacity,
-        pointerFilter: 'none'
+        pointerFilter: 'none',
+        zIndex: 0
       }}
       uiBackground={{ color: UI_TURRET_OVERLAY_COLOR }}
     />
@@ -145,15 +148,16 @@ export const uiMenu = () => (
         width: '100%',
         height: UI_HEALTH_BAR_HEIGHT,
         positionType: 'absolute',
-        position: { top: UI_HUD_EDGE_PADDING, left: 0 },
+        position: { top: UI_HUD_EDGE_PADDING_Y, left: 0 },
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        pointerFilter: 'none'
       }}
     >
       <UiEntity
         uiTransform={{
           width: UI_HEALTH_BAR_WIDTH,
-          height: UI_HEALTH_BAR_HEIGHT
+          height: '100%'
         }}
       >
         <UiEntity
@@ -176,7 +180,8 @@ export const uiMenu = () => (
             height: '100%',
             positionType: 'absolute',
             position: { top: 0, left: 0 },
-            zIndex: 1
+            zIndex: 1,
+            pointerFilter: 'none'
           }}
         />
       </UiEntity>
@@ -190,7 +195,8 @@ export const uiMenu = () => (
         position: { top: UI_OVERCHARGE_LABEL_MARGIN_TOP, left: 0 },
         justifyContent: 'center',
         alignItems: 'center',
-        display: showingOverchargeLabel() ? 'flex' : 'none'
+        display: showingOverchargeLabel() ? 'flex' : 'none',
+        pointerFilter: 'none'
       }}
     >
       <Label
@@ -201,7 +207,7 @@ export const uiMenu = () => (
         textAlign="middle-center"
         uiTransform={{
           width: UI_OVERCHARGE_LABEL_WIDTH,
-          height: UI_OVERCHARGE_LABEL_HEIGHT
+          height: '100%'
         }}
       />
     </UiEntity>
@@ -209,11 +215,13 @@ export const uiMenu = () => (
     <UiEntity
       uiTransform={{
         width: '100%',
-        height: UI_MISSION_BUTTON_HEIGHT + UI_HUD_EDGE_PADDING,
+        height: UI_MISSION_BUTTON_HEIGHT,
         positionType: 'absolute',
-        position: { bottom: 0, left: 0 },
+        position: { bottom: UI_HUD_EDGE_PADDING_Y, left: 0 },
         justifyContent: 'center',
-        alignItems: 'flex-end'
+        alignItems: 'center',
+        pointerFilter: 'none',
+        zIndex: 2
       }}
     >
       <GreenPixelButton
@@ -221,8 +229,7 @@ export const uiMenu = () => (
         fontSize={UI_MISSION_BUTTON_FONT_SIZE}
         uiTransform={{
           width: UI_MISSION_BUTTON_WIDTH,
-          height: UI_MISSION_BUTTON_HEIGHT,
-          margin: { bottom: UI_HUD_EDGE_PADDING },
+          height: '100%',
           display: getGameState().missionStarted || showRestart() ? 'none' : 'flex'
         }}
         onMouseDown={requestMissionStart}
@@ -235,9 +242,9 @@ export const uiMenu = () => (
         textAlign="middle-center"
         uiTransform={{
           width: UI_MISSION_STATUS_LABEL_WIDTH,
-          height: UI_MISSION_BUTTON_HEIGHT,
-          margin: { bottom: UI_HUD_EDGE_PADDING },
-          display: inMissionHud() && !isTurretOccupied() ? 'flex' : 'none'
+          height: '100%',
+          display: inMissionHud() && !isTurretOccupied() ? 'flex' : 'none',
+          pointerFilter: 'none'
         }}
       />
       <GreenPixelButton
@@ -245,8 +252,7 @@ export const uiMenu = () => (
         fontSize={UI_MISSION_BUTTON_FONT_SIZE}
         uiTransform={{
           width: UI_MISSION_BUTTON_WIDTH,
-          height: UI_MISSION_BUTTON_HEIGHT,
-          margin: { bottom: UI_HUD_EDGE_PADDING },
+          height: '100%',
           display: showRestart() ? 'flex' : 'none'
         }}
         onMouseDown={requestNewMission}
@@ -257,14 +263,15 @@ export const uiMenu = () => (
       value="Exit Camera"
       fontSize={UI_BACK_TO_SHIP_BUTTON_FONT_SIZE}
       uiTransform={{
-        width: UI_BACK_TO_SHIP_BUTTON_SIZE,
-        height: UI_BACK_TO_SHIP_BUTTON_SIZE,
+        width: UI_BACK_TO_SHIP_BUTTON_WIDTH,
+        height: UI_BACK_TO_SHIP_BUTTON_HEIGHT,
         positionType: 'absolute',
         position: {
-          bottom: UI_HUD_EDGE_PADDING,
-          right: UI_HUD_EDGE_PADDING
+          bottom: UI_HUD_EDGE_PADDING_Y,
+          right: UI_HUD_EDGE_PADDING_X
         },
-        display: isTurretOccupied() ? 'flex' : 'none'
+        display: isTurretOccupied() ? 'flex' : 'none',
+        zIndex: 2
       }}
       onMouseDown={requestLeaveTurret}
     />
@@ -277,7 +284,8 @@ export const uiMenu = () => (
         position: { top: 0, left: 0 },
         justifyContent: 'center',
         alignItems: 'center',
-        display: showingEncounterStage() ? 'flex' : 'none'
+        display: showingEncounterStage() ? 'flex' : 'none',
+        pointerFilter: 'none'
       }}
     >
       <Label
@@ -292,5 +300,7 @@ export const uiMenu = () => (
         }}
       />
     </UiEntity>
+    <SkillLevelsHud />
+    <RoundResultsUi />
   </UiEntity>
 )

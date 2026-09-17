@@ -426,45 +426,70 @@ export const ENCOUNTER_STAGE_SOUND_PATH = 'assets/scene/Sounds/fail1.mp3'
 
 // MARK: UI
 
-let RIGHT_PANE_WIDTH = 350
-
-
 export const UI_VIRTUAL_WIDTH = 1920
 export const UI_VIRTUAL_HEIGHT = 1080
+
+function uiPct(px: number, of: number): `${number}%` {
+  return `${(px / of) * 100}%` as `${number}%`
+}
+
+function uiW(px: number): `${number}%` {
+  return uiPct(px, UI_VIRTUAL_WIDTH)
+}
+
+function uiH(px: number): `${number}%` {
+  return uiPct(px, UI_VIRTUAL_HEIGHT)
+}
+
 export const UI_FONT = 'monospace' as const
 
 export function boldUi(value: string): string {
   return `<b>${value}</b>`
 }
 export const UI_TINT = Color4.create(0x33 / 255, 0xdb / 255, 0, 1)
-export const UI_HUD_EDGE_PADDING = 80
+
+const HUD_EDGE_PADDING_PX = 80
+const RIGHT_PANE_WIDTH_PX = 350
+const MISSION_BUTTON_WIDTH_PX = 350
+const MISSION_BUTTON_HEIGHT_PX = 100
+const HEALTH_BAR_WIDTH_PX = 480 * 1.2
+const HEALTH_BAR_HEIGHT_PX = 36 * 1.2
+const SKILL_PANEL_ROW_HEIGHT_PX = 50
+const SKILL_PANEL_PADDING_PX = 25
+const SKILL_PANEL_TITLE_HEIGHT_PX = 36
+export const UI_SKILL_PANEL_EMPTY_ROWS = 5
+const SKILL_PANEL_HEIGHT_PX =
+  SKILL_PANEL_TITLE_HEIGHT_PX +
+  SKILL_PANEL_ROW_HEIGHT_PX * (2 + UI_SKILL_PANEL_EMPTY_ROWS) +
+  SKILL_PANEL_PADDING_PX * 2
+
+export const UI_HUD_EDGE_PADDING_X = uiW(HUD_EDGE_PADDING_PX)
+export const UI_HUD_EDGE_PADDING_Y = uiH(HUD_EDGE_PADDING_PX)
 export const UI_MISSION_BUTTON_FONT_SIZE = 22
-export const UI_MISSION_BUTTON_WIDTH = 350
-export const UI_MISSION_BUTTON_HEIGHT = 100
-export const UI_BACK_TO_SHIP_BUTTON_SIZE = RIGHT_PANE_WIDTH
+export const UI_MISSION_BUTTON_WIDTH = uiW(MISSION_BUTTON_WIDTH_PX)
+export const UI_MISSION_BUTTON_HEIGHT = uiH(MISSION_BUTTON_HEIGHT_PX)
+export const UI_BACK_TO_SHIP_BUTTON_WIDTH = uiW(RIGHT_PANE_WIDTH_PX)
+export const UI_BACK_TO_SHIP_BUTTON_HEIGHT = uiH(RIGHT_PANE_WIDTH_PX)
 export const UI_BACK_TO_SHIP_BUTTON_FONT_SIZE = 36
-export const UI_MISSION_STATUS_LABEL_WIDTH = 560
-export const UI_HEALTH_BAR_WIDTH = 480 * 1.2
-export const UI_HEALTH_BAR_HEIGHT = 36 * 1.2
+export const UI_MISSION_STATUS_LABEL_WIDTH = uiW(560)
+export const UI_HEALTH_BAR_WIDTH = uiW(HEALTH_BAR_WIDTH_PX)
+export const UI_HEALTH_BAR_HEIGHT = uiH(HEALTH_BAR_HEIGHT_PX)
 export const UI_HEALTH_BAR_FONT_SIZE = 18
 export const UI_ENCOUNTER_STAGE_DURATION_SECONDS = 2
 export const UI_ENCOUNTER_STAGE_FONT_SIZE = 48
-export const UI_ENCOUNTER_STAGE_LABEL_WIDTH = 720
-export const UI_ENCOUNTER_STAGE_LABEL_HEIGHT = 72
-export const UI_OVERCHARGE_LABEL_WIDTH = 720
-export const UI_OVERCHARGE_LABEL_HEIGHT = 32
+export const UI_ENCOUNTER_STAGE_LABEL_WIDTH = uiW(720)
+export const UI_ENCOUNTER_STAGE_LABEL_HEIGHT = uiH(72)
+export const UI_OVERCHARGE_LABEL_WIDTH = uiW(720)
+export const UI_OVERCHARGE_LABEL_HEIGHT = uiH(32)
 export const UI_OVERCHARGE_LABEL_FONT_SIZE = 18
-export const UI_OVERCHARGE_LABEL_MARGIN_TOP = UI_HUD_EDGE_PADDING + UI_HEALTH_BAR_HEIGHT
-export const UI_SKILL_PANEL_WIDTH = RIGHT_PANE_WIDTH
-export const UI_SKILL_PANEL_ROW_HEIGHT = 50
-export const UI_SKILL_PANEL_PADDING = 25
-export const UI_SKILL_PANEL_EMPTY_ROWS = 5
-export const UI_SKILL_PANEL_TITLE_HEIGHT = 36
+export const UI_OVERCHARGE_LABEL_MARGIN_TOP = uiH(HUD_EDGE_PADDING_PX + HEALTH_BAR_HEIGHT_PX)
+export const UI_SKILL_PANEL_WIDTH = uiW(RIGHT_PANE_WIDTH_PX)
+export const UI_SKILL_PANEL_HEIGHT = uiH(SKILL_PANEL_HEIGHT_PX)
+export const UI_SKILL_PANEL_ROW_HEIGHT = uiPct(SKILL_PANEL_ROW_HEIGHT_PX, SKILL_PANEL_HEIGHT_PX)
+export const UI_SKILL_PANEL_PADDING_X = uiPct(SKILL_PANEL_PADDING_PX, RIGHT_PANE_WIDTH_PX)
+export const UI_SKILL_PANEL_PADDING_Y = uiPct(SKILL_PANEL_PADDING_PX, SKILL_PANEL_HEIGHT_PX)
+export const UI_SKILL_PANEL_TITLE_HEIGHT = uiPct(SKILL_PANEL_TITLE_HEIGHT_PX, SKILL_PANEL_HEIGHT_PX)
 export const UI_SKILL_PANEL_TITLE_FONT_SIZE = 22
-export const UI_SKILL_PANEL_HEIGHT =
-  UI_SKILL_PANEL_TITLE_HEIGHT +
-  UI_SKILL_PANEL_ROW_HEIGHT * (2 + UI_SKILL_PANEL_EMPTY_ROWS) +
-  UI_SKILL_PANEL_PADDING * 2
 export const UI_GUNNER_ICON_PATH = 'assets/scene/Images/gunner.png'
 export const UI_ENGINEERING_ICON_PATH = 'assets/scene/Images/engineering.png'
 export const UI_GREEN_PIXEL_FRAME_PATH = 'assets/scene/Images/green_pixel_frame_9.png'
