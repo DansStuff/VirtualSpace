@@ -29,33 +29,21 @@ export function GreenPixelFrame(props: {
 }) {
   const inset = UI_GREEN_PIXEL_BUTTON_HOVER_INSET
   const clickable = !!(props.onMouseDown || props.onMouseEnter || props.onMouseLeave)
-  const pointerFilter = clickable ? 'block' : 'none'
 
   return (
-    <UiEntity
-      uiTransform={{
-        ...props.uiTransform,
-        pointerFilter
-      }}
-      onMouseDown={props.onMouseDown}
-      onMouseEnter={props.onMouseEnter}
-      onMouseLeave={props.onMouseLeave}
-    >
+    <UiEntity uiTransform={props.uiTransform}>
       <UiEntity
         uiTransform={{
           width: '100%',
           height: '100%',
           positionType: 'absolute',
           position: { top: 0, left: 0 },
-          padding: { top: inset, right: inset, bottom: inset, left: inset },
-          pointerFilter
+          padding: { top: inset, right: inset, bottom: inset, left: inset }
         }}
-        onMouseDown={props.onMouseDown}
       >
         <UiEntity
-          uiTransform={{ width: '100%', height: '100%', pointerFilter }}
+          uiTransform={{ width: '100%', height: '100%' }}
           uiBackground={{ color: props.fillColor ?? UI_GREEN_PIXEL_FRAME_FILL }}
-          onMouseDown={props.onMouseDown}
         />
       </UiEntity>
       <UiEntity
@@ -64,13 +52,15 @@ export function GreenPixelFrame(props: {
           height: '100%',
           positionType: 'absolute',
           position: { top: 0, left: 0 },
-          pointerFilter
+          pointerFilter: clickable ? 'block' : 'none'
         }}
         uiBackground={{
           ...greenPixelFrameBackground,
-          textureMode: isMobile() ? 'stretch' : 'nine-slices'
+          textureMode: 'nine-slices'
         }}
         onMouseDown={props.onMouseDown}
+        onMouseEnter={props.onMouseEnter}
+        onMouseLeave={props.onMouseLeave}
       />
       {props.children}
     </UiEntity>
@@ -119,7 +109,7 @@ export function GreenPixelButton(props: {
           width: '100%',
           height: '100%',
           zIndex: 1,
-          pointerFilter: 'block'
+          pointerFilter: 'none'
         }}
         uiText={{
           value: boldUi(props.value),
@@ -128,7 +118,6 @@ export function GreenPixelButton(props: {
           textAlign: 'middle-center',
           font: UI_FONT
         }}
-        onMouseDown={props.onMouseDown}
       />
     </GreenPixelFrame>
   )
