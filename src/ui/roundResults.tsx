@@ -2,7 +2,7 @@ import { engine } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import ReactEcs, { Button, Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
-import { UI_VIRTUAL_HEIGHT, UI_VIRTUAL_WIDTH } from '../constants'
+import { UI_FONT, UI_TINT, UI_VIRTUAL_HEIGHT, UI_VIRTUAL_WIDTH, boldUi } from '../constants'
 import { room } from '../networking/messages'
 import { contributionMapFromRows, type RoundContribution } from '../players/contributions'
 
@@ -26,11 +26,6 @@ const COL_STAT = 160
 
 const BACKDROP_COLOR = Color4.create(0, 0, 0, 0.55)
 const PANEL_COLOR = Color4.create(0.1, 0.12, 0.16, 0.96)
-const TITLE_WIN_COLOR = Color4.create(0.45, 0.85, 0.5, 1)
-const TITLE_LOSS_COLOR = Color4.create(1, 0.35, 0.28, 1)
-const HEADER_COLOR = Color4.create(0.7, 0.74, 0.8, 1)
-const ROW_COLOR = Color4.create(0.92, 0.93, 0.95, 1)
-const EMPTY_COLOR = Color4.create(0.6, 0.62, 0.66, 1)
 
 let visible = false
 let won = false
@@ -95,24 +90,27 @@ function ResultRowView(row: ResultRow, key: string) {
           }}
         />
         <Label
-          value={displayName(row.playerId)}
+          value={boldUi(displayName(row.playerId))}
+          font={UI_FONT}
           fontSize={18}
-          color={ROW_COLOR}
+          color={UI_TINT}
           textAlign="middle-left"
           uiTransform={{ width: COL_NAME, height: ROW_HEIGHT }}
         />
       </UiEntity>
       <Label
-        value={`${row.damage}`}
+        value={boldUi(`${row.damage}`)}
+        font={UI_FONT}
         fontSize={18}
-        color={ROW_COLOR}
+        color={UI_TINT}
         textAlign="middle-center"
         uiTransform={{ width: COL_STAT, height: ROW_HEIGHT }}
       />
       <Label
-        value={`${row.repairs}`}
+        value={boldUi(`${row.repairs}`)}
+        font={UI_FONT}
         fontSize={18}
-        color={ROW_COLOR}
+        color={UI_TINT}
         textAlign="middle-center"
         uiTransform={{ width: COL_STAT, height: ROW_HEIGHT }}
       />
@@ -148,9 +146,10 @@ function RoundResultsUi() {
         uiBackground={{ color: PANEL_COLOR }}
       >
         <Label
-          value={won ? 'MISSION COMPLETE' : 'SHIP DESTROYED'}
+          value={boldUi(won ? 'MISSION COMPLETE' : 'SHIP DESTROYED')}
+          font={UI_FONT}
           fontSize={32}
-          color={won ? TITLE_WIN_COLOR : TITLE_LOSS_COLOR}
+          color={UI_TINT}
           textAlign="middle-center"
           uiTransform={{ width: '100%', height: TITLE_HEIGHT, margin: { bottom: 16 } }}
         />
@@ -164,23 +163,26 @@ function RoundResultsUi() {
           }}
         >
           <Label
-            value="Crew"
+            value={boldUi('Crew')}
+            font={UI_FONT}
             fontSize={16}
-            color={HEADER_COLOR}
+            color={UI_TINT}
             textAlign="middle-left"
             uiTransform={{ width: COL_CREW, height: HEADER_HEIGHT }}
           />
           <Label
-            value="Damage"
+            value={boldUi('Damage')}
+            font={UI_FONT}
             fontSize={16}
-            color={HEADER_COLOR}
+            color={UI_TINT}
             textAlign="middle-center"
             uiTransform={{ width: COL_STAT, height: HEADER_HEIGHT }}
           />
           <Label
-            value="Repairs"
+            value={boldUi('Repairs')}
+            font={UI_FONT}
             fontSize={16}
-            color={HEADER_COLOR}
+            color={UI_TINT}
             textAlign="middle-center"
             uiTransform={{ width: COL_STAT, height: HEADER_HEIGHT }}
           />
@@ -196,9 +198,10 @@ function RoundResultsUi() {
         >
           {rows.length === 0 ? (
             <Label
-              value="No contributions recorded"
+              value={boldUi('No contributions recorded')}
+              font={UI_FONT}
               fontSize={18}
-              color={EMPTY_COLOR}
+              color={UI_TINT}
               textAlign="middle-center"
               uiTransform={{ width: '100%', height: ROW_HEIGHT }}
             />
@@ -207,10 +210,11 @@ function RoundResultsUi() {
           )}
         </UiEntity>
         <Button
-          value="Close"
+          value={boldUi('Close')}
           variant="primary"
+          font={UI_FONT}
           fontSize={20}
-          color={Color4.White()}
+          color={UI_TINT}
           uiTransform={{ width: CLOSE_WIDTH, height: CLOSE_HEIGHT }}
           onMouseDown={hideRoundResults}
         />

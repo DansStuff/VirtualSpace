@@ -2,6 +2,7 @@ import {
   ColliderLayer,
   engine,
   Entity,
+  Font,
   GltfContainer,
   InputAction,
   inputSystem,
@@ -94,6 +95,7 @@ function createRow(parent: Entity, index: number, parentScale: Vector3): Entity 
   })
   TextShape.create(label, {
     text: 'No Record',
+    font: Font.F_MONOSPACE,
     fontSize: LABEL_FONT_SIZE,
     textColor: Color4.create(LABEL_EMPTY_COLOR.r, LABEL_EMPTY_COLOR.g, LABEL_EMPTY_COLOR.b, LABEL_EMPTY_COLOR.a),
     outlineColor: Color4.Black(),

@@ -5,6 +5,7 @@ import {
   ColliderLayer,
   engine,
   Entity,
+  Font,
   GltfContainer,
   InputAction,
   inputSystem,
@@ -248,6 +249,7 @@ function createHazardVisuals(kind: HazardKind): HazardVisuals {
   })
   TextShape.create(targetingLockedLabel, {
     text: 'Target Locked',
+    font: Font.F_MONOSPACE,
     fontSize: HAZARD_TARGETING_LOCKED_FONT_SIZE,
     textColor: Color4.Green(),
     outlineColor: Color4.Black(),

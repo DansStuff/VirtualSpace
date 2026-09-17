@@ -1,18 +1,21 @@
+import { engine } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { isStateSyncronized } from '@dcl/sdk/network'
 import { getPlayer } from '@dcl/sdk/players'
-import ReactEcs, { Button, Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
+import ReactEcs, { Label, ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 import {
   SHIP_BASE_HULL_HP,
+  UI_FONT,
+  UI_TINT,
+  boldUi,
   UI_HEALTH_BAR_FONT_SIZE,
   UI_HEALTH_BAR_HEIGHT,
-  UI_HEALTH_BAR_MARGIN_TOP,
   UI_HEALTH_BAR_WIDTH,
   UI_BACK_TO_SHIP_BUTTON_FONT_SIZE,
   UI_BACK_TO_SHIP_BUTTON_SIZE,
   UI_MISSION_BUTTON_FONT_SIZE,
   UI_MISSION_BUTTON_HEIGHT,
-  UI_MISSION_BUTTON_MARGIN_BOTTOM,
+  UI_HUD_EDGE_PADDING,
   UI_MISSION_BUTTON_WIDTH,
   UI_MISSION_STATUS_LABEL_WIDTH,
   UI_ENCOUNTER_STAGE_DURATION_SECONDS,
@@ -23,25 +26,26 @@ import {
   UI_OVERCHARGE_LABEL_HEIGHT,
   UI_OVERCHARGE_LABEL_MARGIN_TOP,
   UI_OVERCHARGE_LABEL_WIDTH,
+  UI_TURRET_OVERLAY_COLOR,
   UI_VIRTUAL_HEIGHT,
-  UI_VIRTUAL_WIDTH
+  UI_VIRTUAL_WIDTH,
+  WEAPON_CAMERA_TRANSITION_SECONDS
 } from './constants'
 import { getGameState, isWeaponsOvercharged } from './gamestate'
 import { room } from './networking/messages'
 import { lastStopId } from './path/follow'
 import { exitWeaponCamera, isTurretOccupied } from './sceneObjects'
+import { GreenPixelButton } from './ui/greenPixelFrame'
 import { setupRoundResultsUi } from './ui/roundResults'
 import { setupSkillLevelsUi } from './ui/skillLevels'
 
 let encounterStageUntil = 0
 let encounterStageTurret = ''
 let overchargePlayerName = ''
+let turretOverlayOpacity = 0
 
-const MISSION_STATUS_COLOR = Color4.create(0.55, 0.55, 0.55, 1)
-const ENCOUNTER_STAGE_COLOR = Color4.create(1, 0.75, 0.2, 1)
 const HEALTH_BAR_BACKGROUND = Color4.Red()
 const HEALTH_BAR_FOREGROUND = Color4.Green()
-const OVERCHARGE_LABEL_COLOR = Color4.create(1, 0.28, 0.22, 1)
 
 function truncateWallet(address: string): string {
   if (address.length <= 10) return address
@@ -81,10 +85,19 @@ function hullPercent(): number {
   return (getGameState().hullHp / SHIP_BASE_HULL_HP) * 100
 }
 
+function TurretOverlayFadeSystem(dt: number) {
+  if (isTurretOccupied()) {
+    turretOverlayOpacity = Math.min(1, turretOverlayOpacity + dt / WEAPON_CAMERA_TRANSITION_SECONDS)
+  } else if (turretOverlayOpacity > 0) {
+    turretOverlayOpacity = Math.max(0, turretOverlayOpacity - dt / WEAPON_CAMERA_TRANSITION_SECONDS)
+  }
+}
+
 export function setupUi() {
   ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: UI_VIRTUAL_WIDTH, virtualHeight: UI_VIRTUAL_HEIGHT })
   setupRoundResultsUi()
   setupSkillLevelsUi()
+  engine.addSystem(TurretOverlayFadeSystem)
   room.onMessage('notifyWeaponsOvercharged', (data) => {
     overchargePlayerName = playerDisplayName(data.playerId)
   })
@@ -118,9 +131,21 @@ export const uiMenu = () => (
     <UiEntity
       uiTransform={{
         width: '100%',
+        height: '100%',
+        positionType: 'absolute',
+        position: { top: 0, left: 0 },
+        display: turretOverlayOpacity > 0 ? 'flex' : 'none',
+        opacity: turretOverlayOpacity,
+        pointerFilter: 'none'
+      }}
+      uiBackground={{ color: UI_TURRET_OVERLAY_COLOR }}
+    />
+    <UiEntity
+      uiTransform={{
+        width: '100%',
         height: UI_HEALTH_BAR_HEIGHT,
         positionType: 'absolute',
-        position: { top: UI_HEALTH_BAR_MARGIN_TOP, left: 0 },
+        position: { top: UI_HUD_EDGE_PADDING, left: 0 },
         justifyContent: 'center',
         alignItems: 'center'
       }}
@@ -141,7 +166,8 @@ export const uiMenu = () => (
           />
         </UiEntity>
         <Label
-          value="Hull Status"
+          value={boldUi('Hull Status')}
+          font={UI_FONT}
           fontSize={UI_HEALTH_BAR_FONT_SIZE}
           color={Color4.Black()}
           textAlign="middle-center"
@@ -168,9 +194,10 @@ export const uiMenu = () => (
       }}
     >
       <Label
-        value={`Weapons overcharged by ${overchargePlayerName}!`}
+        value={boldUi(`Weapons overcharged by ${overchargePlayerName}!`)}
+        font={UI_FONT}
         fontSize={UI_OVERCHARGE_LABEL_FONT_SIZE}
-        color={OVERCHARGE_LABEL_COLOR}
+        color={UI_TINT}
         textAlign="middle-center"
         uiTransform={{
           width: UI_OVERCHARGE_LABEL_WIDTH,
@@ -182,66 +209,60 @@ export const uiMenu = () => (
     <UiEntity
       uiTransform={{
         width: '100%',
-        height: UI_MISSION_BUTTON_HEIGHT + UI_MISSION_BUTTON_MARGIN_BOTTOM,
+        height: UI_MISSION_BUTTON_HEIGHT + UI_HUD_EDGE_PADDING,
         positionType: 'absolute',
         position: { bottom: 0, left: 0 },
         justifyContent: 'center',
         alignItems: 'flex-end'
       }}
     >
-      <Button
+      <GreenPixelButton
         value="Start Mission"
-        variant="primary"
         fontSize={UI_MISSION_BUTTON_FONT_SIZE}
-        color={Color4.White()}
         uiTransform={{
           width: UI_MISSION_BUTTON_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
-          margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
+          margin: { bottom: UI_HUD_EDGE_PADDING },
           display: getGameState().missionStarted || showRestart() ? 'none' : 'flex'
         }}
         onMouseDown={requestMissionStart}
       />
       <Label
-        value="Mission in progress: join the fight!"
+        value={boldUi('Mission in progress: join the fight!')}
+        font={UI_FONT}
         fontSize={UI_MISSION_BUTTON_FONT_SIZE}
-        color={MISSION_STATUS_COLOR}
+        color={UI_TINT}
         textAlign="middle-center"
         uiTransform={{
           width: UI_MISSION_STATUS_LABEL_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
-          margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
+          margin: { bottom: UI_HUD_EDGE_PADDING },
           display: inMissionHud() && !isTurretOccupied() ? 'flex' : 'none'
         }}
       />
-      <Button
+      <GreenPixelButton
         value="Restart"
-        variant="primary"
         fontSize={UI_MISSION_BUTTON_FONT_SIZE}
-        color={Color4.White()}
         uiTransform={{
           width: UI_MISSION_BUTTON_WIDTH,
           height: UI_MISSION_BUTTON_HEIGHT,
-          margin: { bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM },
+          margin: { bottom: UI_HUD_EDGE_PADDING },
           display: showRestart() ? 'flex' : 'none'
         }}
         onMouseDown={requestNewMission}
       />
     </UiEntity>
 
-    <Button
-      value="Back to ship"
-      variant="primary"
+    <GreenPixelButton
+      value="Exit Camera"
       fontSize={UI_BACK_TO_SHIP_BUTTON_FONT_SIZE}
-      color={Color4.White()}
-      textAlign="middle-center"
       uiTransform={{
         width: UI_BACK_TO_SHIP_BUTTON_SIZE,
         height: UI_BACK_TO_SHIP_BUTTON_SIZE,
         positionType: 'absolute',
         position: {
-          bottom: UI_MISSION_BUTTON_MARGIN_BOTTOM,
-          right: UI_MISSION_BUTTON_MARGIN_BOTTOM
+          bottom: UI_HUD_EDGE_PADDING,
+          right: UI_HUD_EDGE_PADDING
         },
         display: isTurretOccupied() ? 'flex' : 'none'
       }}
@@ -260,9 +281,10 @@ export const uiMenu = () => (
       }}
     >
       <Label
-        value={encounterStageLabel()}
+        value={boldUi(encounterStageLabel())}
+        font={UI_FONT}
         fontSize={UI_ENCOUNTER_STAGE_FONT_SIZE}
-        color={ENCOUNTER_STAGE_COLOR}
+        color={UI_TINT}
         textAlign="middle-center"
         uiTransform={{
           width: UI_ENCOUNTER_STAGE_LABEL_WIDTH,

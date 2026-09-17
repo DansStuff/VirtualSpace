@@ -426,19 +426,26 @@ export const ENCOUNTER_STAGE_SOUND_PATH = 'assets/scene/Sounds/fail1.mp3'
 
 // MARK: UI
 
+let RIGHT_PANE_WIDTH = 350
+
 
 export const UI_VIRTUAL_WIDTH = 1920
 export const UI_VIRTUAL_HEIGHT = 1080
+export const UI_FONT = 'monospace' as const
+
+export function boldUi(value: string): string {
+  return `<b>${value}</b>`
+}
+export const UI_TINT = Color4.create(0x33 / 255, 0xdb / 255, 0, 1)
+export const UI_HUD_EDGE_PADDING = 80
 export const UI_MISSION_BUTTON_FONT_SIZE = 22
-export const UI_MISSION_BUTTON_WIDTH = 280
-export const UI_MISSION_BUTTON_HEIGHT = 64
-export const UI_MISSION_BUTTON_MARGIN_BOTTOM = 80
-export const UI_BACK_TO_SHIP_BUTTON_SIZE = 200
+export const UI_MISSION_BUTTON_WIDTH = 350
+export const UI_MISSION_BUTTON_HEIGHT = 100
+export const UI_BACK_TO_SHIP_BUTTON_SIZE = RIGHT_PANE_WIDTH
 export const UI_BACK_TO_SHIP_BUTTON_FONT_SIZE = 36
 export const UI_MISSION_STATUS_LABEL_WIDTH = 560
-export const UI_HEALTH_BAR_WIDTH = 480
-export const UI_HEALTH_BAR_HEIGHT = 36
-export const UI_HEALTH_BAR_MARGIN_TOP = 32
+export const UI_HEALTH_BAR_WIDTH = 480 * 1.2
+export const UI_HEALTH_BAR_HEIGHT = 36 * 1.2
 export const UI_HEALTH_BAR_FONT_SIZE = 18
 export const UI_ENCOUNTER_STAGE_DURATION_SECONDS = 2
 export const UI_ENCOUNTER_STAGE_FONT_SIZE = 48
@@ -447,6 +454,25 @@ export const UI_ENCOUNTER_STAGE_LABEL_HEIGHT = 72
 export const UI_OVERCHARGE_LABEL_WIDTH = 720
 export const UI_OVERCHARGE_LABEL_HEIGHT = 32
 export const UI_OVERCHARGE_LABEL_FONT_SIZE = 18
-export const UI_OVERCHARGE_LABEL_MARGIN_TOP = UI_HEALTH_BAR_MARGIN_TOP + UI_HEALTH_BAR_HEIGHT
+export const UI_OVERCHARGE_LABEL_MARGIN_TOP = UI_HUD_EDGE_PADDING + UI_HEALTH_BAR_HEIGHT
+export const UI_SKILL_PANEL_WIDTH = RIGHT_PANE_WIDTH
+export const UI_SKILL_PANEL_ROW_HEIGHT = 50
+export const UI_SKILL_PANEL_PADDING = 25
+export const UI_SKILL_PANEL_EMPTY_ROWS = 5
+export const UI_SKILL_PANEL_TITLE_HEIGHT = 36
+export const UI_SKILL_PANEL_TITLE_FONT_SIZE = 22
+export const UI_SKILL_PANEL_HEIGHT =
+  UI_SKILL_PANEL_TITLE_HEIGHT +
+  UI_SKILL_PANEL_ROW_HEIGHT * (2 + UI_SKILL_PANEL_EMPTY_ROWS) +
+  UI_SKILL_PANEL_PADDING * 2
 export const UI_GUNNER_ICON_PATH = 'assets/scene/Images/gunner.png'
 export const UI_ENGINEERING_ICON_PATH = 'assets/scene/Images/engineering.png'
+export const UI_GREEN_PIXEL_FRAME_PATH = 'assets/scene/Images/green_pixel_frame_9.png'
+export const UI_GREEN_PIXEL_FRAME_SLICES = { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 }
+
+export const UI_GREEN_PIXEL_FRAME_FILL = Color4.create(0.1, 0.2, 0.2, 0.8)
+export const UI_GREEN_PIXEL_BUTTON_HOVER_FILL = Color4.create(0.15, 0.5, 0.25, 0.8)
+
+export const UI_GREEN_PIXEL_BUTTON_HOVER_INSET = 8
+export const UI_TURRET_OVERLAY_COLOR = Color4.create(0.05, 0.55, 0.15, 0.04)
+
