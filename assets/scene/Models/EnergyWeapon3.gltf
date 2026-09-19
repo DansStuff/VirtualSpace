@@ -11,7 +11,6 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				0,
 				1
 			]
 		}
@@ -19,20 +18,34 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Cube",
+			"name":"Torus",
+			"rotation":[
+				0.7071068286895752,
+				0,
+				0,
+				0.7071068286895752
+			],
+			"scale":[
+				0.48260071873664856,
+				0.8299550414085388,
+				0.48260071873664856
+			],
 			"translation":[
 				0,
-				1,
-				0
+				0.8404984474182129,
+				-3.182649612426758
 			]
 		},
 		{
-			"mesh":1,
-			"name":"Cube.004",
-			"translation":[
-				0,
-				1,
+			"children":[
 				0
+			],
+			"name":"Empty.004",
+			"rotation":[
+				-0.06540738791227341,
+				0,
+				0,
+				0.9978586435317993
 			]
 		}
 	],
@@ -54,30 +67,31 @@
 		{
 			"doubleSided":true,
 			"emissiveFactor":[
-				1,
-				1,
+				0.38165944802469626,
+				0,
 				1
 			],
-			"emissiveTexture":{
-				"index":0
-			},
 			"extensions":{
 				"KHR_materials_emissive_strength":{
-					"emissiveStrength":2
+					"emissiveStrength":1.198654443025589
 				}
 			},
-			"name":"ConsoleScreen",
+			"name":"WeaponGlow",
 			"pbrMetallicRoughness":{
-				"baseColorTexture":{
-					"index":1
-				},
-				"metallicFactor":0
+				"baseColorFactor":[
+					0.3049851953983307,
+					0,
+					0.7991029620170593,
+					1
+				],
+				"metallicFactor":0,
+				"roughnessFactor":0.5
 			}
 		}
 	],
 	"meshes":[
 		{
-			"name":"Cube.009",
+			"name":"Torus",
 			"primitives":[
 				{
 					"attributes":{
@@ -87,12 +101,7 @@
 					},
 					"indices":3,
 					"material":0
-				}
-			]
-		},
-		{
-			"name":"Cube.011",
-			"primitives":[
+				},
 				{
 					"attributes":{
 						"POSITION":4,
@@ -105,153 +114,130 @@
 			]
 		}
 	],
-	"textures":[
-		{
-			"sampler":0,
-			"source":0
-		},
-		{
-			"sampler":0,
-			"source":0
-		}
-	],
-	"images":[
-		{
-			"mimeType":"image/png",
-			"name":"crosshair",
-			"uri":"crosshair.png"
-		}
-	],
 	"accessors":[
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":86,
+			"count":2462,
 			"max":[
-				0.6949848532676697,
-				1.4270858764648438,
-				1.432697057723999
+				2.507181167602539,
+				5.209314823150635,
+				1.2108694314956665
 			],
 			"min":[
-				-0.6909635066986084,
-				-0.9937578439712524,
-				-0.03018486499786377
+				-2.507181167602539,
+				-2.015791416168213,
+				-3.803492784500122
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":86,
+			"count":2462,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":86,
+			"count":2462,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5123,
-			"count":162,
+			"count":12084,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":4,
 			"componentType":5126,
-			"count":4,
+			"count":441,
 			"max":[
-				0.5844712257385254,
-				1.3235547542572021,
-				0.8378034234046936
+				2.3436696529388428,
+				2.5404748916625977,
+				1.0473579168319702
 			],
 			"min":[
-				-0.5835481882095337,
-				0.3206232488155365,
-				0.8378034234046936
+				-2.3436696529388428,
+				-0.05437900125980377,
+				-3.639981269836426
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":5,
 			"componentType":5126,
-			"count":4,
+			"count":441,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":6,
 			"componentType":5126,
-			"count":4,
+			"count":441,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":7,
 			"componentType":5123,
-			"count":6,
+			"count":1728,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":1032,
+			"byteLength":29544,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":1032,
-			"byteOffset":1032,
+			"byteLength":29544,
+			"byteOffset":29544,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":688,
-			"byteOffset":2064,
+			"byteLength":19696,
+			"byteOffset":59088,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":324,
-			"byteOffset":2752,
+			"byteLength":24168,
+			"byteOffset":78784,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":48,
-			"byteOffset":3076,
+			"byteLength":5292,
+			"byteOffset":102952,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":48,
-			"byteOffset":3124,
+			"byteLength":5292,
+			"byteOffset":108244,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":32,
-			"byteOffset":3172,
+			"byteLength":3528,
+			"byteOffset":113536,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":12,
-			"byteOffset":3204,
+			"byteLength":3456,
+			"byteOffset":117064,
 			"target":34963
-		}
-	],
-	"samplers":[
-		{
-			"magFilter":9729,
-			"minFilter":9987
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":3216,
-			"uri":"WeaponsConsole.bin"
+			"byteLength":120520,
+			"uri":"EnergyWeapon3.bin"
 		}
 	]
 }

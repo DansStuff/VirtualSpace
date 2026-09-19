@@ -30,6 +30,8 @@ const ROW_COUNT = WEEKLY_TOP_N
 const ROW_GAP = 0.06
 const POINTER_DISTANCE = 30
 const LABEL_FONT_SIZE = 1.4
+/** World-space offset so TextShape sits in front of the row plane (avoids z-fighting). */
+const LABEL_FORWARD = 0.06
 const LABEL_DEFAULT_COLOR = Color4.create(0.92, 0.93, 0.95, 1)
 const LABEL_EMPTY_COLOR = Color4.create(0.6, 0.62, 0.66, 1)
 const LABEL_LOSS_COLOR = Color4.create(1, 0.35, 0.28, 1)
@@ -85,7 +87,7 @@ function createRow(parent: Entity, index: number, parentScale: Vector3): Entity 
   const label = engine.addEntity()
   Transform.create(label, {
     parent: entity,
-    position: Vector3.create(0, 0, -0.02),
+    position: Vector3.create(0, 0, -LABEL_FORWARD / Math.max(parentScale.z, 0.001)),
     scale: Vector3.create(
       1 / (planeScale.x * parentScale.x),
       1 / (planeScale.y * parentScale.y),

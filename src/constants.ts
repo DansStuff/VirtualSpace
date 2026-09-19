@@ -186,6 +186,12 @@ export const ENCOUNTER_PARAMS: Record<string, EncounterParams> = {
 /** Fixed scene-space anchor for the visible ship model (center of the enclosing sphere). */
 export const SCENE_SHIP_POSITION = Vector3.create(64, 64, 64)
 
+/**
+ * Scene-space radius of the walkable ship interior around SCENE_SHIP_POSITION.
+ * Projected planets are scaled so their surface stays outside this volume.
+ */
+export const SHIP_INTERIOR_RADIUS = 10
+
 /** World units per second at mid-leg (ease-in-out averages to this). */
 export const SHIP_CRUISE_SPEED = 800
 
@@ -252,7 +258,6 @@ export const PLANET_ENCLOSING_SPHERE_RADIUS = 40 // previously 64
 /**
  * Smaller enclosing sphere for asteroids (closer shell than planets/stars).
  * Center remains SCENE_SHIP_POSITION; only the projection radius differs.
- * Projected planets are scaled so their surface stays outside this volume.
  */
 export const ASTEROID_ENCLOSING_SPHERE_RADIUS = 20
 
@@ -445,6 +450,10 @@ export const UI_MISSION_STATUS_LABEL_LEFT = '35%'
 export const UI_BACK_TO_SHIP_BUTTON_WIDTH = '20%'
 export const UI_BACK_TO_SHIP_BUTTON_HEIGHT = '32%'
 export const UI_BACK_TO_SHIP_BUTTON_FONT_SIZE = 36
+
+// Turret camera crosshair
+export const UI_TURRET_CROSSHAIR_PATH = 'assets/scene/Images/cam_crosshair.png'
+export const UI_TURRET_CROSSHAIR_SIZE = 256
 
 // Hull bar
 export const UI_HEALTH_BAR_WIDTH = '30%'

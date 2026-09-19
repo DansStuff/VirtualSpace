@@ -82,20 +82,20 @@
         "513": {
           "json": {
             "position": {
-              "x": 64.04034423828125,
+              "x": 64.04000091552734,
               "y": 68,
-              "z": 55.762603759765625
-            },
-            "scale": {
-              "x": 1.75,
-              "y": 1.75,
-              "z": 1.75
+              "z": 55.7599983215332
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -124,14 +124,9 @@
         "515": {
           "json": {
             "position": {
-              "x": 56.94605255126953,
+              "x": 56.95000076293945,
               "y": 68,
-              "z": 60.00322723388672
-            },
-            "scale": {
-              "x": 1.75,
-              "y": 1.75,
-              "z": 1.75
+              "z": 60
             },
             "rotation": {
               "x": 0,
@@ -139,26 +134,31 @@
               "z": 0,
               "w": 0.8987940549850464
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "parent": 0
           }
         },
         "516": {
           "json": {
             "position": {
-              "x": 70.71310424804688,
+              "x": 70.70999908447266,
               "y": 68,
-              "z": 59.51327896118164
-            },
-            "scale": {
-              "x": 1.75,
-              "y": 1.75,
-              "z": 1.75
+              "z": 59.5099983215332
             },
             "rotation": {
               "x": 0,
-              "y": -0.4383711516857147,
+              "y": 0.4383711516857147,
               "z": 0,
-              "w": 0.8987940549850464
+              "w": -0.8987940549850464
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
             },
             "parent": 0
           }
@@ -338,16 +338,16 @@
               "y": 62.25,
               "z": 73.5
             },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
             "rotation": {
               "x": 0.13052618503570557,
               "y": 0,
               "z": 0,
               "w": 0.9914448857307434
-            },
-            "scale": {
-              "x": 1,
-              "y": 1,
-              "z": 1
             },
             "parent": 0
           }
@@ -422,16 +422,16 @@
               "y": 62,
               "z": 64
             },
+            "scale": {
+              "x": 1.899999976158142,
+              "y": 1.899999976158142,
+              "z": 1.899999976158142
+            },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
-            },
-            "scale": {
-              "x": 1.899999976158142,
-              "y": 1.899999976158142,
-              "z": 1.899999976158142
             },
             "parent": 0
           }
@@ -443,79 +443,16 @@
               "y": 60.5,
               "z": 64
             },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0,
-              "w": 1
-            },
             "scale": {
               "x": 2.0999999046325684,
               "y": 2.0999999046325684,
               "z": 2.0999999046325684
             },
-            "parent": 0
-          }
-        },
-        "533": {
-          "json": {
-            "position": {
-              "x": 67.75,
-              "y": 60.25,
-              "z": 64
-            },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
-            },
-            "scale": {
-              "x": 1.5707000494003296,
-              "y": 1.5707000494003296,
-              "z": 1.5707000494003296
-            },
-            "parent": 0
-          }
-        },
-        "534": {
-          "json": {
-            "position": {
-              "x": 60,
-              "y": 60.25,
-              "z": 64
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0.99920254945755,
-              "z": 0,
-              "w": -0.039928145706653595
-            },
-            "scale": {
-              "x": 1.5707000494003296,
-              "y": 1.5707000494003296,
-              "z": 1.5707000494003296
-            },
-            "parent": 0
-          }
-        },
-        "535": {
-          "json": {
-            "position": {
-              "x": 64,
-              "y": 60.25,
-              "z": 60.5
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0.7071067690849304,
-              "z": 0,
-              "w": 0.7071067690849304
-            },
-            "scale": {
-              "x": 1.5707000494003296,
-              "y": 1.5707000494003296,
-              "z": 1.5707000494003296
             },
             "parent": 0
           }
@@ -649,7 +586,7 @@
         },
         "513": {
           "json": {
-            "src": "assets/scene/Models/EnergyWeapon2.gltf",
+            "src": "assets/scene/Models/EnergyWeapon3.gltf",
             "visibleMeshesCollisionMask": 2,
             "invisibleMeshesCollisionMask": 3
           }
@@ -663,14 +600,14 @@
         },
         "515": {
           "json": {
-            "src": "assets/scene/Models/EnergyWeapon2.gltf",
+            "src": "assets/scene/Models/EnergyWeapon3.gltf",
             "visibleMeshesCollisionMask": 2,
             "invisibleMeshesCollisionMask": 3
           }
         },
         "516": {
           "json": {
-            "src": "assets/scene/Models/EnergyWeapon2.gltf",
+            "src": "assets/scene/Models/EnergyWeapon3.gltf",
             "visibleMeshesCollisionMask": 2,
             "invisibleMeshesCollisionMask": 3
           }
@@ -769,27 +706,6 @@
         "532": {
           "json": {
             "src": "assets/scene/Models/MissionTableText.gltf",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 3
-          }
-        },
-        "533": {
-          "json": {
-            "src": "assets/scene/Models/Chair.gltf",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 3
-          }
-        },
-        "534": {
-          "json": {
-            "src": "assets/scene/Models/Chair.gltf",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 3
-          }
-        },
-        "535": {
-          "json": {
-            "src": "assets/scene/Models/Chair.gltf",
             "visibleMeshesCollisionMask": 0,
             "invisibleMeshesCollisionMask": 3
           }
@@ -918,21 +834,6 @@
             "value": "MissionTableText"
           }
         },
-        "533": {
-          "json": {
-            "value": "Chair.gltf"
-          }
-        },
-        "534": {
-          "json": {
-            "value": "Chair.gltf_2"
-          }
-        },
-        "535": {
-          "json": {
-            "value": "Chair.gltf_3"
-          }
-        },
         "66063": {
           "json": {
             "value": "CenterConsoleArrow"
@@ -942,20 +843,6 @@
           "json": {
             "value": "Scoreboard"
           }
-        }
-      }
-    },
-    {
-      "name": "core::VirtualCamera",
-      "jsonSchema": {
-        "type": "object",
-        "properties": {},
-        "serializationType": "protocol-buffer",
-        "protocolBuffer": "PBVirtualCamera"
-      },
-      "data": {
-        "515": {
-          "json": {}
         }
       }
     },
@@ -1075,10 +962,7 @@
                   528,
                   529,
                   530,
-                  532,
-                  533,
-                  534,
-                  535
+                  532
                 ]
               },
               {
@@ -1172,18 +1056,6 @@
               {
                 "entity": 532,
                 "children": []
-              },
-              {
-                "entity": 533,
-                "children": []
-              },
-              {
-                "entity": 534,
-                "children": []
-              },
-              {
-                "entity": 535,
-                "children": []
               }
             ]
           }
@@ -1268,15 +1140,6 @@
           "json": {}
         },
         "532": {
-          "json": {}
-        },
-        "533": {
-          "json": {}
-        },
-        "534": {
-          "json": {}
-        },
-        "535": {
           "json": {}
         },
         "66063": {

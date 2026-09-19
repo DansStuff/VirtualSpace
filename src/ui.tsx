@@ -29,6 +29,8 @@ import {
   UI_OVERCHARGE_LABEL_HEIGHT,
   UI_OVERCHARGE_LABEL_MARGIN_TOP,
   UI_OVERCHARGE_LABEL_WIDTH,
+  UI_TURRET_CROSSHAIR_PATH,
+  UI_TURRET_CROSSHAIR_SIZE,
   UI_VIRTUAL_HEIGHT,
   UI_VIRTUAL_WIDTH
 } from './constants'
@@ -187,6 +189,31 @@ export const uiMenu = () => {
         uiTransform={{
           width: UI_OVERCHARGE_LABEL_WIDTH,
           height: '100%'
+        }}
+      />
+    </UiEntity>
+
+    <UiEntity
+      uiTransform={{
+        width: '100%',
+        height: '100%',
+        positionType: 'absolute',
+        position: { top: 0, left: 0 },
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: isTurretOccupied() ? 'flex' : 'none',
+        pointerFilter: 'none'
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          width: UI_TURRET_CROSSHAIR_SIZE * 2,
+          height: UI_TURRET_CROSSHAIR_SIZE * 2,
+          pointerFilter: 'none'
+        }}
+        uiBackground={{
+          texture: { src: UI_TURRET_CROSSHAIR_PATH },
+          textureMode: 'stretch'
         }}
       />
     </UiEntity>

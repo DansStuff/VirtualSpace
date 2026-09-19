@@ -35,16 +35,16 @@
 	"materials":[
 		{
 			"doubleSided":true,
-			"name":"Ship",
+			"name":"Metal",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.14159438014030457,
-					0.12022318691015244,
-					0.16504591703414917,
+					0.14126233756542206,
+					0.1195385530591011,
+					0.16513225436210632,
 					1
 				],
-				"metallicFactor":0.539130449295044,
-				"roughnessFactor":0.7347825765609741
+				"metallicFactor":0.7501852512359619,
+				"roughnessFactor":0.609154462814331
 			}
 		},
 		{
@@ -64,6 +64,20 @@
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"MetalDarker",
+			"pbrMetallicRoughness":{
+				"baseColorFactor":[
+					0.08224207162857056,
+					0.07000201940536499,
+					0.09564603865146637,
+					1
+				],
+				"metallicFactor":0.7501852512359619,
+				"roughnessFactor":0.609154462814331
 			}
 		}
 	],
@@ -88,6 +102,15 @@
 					},
 					"indices":7,
 					"material":1
+				},
+				{
+					"attributes":{
+						"POSITION":8,
+						"NORMAL":9,
+						"TEXCOORD_0":10
+					},
+					"indices":11,
+					"material":2
 				}
 			]
 		}
@@ -96,35 +119,35 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":434,
+			"count":678,
 			"max":[
-				1,
-				0.6000000238418579,
-				1
+				1.240804672241211,
+				0.6207137107849121,
+				1.240804672241211
 			],
 			"min":[
-				-1,
-				0,
-				-1
+				-1.240804672241211,
+				0.00035369768738746643,
+				-1.240804672241211
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":434,
+			"count":678,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":434,
+			"count":678,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5123,
-			"count":1290,
+			"count":2154,
 			"type":"SCALAR"
 		},
 		{
@@ -133,12 +156,12 @@
 			"count":48,
 			"max":[
 				0.864718496799469,
-				0.5701357126235962,
+				0.5908493995666504,
 				0.864718496799469
 			],
 			"min":[
 				-0.864718496799469,
-				0.5701357126235962,
+				0.5908493995666504,
 				-0.864718496799469
 			],
 			"type":"VEC3"
@@ -160,61 +183,119 @@
 			"componentType":5123,
 			"count":138,
 			"type":"SCALAR"
+		},
+		{
+			"bufferView":8,
+			"componentType":5126,
+			"count":196,
+			"max":[
+				1.240804672241211,
+				0.0207136869430542,
+				1.240804672241211
+			],
+			"min":[
+				-1.240804672241211,
+				0.00035369768738746643,
+				-1.240804672241211
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":9,
+			"componentType":5126,
+			"count":196,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":10,
+			"componentType":5126,
+			"count":196,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":11,
+			"componentType":5123,
+			"count":576,
+			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":5208,
+			"byteLength":8136,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":5208,
-			"byteOffset":5208,
+			"byteLength":8136,
+			"byteOffset":8136,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":3472,
-			"byteOffset":10416,
+			"byteLength":5424,
+			"byteOffset":16272,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":2580,
-			"byteOffset":13888,
+			"byteLength":4308,
+			"byteOffset":21696,
 			"target":34963
 		},
 		{
 			"buffer":0,
 			"byteLength":576,
-			"byteOffset":16468,
+			"byteOffset":26004,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":576,
-			"byteOffset":17044,
+			"byteOffset":26580,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":384,
-			"byteOffset":17620,
+			"byteOffset":27156,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":276,
-			"byteOffset":18004,
+			"byteOffset":27540,
+			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":2352,
+			"byteOffset":27816,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":2352,
+			"byteOffset":30168,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":1568,
+			"byteOffset":32520,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":1152,
+			"byteOffset":34088,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":18280,
+			"byteLength":35240,
 			"uri":"MissionTable.bin"
 		}
 	]
