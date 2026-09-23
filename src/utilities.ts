@@ -1,7 +1,12 @@
 import { engine, InputAction, inputSystem, PointerEventType } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { movePlayerTo } from '~system/RestrictedActions'
-import { SCENE_SHIP_POSITION } from './constants'
+import { SCENE_SHIP_POSITION, SIMULATION_MAX_DELTA_SECONDS } from './constants'
+
+/** Frame `dt` capped at SIMULATION_MAX_DELTA_SECONDS so a hitch cannot jump the sim too far. */
+export function clampSimulationStep(dt: number): number {
+  return Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
+}
 
 /**
  * Returns the conjugate of a quaternion (-x, -y, -z, w).

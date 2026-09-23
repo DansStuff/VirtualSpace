@@ -1,5 +1,5 @@
-import { AudioSource, engine, Entity, Material, MeshRenderer, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
-import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { AudioSource, engine, Entity, Material, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
+import { Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
   OVERCHARGE_LASER_ALBEDO_COLOR,
@@ -15,13 +15,13 @@ import {
   SHIP_LASER_POOL_SIZE,
   SHIP_LASER_SOUND_PATH,
   SHIP_LASER_SOUND_VOICES,
-  SHIP_LASER_WIDTH,
-  SIMULATION_MAX_DELTA_SECONDS
+  SHIP_LASER_WIDTH
 } from '../constants'
+import { createBeamStrip, poseBeamStrip } from '../effects/beamStrip'
 import { isWeaponsOvercharged } from '../gamestate'
-import { forEachLiveHazard } from '../hazards/visuals'
+import { forEachHazardTargetCount } from '../hazards/visuals'
 import { ObjectPool } from '../objectPool'
-import { directionFromTo } from '../utilities'
+import { clampSimulationStep } from '../utilities'
 
 type ActiveLaser = {
   entity: Entity
@@ -30,7 +30,6 @@ type ActiveLaser = {
 }
 
 const laserOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_ORIGIN_OFFSET)
-const worldDown = Vector3.Down()
 
 let laserPool: ObjectPool<Entity>
 const active: ActiveLaser[] = []
@@ -49,14 +48,8 @@ function applyLaserMaterial(entity: Entity, overcharged: boolean): void {
 }
 
 function createLaserEntity(): Entity {
-  const entity = engine.addEntity()
-  Transform.create(entity, {
-    position: Vector3.clone(laserOrigin),
-    scale: Vector3.create(SHIP_LASER_WIDTH, 1, 1)
-  })
-  MeshRenderer.setPlane(entity)
+  const entity = createBeamStrip(laserOrigin, SHIP_LASER_WIDTH)
   applyLaserMaterial(entity, false)
-  VisibilityComponent.create(entity, { visible: false })
   return entity
 }
 
@@ -69,7 +62,7 @@ function acquireLaser(target: Entity): void {
   applyLaserMaterial(entity, isWeaponsOvercharged())
   VisibilityComponent.getMutable(entity).visible = true
   if (Transform.has(target)) {
-    applyLaserPose(entity, Transform.get(target).position)
+    poseBeamStrip(entity, laserOrigin, Transform.get(target).position, SHIP_LASER_WIDTH)
   }
   active.push({ entity, target, remaining: SHIP_LASER_LIFETIME_SECONDS })
   playLaserSound()
@@ -81,29 +74,10 @@ function releaseLaser(index: number): void {
   active.splice(index, 1)
 }
 
-/**
- * Rotation for a plane lying along the beam: local +Y is origin→target, local +Z is
- * world-down projected onto the plane perpendicular to the beam (visible from below).
- */
-function laserRotation(beamDir: Vector3): Quaternion.Mutable {
-  const zAxis = Vector3.normalize(
-    Vector3.subtract(worldDown, Vector3.scale(beamDir, Vector3.dot(worldDown, beamDir)))
-  )
-  return Quaternion.lookRotation(zAxis, beamDir)
-}
-
-function applyLaserPose(entity: Entity, targetPosition: Vector3): void {
-  const length = Vector3.distance(laserOrigin, targetPosition)
-  const transform = Transform.getMutable(entity)
-  transform.position = Vector3.lerp(laserOrigin, targetPosition, 0.5)
-  transform.rotation = laserRotation(directionFromTo(laserOrigin, targetPosition))
-  transform.scale = Vector3.create(SHIP_LASER_WIDTH, Math.max(length, 0.01), 1)
-}
-
 function fireShots(dt: number): void {
   const seen = new Set<Entity>()
 
-  forEachLiveHazard((entity, targetCount) => {
+  forEachHazardTargetCount((entity, targetCount) => {
     seen.add(entity)
     if (targetCount <= 0) {
       fireElapsed.delete(entity)
@@ -139,12 +113,12 @@ function updateActive(dt: number): void {
       releaseLaser(i)
       continue
     }
-    applyLaserPose(laser.entity, Transform.get(laser.target).position)
+    poseBeamStrip(laser.entity, laserOrigin, Transform.get(laser.target).position, SHIP_LASER_WIDTH)
   }
 }
 
 function LaserSystem(dt: number): void {
-  const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
+  const step = clampSimulationStep(dt)
   fireShots(step)
   updateActive(step)
 }

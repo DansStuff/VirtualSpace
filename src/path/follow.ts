@@ -74,10 +74,10 @@ import {
   SHIP_CRUISE_SPEED,
   SHIP_MAX_BANK_DEGREES,
   SHIP_MODEL_YAW_DEGREES,
-  SHIP_ROLL_SMOOTH,
-  SIMULATION_MAX_DELTA_SECONDS
+  SHIP_ROLL_SMOOTH
 } from '../constants'
 import { shipVirtualPosition, shipVirtualRotation } from '../ship'
+import { clampSimulationStep } from '../utilities'
 import { SHIP_ROUTE, type ShipRoute } from './route'
 
 const SHIP_MODEL_YAW = Quaternion.fromAngleAxis(SHIP_MODEL_YAW_DEGREES, Vector3.Up())
@@ -453,7 +453,7 @@ export function teleportToStop(stopId: string): void {
 export function ShipPathSystem(dt: number): void {
   if (preparedLegs.length === 0) return
 
-  const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
+  const step = clampSimulationStep(dt)
 
   if (state.holding) {
     applyLookAndBank(0, step)

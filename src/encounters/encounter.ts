@@ -11,12 +11,12 @@ import {
   ENCOUNTER_PARAMS,
   ENCOUNTER_STAGE_TELEGRAPH_SECONDS,
   HAZARD_SPAWN_INTERVAL,
-  SIMULATION_MAX_DELTA_SECONDS,
   type EncounterParams,
   type EncounterStage
 } from '../constants'
 import { getGameState } from '../gamestate'
 import { clearLive, hasLive, spawn, tick } from '../hazards/simulation'
+import { clampSimulationStep } from '../utilities'
 
 export type EncounterTickResult = 'running' | 'stageStarted' | 'cleared' | 'shipDestroyed'
 
@@ -56,7 +56,7 @@ class WaveEncounter implements Encounter {
     const stage = this.params.stages[this.stageIndex]
     if (!stage) return 'cleared'
 
-    const step = Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
+    const step = clampSimulationStep(dt)
     this.stageElapsed += step
     this.spawnDueHazards(stage)
 

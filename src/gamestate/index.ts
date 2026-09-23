@@ -3,10 +3,10 @@ import { isServer, syncEntity } from '@dcl/sdk/network'
 import {
   OVERCHARGE_DURATION_SECONDS,
   PATH_START_STOP_ID,
-  SHIP_BASE_HULL_HP,
-  SIMULATION_MAX_DELTA_SECONDS
+  SHIP_BASE_HULL_HP
 } from '../constants'
 import { isPathFinished, resumeFromStop, teleportToStop } from '../path/follow'
+import { clampSimulationStep } from '../utilities'
 import { GameState, type GameStateSnapshot } from './schema'
 
 export { GameState, type GameStateSnapshot } from './schema'
@@ -162,7 +162,7 @@ export function isWeaponsOvercharged(): boolean {
 
 function OverchargeSystem(dt: number): void {
   if (overchargeRemaining <= 0) return
-  overchargeRemaining -= Math.min(dt, SIMULATION_MAX_DELTA_SECONDS)
+  overchargeRemaining -= clampSimulationStep(dt)
   if (overchargeRemaining > 0) return
   overchargeRemaining = 0
   GameState.getMutable(stateEntityOrThrow()).weaponsOvercharged = false

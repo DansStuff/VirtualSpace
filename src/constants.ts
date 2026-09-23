@@ -362,6 +362,10 @@ export const SAUCER_HOVER_DISTANCE = 40
 
 export const SAUCER_BEAM_ALBEDO_COLOR = Color4.create(0.05, 0.85, 0.15, 1)
 export const SAUCER_BEAM_EMISSIVE_COLOR = Color3.create(0.15, 1, 0.25)
+export const SAUCER_BEAM_EMISSIVE_INTENSITY = 4
+
+/** Scene-space width of the saucer beam plane before the pulse is applied. */
+export const SAUCER_BEAM_WIDTH = 0.25
 
 /** Scene-space offset from SCENE_SHIP_POSITION: below the floor, toward the bow (scene -Z; +Z is stern). */
 export const SAUCER_BEAM_TARGET_OFFSET = Vector3.create(0, -5, -10)
@@ -372,7 +376,7 @@ export const SAUCER_BEAM_TARGET_X_SPREAD = 10
 /** Seconds between saucer beam impact rerolls while hovering. */
 export const SAUCER_BEAM_RETARGET_SECONDS = 1.3
 
-/** Fractional width pulse around SHIP_LASER_WIDTH (0.2 = ±20%). */
+/** Fractional width pulse around SAUCER_BEAM_WIDTH (0.2 = ±20%). */
 export const SAUCER_BEAM_WIDTH_PULSE_AMPLITUDE = 0.4
 
 /** Seconds for one full width pulse cycle. */
