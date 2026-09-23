@@ -6,10 +6,11 @@ import {
   HAZARD_AIM_CONE_HALF_ANGLE_DEGREES,
   HAZARD_RAYCAST_MAX_DISTANCE,
   HAZARD_SELECT_SOUND_PATH,
-  HAZARD_TARGET_COOLDOWN_SECONDS
+  HAZARD_TARGET_COOLDOWN_SECONDS,
+  type TurretId
 } from '../constants'
 import { room } from '../networking/messages'
-import { isTurretOccupied } from '../sceneObjects'
+import { getOccupiedTurret, isTurretOccupied } from '../sceneObjects'
 import { applyReticule } from './reticule'
 import type { SpawnedHazard } from './visuals'
 
@@ -19,20 +20,27 @@ let hazards: readonly SpawnedHazard[] = []
 
 /** Hazard this client last asked the server to lock. Set before the server confirms. */
 let localTargetId: number | undefined
+/** Turret the local player was in when they last clicked their target. */
+let localTargetTurret: TurretId | null = null
 let targetCooldownRemaining = 0
 
 export function clearLocalTarget(): void {
   localTargetId = undefined
+  localTargetTurret = null
 }
 
 export function clearLocalTargetIf(hazardId: number): void {
   if (localTargetId === hazardId) {
-    localTargetId = undefined
+    clearLocalTarget()
   }
 }
 
 export function isLocalTarget(hazardId: number): boolean {
   return hazardId === localTargetId
+}
+
+export function getLocalTargetTurret(): TurretId | null {
+  return localTargetTurret
 }
 
 /** Targeters other than the local player. Counts everyone if the local player isn't known yet. */
@@ -51,6 +59,8 @@ function findHazard(hazardId: number): SpawnedHazard | undefined {
 }
 
 function requestHazardTarget(hazardId: number) {
+  // Re-clicking the current target from another turret still moves the local laser there.
+  localTargetTurret = getOccupiedTurret()
   if (hazardId === localTargetId) return
   const previousId = localTargetId
   localTargetId = hazardId

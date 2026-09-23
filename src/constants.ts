@@ -393,7 +393,10 @@ export const SHIP_LASER_LIFETIME_SECONDS = 0.15
 /** Scene-space width of the laser plane (local X). Length is the ship-to-asteroid distance. */
 export const SHIP_LASER_WIDTH = 0.25
 
-/** Offset from SCENE_SHIP_POSITION to the local player's laser origin, slightly above the ship roof. */
+/**
+ * Offset from SCENE_SHIP_POSITION to the local player's laser origin when the weapon they
+ * locked from is unknown. Normally the local laser fires from that weapon's muzzle.
+ */
 export const SHIP_LASER_LOCAL_ORIGIN_OFFSET = Vector3.create(0, 7, -6)
 
 /** Offset from SCENE_SHIP_POSITION to other players' laser origin, below the hull. */
@@ -401,6 +404,9 @@ export const SHIP_LASER_OTHER_ORIGIN_OFFSET = Vector3.create(0, -7, -6)
 
 /** Camera-local offset from the weapon pose (+Z look, +Y up, +X right). */
 export const WEAPON_CAMERA_LOCAL_OFFSET = Vector3.create(0, -3, 2)
+
+/** Local laser origin relative to the weapon pose, in the same frame as WEAPON_CAMERA_LOCAL_OFFSET. */
+export const WEAPON_MUZZLE_LOCAL_OFFSET = Vector3.create(0, 0, 3.5)
 
 /** Seconds to blend into / out of a weapon VirtualCamera. */
 export const WEAPON_CAMERA_TRANSITION_SECONDS = 0.5

@@ -27,6 +27,7 @@ import {
   WEAPON_CAMERA_FOV_DEGREES,
   WEAPON_CAMERA_LOCAL_OFFSET,
   WEAPON_CAMERA_TRANSITION_SECONDS,
+  WEAPON_MUZZLE_LOCAL_OFFSET,
   type TurretId
 } from './constants'
 import { getGameState, isBreachActive } from './gamestate'
@@ -53,6 +54,8 @@ export type TurretView = {
   position: Vector3
   rotation: Quaternion
   look: Vector3
+  /** Scene-space origin for lasers fired from this weapon. */
+  muzzle: Vector3
 }
 
 const turretViews = new Map<TurretId, TurretView>()
@@ -147,7 +150,8 @@ function cacheTurretView(id: TurretId, weapon: Entity): TurretView {
   const rotation = Quaternion.multiply(pose.rotation, WEAPON_CAMERA_YAW)
   const position = Vector3.add(pose.position, Vector3.rotate(WEAPON_CAMERA_LOCAL_OFFSET, rotation))
   const look = Vector3.normalize(Vector3.rotate(Vector3.Forward(), rotation))
-  const view: TurretView = { position, rotation, look }
+  const muzzle = Vector3.add(pose.position, Vector3.rotate(WEAPON_MUZZLE_LOCAL_OFFSET, rotation))
+  const view: TurretView = { position, rotation, look, muzzle }
   turretViews.set(id, view)
   return view
 }
@@ -291,6 +295,10 @@ export function exitWeaponCamera(): void {
 
 export function isTurretOccupied(): boolean {
   return turretOccupied
+}
+
+export function getOccupiedTurret(): TurretId | null {
+  return occupiedTurret
 }
 
 function WeaponConsoleSystem(): void {

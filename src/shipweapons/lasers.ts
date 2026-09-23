@@ -20,8 +20,10 @@ import {
 } from '../constants'
 import { createBeamStrip, poseBeamStrip } from '../effects/beamStrip'
 import { isWeaponsOvercharged } from '../gamestate'
+import { getLocalTargetTurret } from '../hazards/targeting'
 import { forEachHazardLaserSource } from '../hazards/visuals'
 import { ObjectPool } from '../objectPool'
+import { getTurretView } from '../sceneObjects'
 import { clampSimulationStep } from '../utilities'
 
 type ActiveLaser = {
@@ -31,8 +33,15 @@ type ActiveLaser = {
   remaining: number
 }
 
-const localOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_LOCAL_ORIGIN_OFFSET)
+const fallbackLocalOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_LOCAL_ORIGIN_OFFSET)
 const otherOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_OTHER_ORIGIN_OFFSET)
+
+/** Muzzle of the weapon the local player locked from. */
+function localOrigin(): Vector3 {
+  const turret = getLocalTargetTurret()
+  const view = turret ? getTurretView(turret) : undefined
+  return view?.muzzle ?? fallbackLocalOrigin
+}
 
 let laserPool: ObjectPool<Entity>
 const active: ActiveLaser[] = []
@@ -52,7 +61,7 @@ function applyLaserMaterial(entity: Entity, overcharged: boolean): void {
 }
 
 function createLaserEntity(): Entity {
-  const entity = createBeamStrip(localOrigin, SHIP_LASER_WIDTH)
+  const entity = createBeamStrip(fallbackLocalOrigin, SHIP_LASER_WIDTH)
   applyLaserMaterial(entity, false)
   return entity
 }
@@ -114,12 +123,13 @@ function pruneDespawned(elapsedByHazard: Map<Entity, number>, seen: Set<Entity>)
 
 function fireShots(dt: number): void {
   const seen = new Set<Entity>()
+  const origin = localOrigin()
 
   forEachHazardLaserSource((entity, isLocalTarget, otherTargeters) => {
     seen.add(entity)
     const localRate = isLocalTarget ? SHIP_LASER_BASE_FIRE_RATE : 0
     const otherRate = SHIP_LASER_BASE_FIRE_RATE * Math.min(otherTargeters, SHIP_LASER_MAX_TARGETERS)
-    advanceStream(localFireElapsed, entity, localRate, localOrigin, dt)
+    advanceStream(localFireElapsed, entity, localRate, origin, dt)
     advanceStream(otherFireElapsed, entity, otherRate, otherOrigin, dt)
   })
 
@@ -147,7 +157,7 @@ function LaserSystem(dt: number): void {
 
 function createLaserSoundEntity(): Entity {
   const entity = engine.addEntity()
-  Transform.create(entity, { position: Vector3.clone(localOrigin) })
+  Transform.create(entity, { position: Vector3.clone(fallbackLocalOrigin) })
   AudioSource.create(entity, {
     audioClipUrl: SHIP_LASER_SOUND_PATH,
     playing: false,
