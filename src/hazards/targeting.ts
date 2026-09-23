@@ -1,5 +1,6 @@
 import { engine, InputAction, inputSystem, PointerEventType, PrimaryPointerInfo, Transform } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
+import { getPlayer } from '@dcl/sdk/players'
 import { playGlobalSound } from '../audio/global'
 import {
   HAZARD_AIM_CONE_HALF_ANGLE_DEGREES,
@@ -30,8 +31,19 @@ export function clearLocalTargetIf(hazardId: number): void {
   }
 }
 
+export function isLocalTarget(hazardId: number): boolean {
+  return hazardId === localTargetId
+}
+
+/** Targeters other than the local player. Counts everyone if the local player isn't known yet. */
+export function otherTargeterCount(targeters: string[]): number {
+  const localAddress = getPlayer()?.userId?.toLowerCase()
+  if (!localAddress) return targeters.length
+  return targeters.filter((address) => address.toLowerCase() !== localAddress).length
+}
+
 export function applyTargetingAppearance(hazard: SpawnedHazard): void {
-  applyReticule(hazard.visuals.reticule, hazard.targeters, hazard.hazardId === localTargetId)
+  applyReticule(hazard.visuals.reticule, hazard.targeters, isLocalTarget(hazard.hazardId))
 }
 
 function findHazard(hazardId: number): SpawnedHazard | undefined {

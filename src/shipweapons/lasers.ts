@@ -10,8 +10,9 @@ import {
   SHIP_LASER_EMISSIVE_COLOR,
   SHIP_LASER_EMISSIVE_INTENSITY,
   SHIP_LASER_LIFETIME_SECONDS,
+  SHIP_LASER_LOCAL_ORIGIN_OFFSET,
   SHIP_LASER_MAX_TARGETERS,
-  SHIP_LASER_ORIGIN_OFFSET,
+  SHIP_LASER_OTHER_ORIGIN_OFFSET,
   SHIP_LASER_POOL_SIZE,
   SHIP_LASER_SOUND_PATH,
   SHIP_LASER_SOUND_VOICES,
@@ -19,21 +20,24 @@ import {
 } from '../constants'
 import { createBeamStrip, poseBeamStrip } from '../effects/beamStrip'
 import { isWeaponsOvercharged } from '../gamestate'
-import { forEachHazardTargetCount } from '../hazards/visuals'
+import { forEachHazardLaserSource } from '../hazards/visuals'
 import { ObjectPool } from '../objectPool'
 import { clampSimulationStep } from '../utilities'
 
 type ActiveLaser = {
   entity: Entity
+  origin: Vector3
   target: Entity
   remaining: number
 }
 
-const laserOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_ORIGIN_OFFSET)
+const localOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_LOCAL_ORIGIN_OFFSET)
+const otherOrigin = Vector3.add(SCENE_SHIP_POSITION, SHIP_LASER_OTHER_ORIGIN_OFFSET)
 
 let laserPool: ObjectPool<Entity>
 const active: ActiveLaser[] = []
-const fireElapsed = new Map<Entity, number>()
+const localFireElapsed = new Map<Entity, number>()
+const otherFireElapsed = new Map<Entity, number>()
 
 const laserSoundEntities: Entity[] = []
 let laserSoundIndex = 0
@@ -48,7 +52,7 @@ function applyLaserMaterial(entity: Entity, overcharged: boolean): void {
 }
 
 function createLaserEntity(): Entity {
-  const entity = createBeamStrip(laserOrigin, SHIP_LASER_WIDTH)
+  const entity = createBeamStrip(localOrigin, SHIP_LASER_WIDTH)
   applyLaserMaterial(entity, false)
   return entity
 }
@@ -57,14 +61,14 @@ function resetLaser(entity: Entity): void {
   VisibilityComponent.getMutable(entity).visible = false
 }
 
-function acquireLaser(target: Entity): void {
+function acquireLaser(target: Entity, origin: Vector3): void {
   const entity = laserPool.acquire()
   applyLaserMaterial(entity, isWeaponsOvercharged())
   VisibilityComponent.getMutable(entity).visible = true
   if (Transform.has(target)) {
-    poseBeamStrip(entity, laserOrigin, Transform.get(target).position, SHIP_LASER_WIDTH)
+    poseBeamStrip(entity, origin, Transform.get(target).position, SHIP_LASER_WIDTH)
   }
-  active.push({ entity, target, remaining: SHIP_LASER_LIFETIME_SECONDS })
+  active.push({ entity, origin, target, remaining: SHIP_LASER_LIFETIME_SECONDS })
   playLaserSound()
 }
 
@@ -74,35 +78,53 @@ function releaseLaser(index: number): void {
   active.splice(index, 1)
 }
 
+/** Fire `rate` shots per second at `hazard` from `origin`. The first shot fires immediately. */
+function advanceStream(
+  elapsedByHazard: Map<Entity, number>,
+  hazard: Entity,
+  rate: number,
+  origin: Vector3,
+  dt: number
+): void {
+  if (rate <= 0) {
+    elapsedByHazard.delete(hazard)
+    return
+  }
+
+  const interval = 1 / rate
+  let elapsed = elapsedByHazard.get(hazard)
+  if (elapsed === undefined) {
+    elapsed = interval
+  }
+  elapsed += dt
+  while (elapsed >= interval) {
+    elapsed -= interval
+    acquireLaser(hazard, origin)
+  }
+  elapsedByHazard.set(hazard, elapsed)
+}
+
+function pruneDespawned(elapsedByHazard: Map<Entity, number>, seen: Set<Entity>): void {
+  for (const entity of elapsedByHazard.keys()) {
+    if (!seen.has(entity)) {
+      elapsedByHazard.delete(entity)
+    }
+  }
+}
+
 function fireShots(dt: number): void {
   const seen = new Set<Entity>()
 
-  forEachHazardTargetCount((entity, targetCount) => {
+  forEachHazardLaserSource((entity, isLocalTarget, otherTargeters) => {
     seen.add(entity)
-    if (targetCount <= 0) {
-      fireElapsed.delete(entity)
-      return
-    }
-
-    const clamped = Math.min(targetCount, SHIP_LASER_MAX_TARGETERS)
-    const interval = 1 / (SHIP_LASER_BASE_FIRE_RATE * clamped)
-    let elapsed = fireElapsed.get(entity)
-    if (elapsed === undefined) {
-      elapsed = interval
-    }
-    elapsed += dt
-    while (elapsed >= interval) {
-      elapsed -= interval
-      acquireLaser(entity)
-    }
-    fireElapsed.set(entity, elapsed)
+    const localRate = isLocalTarget ? SHIP_LASER_BASE_FIRE_RATE : 0
+    const otherRate = SHIP_LASER_BASE_FIRE_RATE * Math.min(otherTargeters, SHIP_LASER_MAX_TARGETERS)
+    advanceStream(localFireElapsed, entity, localRate, localOrigin, dt)
+    advanceStream(otherFireElapsed, entity, otherRate, otherOrigin, dt)
   })
 
-  for (const entity of fireElapsed.keys()) {
-    if (!seen.has(entity)) {
-      fireElapsed.delete(entity)
-    }
-  }
+  pruneDespawned(localFireElapsed, seen)
+  pruneDespawned(otherFireElapsed, seen)
 }
 
 function updateActive(dt: number): void {
@@ -113,7 +135,7 @@ function updateActive(dt: number): void {
       releaseLaser(i)
       continue
     }
-    poseBeamStrip(laser.entity, laserOrigin, Transform.get(laser.target).position, SHIP_LASER_WIDTH)
+    poseBeamStrip(laser.entity, laser.origin, Transform.get(laser.target).position, SHIP_LASER_WIDTH)
   }
 }
 
@@ -125,7 +147,7 @@ function LaserSystem(dt: number): void {
 
 function createLaserSoundEntity(): Entity {
   const entity = engine.addEntity()
-  Transform.create(entity, { position: Vector3.clone(laserOrigin) })
+  Transform.create(entity, { position: Vector3.clone(localOrigin) })
   AudioSource.create(entity, {
     audioClipUrl: SHIP_LASER_SOUND_PATH,
     playing: false,

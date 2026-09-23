@@ -41,10 +41,13 @@ export const ENGINEERING_REPAIR_BASE_HP = 5
 /** Extra hull HP restored per engineering level above 1. Level 2 = 6, level 10 = 14. */
 export const ENGINEERING_REPAIR_HP_PER_LEVEL = 1
 
-/** Shots per second with one player targeting. Extra players multiply this, up to SHIP_LASER_MAX_TARGETERS. */
+/**
+ * Shots per second for the local player's laser (fixed), and per other player targeting
+ * the same hazard. Other players multiply this, up to SHIP_LASER_MAX_TARGETERS.
+ */
 export const SHIP_LASER_BASE_FIRE_RATE = 1.5
 
-/** Target-count clamp for shot frequency. 1 player = base rate; 5+ players = 5× base. */
+/** Clamp on other players' shot frequency. 1 other = base rate; 5+ others = 5× base. The local laser is not counted. */
 export const SHIP_LASER_MAX_TARGETERS = 5
 
 /** Seconds between damage ticks on a locked hazard. First hit waits one full interval. */
@@ -390,8 +393,11 @@ export const SHIP_LASER_LIFETIME_SECONDS = 0.15
 /** Scene-space width of the laser plane (local X). Length is the ship-to-asteroid distance. */
 export const SHIP_LASER_WIDTH = 0.25
 
-/** Offset from SCENE_SHIP_POSITION to the laser origin, slightly above the ship roof. */
-export const SHIP_LASER_ORIGIN_OFFSET = Vector3.create(0, 7, -6)
+/** Offset from SCENE_SHIP_POSITION to the local player's laser origin, slightly above the ship roof. */
+export const SHIP_LASER_LOCAL_ORIGIN_OFFSET = Vector3.create(0, 7, -6)
+
+/** Offset from SCENE_SHIP_POSITION to other players' laser origin, below the hull. */
+export const SHIP_LASER_OTHER_ORIGIN_OFFSET = Vector3.create(0, -7, -6)
 
 /** Camera-local offset from the weapon pose (+Z look, +Y up, +X right). */
 export const WEAPON_CAMERA_LOCAL_OFFSET = Vector3.create(0, -3, 2)

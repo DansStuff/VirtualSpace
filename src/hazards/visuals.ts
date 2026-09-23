@@ -28,7 +28,14 @@ import {
   updateSaucerBeam,
   type SaucerBeam
 } from './saucerBeam'
-import { applyTargetingAppearance, clearLocalTarget, clearLocalTargetIf, setupHazardTargeting } from './targeting'
+import {
+  applyTargetingAppearance,
+  clearLocalTarget,
+  clearLocalTargetIf,
+  isLocalTarget,
+  otherTargeterCount,
+  setupHazardTargeting
+} from './targeting'
 
 /** Pooled entity tree for one hazard. Reset to hidden when released. */
 type HazardVisuals = {
@@ -134,10 +141,12 @@ function releaseHazard(hazard: SpawnedHazard) {
   hazardPool(hazard.visuals.kind).release(hazard.visuals)
 }
 
-/** Visit every live client-side hazard with how many players are targeting it. */
-export function forEachHazardTargetCount(visitor: (entity: Entity, targetCount: number) => void): void {
+/** Visit every live hazard with what the ship lasers need to fire at it. */
+export function forEachHazardLaserSource(
+  visitor: (entity: Entity, isLocalTarget: boolean, otherTargeters: number) => void
+): void {
   for (const hazard of spawned) {
-    visitor(hazard.visuals.entity, hazard.targeters.length)
+    visitor(hazard.visuals.entity, isLocalTarget(hazard.hazardId), otherTargeterCount(hazard.targeters))
   }
 }
 
