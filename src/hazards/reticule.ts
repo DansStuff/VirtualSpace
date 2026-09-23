@@ -130,11 +130,11 @@ export function createTargetingReticule(hazard: Entity): TargetingReticule {
 }
 
 /**
- * The crosshair shows while anyone targets the hazard or the local player has requested it.
- * "Target Locked" shows only on the local player's own target.
+ * The crosshair and "Target Locked" show only on the local player's own target.
+ * Portraits show for every targeter on any hazard.
  */
 export function applyReticule(reticule: TargetingReticule, targeters: string[], isLocalTarget: boolean): void {
-  VisibilityComponent.getMutable(reticule.indicator).visible = targeters.length > 0 || isLocalTarget
+  VisibilityComponent.getMutable(reticule.indicator).visible = isLocalTarget
   VisibilityComponent.getMutable(reticule.lockedLabel).visible = isLocalTarget
   reticule.portraitSlots.forEach((slot, i) => {
     const address = targeters[i]
