@@ -457,6 +457,27 @@
             "parent": 0
           }
         },
+        "533": {
+          "json": {
+            "position": {
+              "x": 64,
+              "y": 60.45000076293945,
+              "z": 64
+            },
+            "rotation": {
+              "x": 0,
+              "y": -0.7071067690849304,
+              "z": 0,
+              "w": 0.7071067690849304
+            },
+            "scale": {
+              "x": 2.0999999046325684,
+              "y": 2.0999999046325684,
+              "z": 2.0999999046325684
+            },
+            "parent": 0
+          }
+        },
         "66063": {
           "json": {
             "position": {
@@ -710,6 +731,13 @@
             "invisibleMeshesCollisionMask": 3
           }
         },
+        "533": {
+          "json": {
+            "src": "assets/scene/Models/MapPlane.gltf",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        },
         "66063": {
           "json": {
             "src": "assets/scene/Models/TutArrow.gltf",
@@ -832,6 +860,11 @@
         "532": {
           "json": {
             "value": "MissionTableText"
+          }
+        },
+        "533": {
+          "json": {
+            "value": "MapPlane"
           }
         },
         "66063": {
@@ -962,7 +995,8 @@
                   528,
                   529,
                   530,
-                  532
+                  532,
+                  533
                 ]
               },
               {
@@ -1056,6 +1090,10 @@
               {
                 "entity": 532,
                 "children": []
+              },
+              {
+                "entity": 533,
+                "children": []
               }
             ]
           }
@@ -1141,6 +1179,11 @@
         },
         "532": {
           "json": {}
+        },
+        "533": {
+          "json": {
+            "porportionalScaling": true
+          }
         },
         "66063": {
           "json": {}

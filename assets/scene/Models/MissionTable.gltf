@@ -51,19 +51,18 @@
 			"doubleSided":true,
 			"emissiveFactor":[
 				0,
-				0.23625611409569203,
-				0.01019287969441729
+				0.0075130225347432855,
+				0
 			],
 			"name":"PlaceholderScreen",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0,
-					0.11911102384328842,
-					0.00200830539688468,
+					0.009721232578158379,
+					0,
 					1
 				],
-				"metallicFactor":0,
-				"roughnessFactor":0.5
+				"metallicFactor":0
 			}
 		},
 		{

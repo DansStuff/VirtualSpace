@@ -17,6 +17,7 @@ export enum EntityNames {
   LeftConsoleArrow = "LeftConsoleArrow",
   LeftWeapon = "LeftWeapon",
   LeftWeaponConsole = "LeftWeaponConsole",
+  MapPlane = "MapPlane",
   MissionStartArrow = "MissionStartArrow",
   MissionTable = "MissionTable",
   MissionTableText = "MissionTableText",

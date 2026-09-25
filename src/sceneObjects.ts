@@ -5,21 +5,25 @@ import {
   engine,
   Entity,
   GltfContainer,
+  GltfNodeModifiers,
   InputAction,
   InputModifier,
   inputSystem,
   InteractionType,
   MainCamera,
+  Material,
+  MaterialTransparencyMode,
   Name,
   PointerEvents,
   PointerEventType,
   PointerLock,
+  TextureFilterMode,
   TouchScreenControls,
   Transform,
   VirtualCamera,
   VisibilityComponent
 } from '@dcl/sdk/ecs'
-import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer, isStateSyncronized } from '@dcl/sdk/network'
 import { getPlatform, isMobile } from '@dcl/sdk/platform'
 import { EntityNames } from '../assets/scene/entity-names'
@@ -48,7 +52,10 @@ let overchargeStation: Entity | null = null
 let missionTable: Entity | null = null
 let missionTableText: Entity | null = null
 let missionStartArrow: Entity | null = null
+let mapPlane: Entity | null = null
 let breachPointerEventsReady = false
+
+const MAP_PLANE_TEXTURE_PATH = 'assets/scene/Images/map.png'
 
 export type TurretView = {
   position: Vector3
@@ -140,6 +147,34 @@ function setBreachInteractable(entity: Entity, interactable: boolean): void {
 function initBreach(entity: Entity): void {
   VisibilityComponent.createOrReplace(entity, { visible: false, propagateToChildren: true })
   setBreachPointerCollider(entity, false)
+}
+
+function initMapPlane(entity: Entity): void {
+  const texture = Material.Texture.Common({
+    src: MAP_PLANE_TEXTURE_PATH,
+    filterMode: TextureFilterMode.TFM_POINT
+  })
+  GltfNodeModifiers.createOrReplace(entity, {
+    modifiers: [
+      {
+        path: '',
+        castShadows: false,
+        material: {
+          material: {
+            $case: 'pbr',
+            pbr: {
+              texture,
+              emissiveTexture: texture,
+              emissiveColor: Color3.White(),
+              emissiveIntensity: 1,
+              transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
+              alphaTest: 0.5
+            }
+          }
+        }
+      }
+    ]
+  })
 }
 
 /** Weapon GLTFs face -Z; VirtualCamera looks along +Z. */
@@ -350,6 +385,7 @@ export function setupSceneObjects(): void {
   missionTable = null
   missionTableText = null
   missionStartArrow = null
+  mapPlane = null
   consoleCameras.clear()
   consoleTurrets.clear()
   consoleTutArrows.clear()
@@ -397,6 +433,10 @@ export function setupSceneObjects(): void {
       missionStartArrow = entity
       continue
     }
+    if (name.value === EntityNames.MapPlane) {
+      mapPlane = entity
+      continue
+    }
     const arrowTurret = turretIdFromConsoleArrowName(name.value)
     if (arrowTurret) {
       consoleTutArrows.set(arrowTurret, entity)
@@ -417,6 +457,9 @@ export function setupSceneObjects(): void {
 
   for (const entity of breachEntities.values()) {
     initBreach(entity)
+  }
+  if (mapPlane) {
+    initMapPlane(mapPlane)
   }
 
   const missionStarted = getGameState().missionStarted
