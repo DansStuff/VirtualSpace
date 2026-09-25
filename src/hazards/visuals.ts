@@ -2,6 +2,8 @@ import { Animator, ColliderLayer, engine, Entity, GltfContainer, Transform, Visi
 import { Vector3 } from '@dcl/sdk/math'
 import {
   ASTEROID_ENCLOSING_SPHERE_RADIUS,
+  CAMERA_SHAKE_HAZARD_IMPACT_INTENSITY,
+  CAMERA_SHAKE_SAUCER_SHOT_INTENSITY,
   HAZARD_ASTEROID_MODEL_PATH,
   HAZARD_ASTEROID_POOL_SIZE,
   HAZARD_HIT_SHIP_SOUND_PATH,
@@ -15,6 +17,7 @@ import {
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
 import { room } from '../networking/messages'
+import { shakeCameras } from '../effects/cameraShake'
 import { ObjectPool } from '../objectPool'
 import { shipVirtualPosition } from '../ship'
 import { ProjectedBody } from '../spaceobjects/projection'
@@ -256,6 +259,7 @@ export function setupHazardVisuals() {
     console.log(`[CLIENT] Hazard ${data.hazardId} destroyed (${cause})`)
     if (data.hitShip) {
       playGlobalSound(HAZARD_HIT_SHIP_SOUND_PATH)
+      shakeCameras(CAMERA_SHAKE_HAZARD_IMPACT_INTENSITY)
     }
     despawnHazard(data.hazardId)
   })
@@ -270,5 +274,6 @@ export function setupHazardVisuals() {
 
   room.onMessage('notifySaucerFired', (data) => {
     console.log(`[CLIENT] Saucer ${data.hazardId} fired`)
+    shakeCameras(CAMERA_SHAKE_SAUCER_SHOT_INTENSITY)
   })
 }

@@ -7,6 +7,7 @@ import { AssetLoad, engine } from '@dcl/sdk/ecs'
 import { isServer } from '@dcl/sdk/network'
 import { registerGlobalSounds } from './audio/global'
 import { ENCOUNTER_STAGE_SOUND_PATH, HAZARD_HIT_SHIP_SOUND_PATH, HAZARD_SELECT_SOUND_PATH, PATH_START_STOP_ID, SHIP_LASER_SOUND_PATH } from './constants'
+import { CameraShakeSystem } from './effects/cameraShake'
 import { setupEncounters } from './encounters/client'
 import { setupScoreboard } from './leaderboard/scoreboard'
 import { setupWeeklyBoard } from './leaderboard/weeklyBoard'
@@ -95,6 +96,7 @@ export function main() {
   }
 
   setupClientRoom()
+  engine.addSystem(CameraShakeSystem)
   setupUi()
   setupScoreboard()
   setupDebugTeleportToShip()

@@ -414,6 +414,23 @@ export const WEAPON_CAMERA_TRANSITION_SECONDS = 0.5
 /** Vertical FOV in degrees while a weapon VirtualCamera is active. */
 export const WEAPON_CAMERA_FOV_DEGREES = 60
 
+/** Default strength multiplier for shakeCamera(). */
+export const CAMERA_SHAKE_DEFAULT_INTENSITY = 1
+
+export const CAMERA_SHAKE_DEFAULT_DURATION_SECONDS = 0.4
+
+/** Max camera-local position offset in meters at intensity 1. */
+export const CAMERA_SHAKE_MAX_OFFSET = 0.15
+
+/** Max pitch/yaw/roll jitter in degrees at intensity 1. */
+export const CAMERA_SHAKE_MAX_ANGLE_DEGREES = 1.5
+
+/** Shake intensity when a hazard collides with the ship. */
+export const CAMERA_SHAKE_HAZARD_IMPACT_INTENSITY = 1
+
+/** Shake intensity when a saucer shot hits the ship. */
+export const CAMERA_SHAKE_SAUCER_SHOT_INTENSITY = 0.6
+
 export const SHIP_LASER_SOUND_PATH = 'assets/scene/Sounds/laser1.mp3'
 
 /** Concurrent laser one-shots. One AudioSource cannot restart while still playing. */
