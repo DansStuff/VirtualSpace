@@ -8,7 +8,7 @@ export const SHIP_ROUTE = {
   planets: [
     {
       name: 'Home_Planet',
-      model: 'assets/scene/Models/TestPlanet.gltf',
+      model: 'assets/scene/Models/Planets/Planet1.gltf',
       x: -266.09,
       y: 0,
       z: 139.23,
@@ -24,7 +24,7 @@ export const SHIP_ROUTE = {
     },
     {
       name: 'Planet_3',
-      model: 'assets/scene/Models/TestPlanet.gltf',
+      model: 'assets/scene/Models/Planets/Planet1.gltf',
       x: -1459.33,
       y: 0,
       z: 4946.3,
@@ -32,7 +32,7 @@ export const SHIP_ROUTE = {
     },
     {
       name: 'Planet_4',
-      model: 'assets/scene/Models/TestPlanet.gltf',
+      model: 'assets/scene/Models/Planets/Planet1.gltf',
       x: 6181.18,
       y: 0,
       z: 7981.74,
@@ -40,7 +40,7 @@ export const SHIP_ROUTE = {
     },
     {
       name: 'Planet_5',
-      model: 'assets/scene/Models/TestPlanet.gltf',
+      model: 'assets/scene/Models/Planets/Planet1.gltf',
       x: 12040.88,
       y: 0,
       z: 1527.85,
@@ -48,7 +48,7 @@ export const SHIP_ROUTE = {
     },
     {
       name: 'Planet_6',
-      model: 'assets/scene/Models/TestPlanet.gltf',
+      model: 'assets/scene/Models/Planets/Planet1.gltf',
       x: 20817.71,
       y: 0,
       z: -433.37,
@@ -56,7 +56,7 @@ export const SHIP_ROUTE = {
     },
     {
       name: 'Planet_7',
-      model: 'assets/scene/Models/TestPlanet.gltf',
+      model: 'assets/scene/Models/Planets/Planet1.gltf',
       x: 9608.57,
       y: 0,
       z: -12799.7,
@@ -64,7 +64,7 @@ export const SHIP_ROUTE = {
     },
     {
       name: 'Planet_8',
-      model: 'assets/scene/Models/TestPlanet.gltf',
+      model: 'assets/scene/Models/Planets/Planet1.gltf',
       x: 19279.05,
       y: 0,
       z: -8398.96,

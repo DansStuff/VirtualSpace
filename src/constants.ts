@@ -363,8 +363,7 @@ export const HAZARD_SAUCER_RADIUS = 5
 /** Virtual-space distance from the ship where a saucer stops approaching. */
 export const SAUCER_HOVER_DISTANCE = 40
 
-export const SAUCER_BEAM_ALBEDO_COLOR = Color4.create(0.05, 0.85, 0.15, 1)
-export const SAUCER_BEAM_EMISSIVE_COLOR = Color3.create(0.15, 1, 0.25)
+export const SAUCER_BEAM_COLOR = Color3.create(0.05, 0.85, 0.15)
 export const SAUCER_BEAM_EMISSIVE_INTENSITY = 4
 
 /** Scene-space width of the saucer beam plane before the pulse is applied. */
@@ -420,10 +419,10 @@ export const CAMERA_SHAKE_DEFAULT_INTENSITY = 1
 export const CAMERA_SHAKE_DEFAULT_DURATION_SECONDS = 0.4
 
 /** Max camera-local position offset in meters at intensity 1. */
-export const CAMERA_SHAKE_MAX_OFFSET = 0.15
+export const CAMERA_SHAKE_MAX_OFFSET = 0.3
 
 /** Max pitch/yaw/roll jitter in degrees at intensity 1. */
-export const CAMERA_SHAKE_MAX_ANGLE_DEGREES = 1.5
+export const CAMERA_SHAKE_MAX_ANGLE_DEGREES = 3
 
 /** Shake intensity when a hazard collides with the ship. */
 export const CAMERA_SHAKE_HAZARD_IMPACT_INTENSITY = 1
@@ -439,12 +438,11 @@ export const SHIP_LASER_SOUND_VOICES = 16
 /** Pre-warmed laser plane entities. The pool grows if this is exhausted. */
 export const SHIP_LASER_POOL_SIZE = 16
 
-export const SHIP_LASER_ALBEDO_COLOR = Color4.create(0.45, 0.05, 0.85, 1)
-export const SHIP_LASER_EMISSIVE_COLOR = Color3.create(0.45, 0.05, 0.85)
-export const SHIP_LASER_EMISSIVE_INTENSITY = 4
+/** Shared by WeaponLights and ship laser beams. */
+export const WEAPON_LIGHT_COLOR = Color3.Yellow()
+export const WEAPON_LIGHT_OVERCHARGE_COLOR = Color3.create(0.85, 0, 1)
 
-export const OVERCHARGE_LASER_ALBEDO_COLOR = Color4.create(0.95, 0.08, 0.08, 1)
-export const OVERCHARGE_LASER_EMISSIVE_COLOR = Color3.create(0.95, 0.08, 0.08)
+export const SHIP_LASER_EMISSIVE_INTENSITY = 4
 
 // MARK: Encounters
 

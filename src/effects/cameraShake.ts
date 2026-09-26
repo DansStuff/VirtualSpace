@@ -1,5 +1,6 @@
-import { engine, Entity, Schemas, Transform, VirtualCamera } from '@dcl/sdk/ecs'
+import { engine, Entity, Name, Schemas, Transform, VirtualCamera } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
+import { EntityNames } from '../../assets/scene/entity-names'
 import {
   CAMERA_SHAKE_DEFAULT_DURATION_SECONDS,
   CAMERA_SHAKE_DEFAULT_INTENSITY,
@@ -52,6 +53,29 @@ export function shakeCameras(
   for (const [entity] of engine.getEntitiesWith(VirtualCamera, Transform)) {
     shakeEntity(entity, intensity, durationSeconds)
   }
+}
+
+let shipEntity: Entity | undefined
+
+function findShip(): Entity | undefined {
+  if (shipEntity !== undefined && Transform.has(shipEntity)) return shipEntity
+  shipEntity = undefined
+  for (const [entity, name] of engine.getEntitiesWith(Name)) {
+    if (name.value === EntityNames.Ship) {
+      shipEntity = entity
+      break
+    }
+  }
+  return shipEntity
+}
+
+/** Shake the Ship entity (and everything parented to it). */
+export function shakeShip(
+  intensity = CAMERA_SHAKE_DEFAULT_INTENSITY,
+  durationSeconds = CAMERA_SHAKE_DEFAULT_DURATION_SECONDS
+): void {
+  const ship = findShip()
+  if (ship !== undefined) shakeEntity(ship, intensity, durationSeconds)
 }
 
 function randomSigned(): number {

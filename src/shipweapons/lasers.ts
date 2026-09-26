@@ -1,13 +1,9 @@
 import { AudioSource, engine, Entity, Material, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
-import { Vector3 } from '@dcl/sdk/math'
+import { Color4, Vector3 } from '@dcl/sdk/math'
 import { isServer } from '@dcl/sdk/network'
 import {
-  OVERCHARGE_LASER_ALBEDO_COLOR,
-  OVERCHARGE_LASER_EMISSIVE_COLOR,
   SCENE_SHIP_POSITION,
-  SHIP_LASER_ALBEDO_COLOR,
   SHIP_LASER_BASE_FIRE_RATE,
-  SHIP_LASER_EMISSIVE_COLOR,
   SHIP_LASER_EMISSIVE_INTENSITY,
   SHIP_LASER_LIFETIME_SECONDS,
   SHIP_LASER_LOCAL_ORIGIN_OFFSET,
@@ -16,7 +12,9 @@ import {
   SHIP_LASER_POOL_SIZE,
   SHIP_LASER_SOUND_PATH,
   SHIP_LASER_SOUND_VOICES,
-  SHIP_LASER_WIDTH
+  SHIP_LASER_WIDTH,
+  WEAPON_LIGHT_COLOR,
+  WEAPON_LIGHT_OVERCHARGE_COLOR
 } from '../constants'
 import { createBeamStrip, poseBeamStrip } from '../effects/beamStrip'
 import { isWeaponsOvercharged } from '../gamestate'
@@ -52,9 +50,10 @@ const laserSoundEntities: Entity[] = []
 let laserSoundIndex = 0
 
 function applyLaserMaterial(entity: Entity, overcharged: boolean): void {
+  const color = overcharged ? WEAPON_LIGHT_OVERCHARGE_COLOR : WEAPON_LIGHT_COLOR
   Material.setPbrMaterial(entity, {
-    albedoColor: overcharged ? OVERCHARGE_LASER_ALBEDO_COLOR : SHIP_LASER_ALBEDO_COLOR,
-    emissiveColor: overcharged ? OVERCHARGE_LASER_EMISSIVE_COLOR : SHIP_LASER_EMISSIVE_COLOR,
+    albedoColor: Color4.fromColor3(color),
+    emissiveColor: color,
     emissiveIntensity: SHIP_LASER_EMISSIVE_INTENSITY,
     castShadows: false
   })

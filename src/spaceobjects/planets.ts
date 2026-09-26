@@ -50,6 +50,9 @@ export function createPlanet(
   // Models must be origin-centered with radius 1. Baked glTF node translations get multiplied
   // by Transform.scale and will fling the mesh off-screen once ProjectedBodySystem applies apparent size.
   GltfContainer.create(entity, { src: modelPath })
+  GltfNodeModifiers.create(entity, {
+    modifiers: [{ path: '', castShadows: false }]
+  })
   Transform.create(entity, { position: data.position })
   ProjectedBody.create(entity, {
     position: data.position,
@@ -75,10 +78,11 @@ function applyStarOrangeTint(entity: Entity, tintStrength: number): void {
   const g = STAR_BASE_COLOR.g * (1 - tintStrength * 0.25)
   const b = STAR_BASE_COLOR.b * (1 - tintStrength * 0.55)
 
-  GltfNodeModifiers.create(entity, {
+  GltfNodeModifiers.createOrReplace(entity, {
     modifiers: [
       {
         path: '',
+        castShadows: false,
         material: {
           material: {
             $case: 'pbr',

@@ -17,7 +17,7 @@ import {
 } from '../constants'
 import { playGlobalSound } from '../audio/global'
 import { room } from '../networking/messages'
-import { shakeCameras } from '../effects/cameraShake'
+import { shakeCameras, shakeShip } from '../effects/cameraShake'
 import { ObjectPool } from '../objectPool'
 import { shipVirtualPosition } from '../ship'
 import { ProjectedBody } from '../spaceobjects/projection'
@@ -260,6 +260,7 @@ export function setupHazardVisuals() {
     if (data.hitShip) {
       playGlobalSound(HAZARD_HIT_SHIP_SOUND_PATH)
       shakeCameras(CAMERA_SHAKE_HAZARD_IMPACT_INTENSITY)
+      shakeShip(CAMERA_SHAKE_HAZARD_IMPACT_INTENSITY)
     }
     despawnHazard(data.hazardId)
   })
@@ -275,5 +276,6 @@ export function setupHazardVisuals() {
   room.onMessage('notifySaucerFired', (data) => {
     console.log(`[CLIENT] Saucer ${data.hazardId} fired`)
     shakeCameras(CAMERA_SHAKE_SAUCER_SHOT_INTENSITY)
+    shakeShip(CAMERA_SHAKE_SAUCER_SHOT_INTENSITY)
   })
 }

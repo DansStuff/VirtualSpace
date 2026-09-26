@@ -18,46 +18,34 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Text.001",
-			"rotation":[
-				-1,
-				0,
-				0,
-				4.371138828673793e-08
-			],
-			"scale":[
-				0.257799357175827,
-				1,
-				1
-			],
+			"name":"WeaponLights",
 			"translation":[
 				0,
-				0.6074696779251099,
-				0
+				-1.5633316040039062,
+				11.724472045898438
 			]
 		}
 	],
 	"materials":[
 		{
-			"alphaMode":"BLEND",
 			"doubleSided":true,
 			"emissiveFactor":[
-				0.0026709255762398243,
-				1,
-				0
+				0.38165944802469626,
+				0,
+				1
 			],
 			"extensions":{
 				"KHR_materials_emissive_strength":{
-					"emissiveStrength":1.2999999523162842
+					"emissiveStrength":1.198654443025589
 				}
 			},
-			"name":"Material.011",
+			"name":"WeaponGlow",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
+					0.3049851953983307,
 					0,
-					0.8004492521286011,
-					0.0034427442587912083,
-					0.2763819098472595
+					0.7991029620170593,
+					1
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.5
@@ -66,7 +54,7 @@
 	],
 	"meshes":[
 		{
-			"name":"Text",
+			"name":"Cylinder.005",
 			"primitives":[
 				{
 					"attributes":{
@@ -84,68 +72,68 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":13393,
+			"count":66,
 			"max":[
-				3.2804572582244873,
-				-0.00021700584329664707,
-				0.8450825214385986
+				1.1551324129104614,
+				6.64123010635376,
+				1.1551324129104614
 			],
 			"min":[
-				-3.2809178829193115,
-				-0.16171720623970032,
-				-0.8445897102355957
+				-1.1551324129104614,
+				2.550173282623291,
+				-1.1551324129104614
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":13393,
+			"count":66,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":13393,
+			"count":66,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5123,
-			"count":51840,
+			"count":144,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":160716,
+			"byteLength":792,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":160716,
-			"byteOffset":160716,
+			"byteLength":792,
+			"byteOffset":792,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":107144,
-			"byteOffset":321432,
+			"byteLength":528,
+			"byteOffset":1584,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":103680,
-			"byteOffset":428576,
+			"byteLength":288,
+			"byteOffset":2112,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":532256,
-			"uri":"MissionTableText.bin"
+			"byteLength":2400,
+			"uri":"WeaponLights.bin"
 		}
 	]
 }

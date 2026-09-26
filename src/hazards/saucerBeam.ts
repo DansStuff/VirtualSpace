@@ -1,8 +1,7 @@
 import { Entity, Material, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
-import { Vector3 } from '@dcl/sdk/math'
+import { Color4, Vector3 } from '@dcl/sdk/math'
 import {
-  SAUCER_BEAM_ALBEDO_COLOR,
-  SAUCER_BEAM_EMISSIVE_COLOR,
+  SAUCER_BEAM_COLOR,
   SAUCER_BEAM_EMISSIVE_INTENSITY,
   SAUCER_BEAM_RETARGET_SECONDS,
   SAUCER_BEAM_TARGET_OFFSET,
@@ -39,8 +38,8 @@ function pulsedBeamWidth(): number {
 export function createSaucerBeam(): SaucerBeam {
   const entity = createBeamStrip(SCENE_SHIP_POSITION, SAUCER_BEAM_WIDTH)
   Material.setPbrMaterial(entity, {
-    albedoColor: SAUCER_BEAM_ALBEDO_COLOR,
-    emissiveColor: SAUCER_BEAM_EMISSIVE_COLOR,
+    albedoColor: Color4.fromColor3(SAUCER_BEAM_COLOR),
+    emissiveColor: SAUCER_BEAM_COLOR,
     emissiveIntensity: SAUCER_BEAM_EMISSIVE_INTENSITY,
     castShadows: false
   })

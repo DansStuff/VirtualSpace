@@ -4,6 +4,8 @@ import {
   ColliderLayer,
   engine,
   Entity,
+  getWorldPosition,
+  getWorldRotation,
   GltfContainer,
   GltfNodeModifiers,
   InputAction,
@@ -11,19 +13,16 @@ import {
   inputSystem,
   InteractionType,
   MainCamera,
-  Material,
-  MaterialTransparencyMode,
   Name,
   PointerEvents,
   PointerEventType,
   PointerLock,
-  TextureFilterMode,
   TouchScreenControls,
   Transform,
   VirtualCamera,
   VisibilityComponent
 } from '@dcl/sdk/ecs'
-import { Color3, Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isServer, isStateSyncronized } from '@dcl/sdk/network'
 import { getPlatform, isMobile } from '@dcl/sdk/platform'
 import { EntityNames } from '../assets/scene/entity-names'
@@ -31,6 +30,8 @@ import {
   WEAPON_CAMERA_FOV_DEGREES,
   WEAPON_CAMERA_LOCAL_OFFSET,
   WEAPON_CAMERA_TRANSITION_SECONDS,
+  WEAPON_LIGHT_COLOR,
+  WEAPON_LIGHT_OVERCHARGE_COLOR,
   WEAPON_MUZZLE_LOCAL_OFFSET,
   type TurretId
 } from './constants'
@@ -52,10 +53,13 @@ let overchargeStation: Entity | null = null
 let missionTable: Entity | null = null
 let missionTableText: Entity | null = null
 let missionStartArrow: Entity | null = null
-let mapPlane: Entity | null = null
+let missionLights: Entity | null = null
+let missionLightsShowingEncounter: boolean | null = null
+let weaponLights: Entity | null = null
+let weaponLightsShowingOvercharge: boolean | null = null
 let breachPointerEventsReady = false
 
-const MAP_PLANE_TEXTURE_PATH = 'assets/scene/Images/map.png'
+const LIGHT_EMISSIVE_INTENSITY = 3
 
 export type TurretView = {
   position: Vector3
@@ -149,43 +153,15 @@ function initBreach(entity: Entity): void {
   setBreachPointerCollider(entity, false)
 }
 
-function initMapPlane(entity: Entity): void {
-  const texture = Material.Texture.Common({
-    src: MAP_PLANE_TEXTURE_PATH,
-    filterMode: TextureFilterMode.TFM_POINT
-  })
-  GltfNodeModifiers.createOrReplace(entity, {
-    modifiers: [
-      {
-        path: '',
-        castShadows: false,
-        material: {
-          material: {
-            $case: 'pbr',
-            pbr: {
-              texture,
-              emissiveTexture: texture,
-              emissiveColor: Color3.White(),
-              emissiveIntensity: 1,
-              transparencyMode: MaterialTransparencyMode.MTM_ALPHA_TEST,
-              alphaTest: 0.5
-            }
-          }
-        }
-      }
-    ]
-  })
-}
-
 /** Weapon GLTFs face -Z; VirtualCamera looks along +Z. */
 const WEAPON_CAMERA_YAW = Quaternion.fromEulerDegrees(0, 180, 0)
 
 function cacheTurretView(id: TurretId, weapon: Entity): TurretView {
-  const pose = Transform.get(weapon)
-  const rotation = Quaternion.multiply(pose.rotation, WEAPON_CAMERA_YAW)
-  const position = Vector3.add(pose.position, Vector3.rotate(WEAPON_CAMERA_LOCAL_OFFSET, rotation))
+  const weaponPosition = getWorldPosition(engine, weapon)
+  const rotation = Quaternion.multiply(getWorldRotation(engine, weapon), WEAPON_CAMERA_YAW)
+  const position = Vector3.add(weaponPosition, Vector3.rotate(WEAPON_CAMERA_LOCAL_OFFSET, rotation))
   const look = Vector3.normalize(Vector3.rotate(Vector3.Forward(), rotation))
-  const muzzle = Vector3.add(pose.position, Vector3.rotate(WEAPON_MUZZLE_LOCAL_OFFSET, rotation))
+  const muzzle = Vector3.add(weaponPosition, Vector3.rotate(WEAPON_MUZZLE_LOCAL_OFFSET, rotation))
   const view: TurretView = { position, rotation, look, muzzle }
   turretViews.set(id, view)
   return view
@@ -243,6 +219,46 @@ function enableMissionTable(): void {
   if (!missionTable || getPlatform() === null) return
   if (PointerEvents.getOrNull(missionTable)) return
   attachInteractEvent(missionTable, 'Start Mission')
+}
+
+function applyEmissiveMaterial(entity: Entity, color: Color3): void {
+  GltfNodeModifiers.createOrReplace(entity, {
+    modifiers: [
+      {
+        path: '',
+        material: {
+          material: {
+            $case: 'pbr',
+            pbr: {
+              albedoColor: Color4.fromColor3(color),
+              emissiveColor: color,
+              emissiveIntensity: LIGHT_EMISSIVE_INTENSITY
+            }
+          }
+        }
+      }
+    ]
+  })
+}
+
+function applyMissionLights(inEncounter: boolean): void {
+  if (!missionLights || missionLightsShowingEncounter === inEncounter) return
+  missionLightsShowingEncounter = inEncounter
+  applyEmissiveMaterial(missionLights, inEncounter ? Color3.Red() : Color3.Green())
+}
+
+function MissionLightsSystem(): void {
+  applyMissionLights(getGameState().inEncounter)
+}
+
+function applyWeaponLights(overcharged: boolean): void {
+  if (!weaponLights || weaponLightsShowingOvercharge === overcharged) return
+  weaponLightsShowingOvercharge = overcharged
+  applyEmissiveMaterial(weaponLights, overcharged ? WEAPON_LIGHT_OVERCHARGE_COLOR : WEAPON_LIGHT_COLOR)
+}
+
+function WeaponLightsSystem(): void {
+  applyWeaponLights(getGameState().weaponsOvercharged)
 }
 
 function setEntityVisible(entity: Entity | null, visible: boolean): void {
@@ -385,7 +401,10 @@ export function setupSceneObjects(): void {
   missionTable = null
   missionTableText = null
   missionStartArrow = null
-  mapPlane = null
+  missionLights = null
+  missionLightsShowingEncounter = null
+  weaponLights = null
+  weaponLightsShowingOvercharge = null
   consoleCameras.clear()
   consoleTurrets.clear()
   consoleTutArrows.clear()
@@ -433,8 +452,12 @@ export function setupSceneObjects(): void {
       missionStartArrow = entity
       continue
     }
-    if (name.value === EntityNames.MapPlane) {
-      mapPlane = entity
+    if (name.value === EntityNames.MissionLights) {
+      missionLights = entity
+      continue
+    }
+    if (name.value === EntityNames.WeaponLights) {
+      weaponLights = entity
       continue
     }
     const arrowTurret = turretIdFromConsoleArrowName(name.value)
@@ -457,9 +480,6 @@ export function setupSceneObjects(): void {
 
   for (const entity of breachEntities.values()) {
     initBreach(entity)
-  }
-  if (mapPlane) {
-    initMapPlane(mapPlane)
   }
 
   const missionStarted = getGameState().missionStarted
@@ -505,5 +525,7 @@ export function setupSceneObjects(): void {
   engine.addSystem(BreachRepairSystem)
   engine.addSystem(OverchargeStationSystem)
   engine.addSystem(MissionTableSystem)
+  engine.addSystem(MissionLightsSystem)
+  engine.addSystem(WeaponLightsSystem)
   engine.addSystem(SpinSystem)
 }

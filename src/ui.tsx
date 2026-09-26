@@ -32,7 +32,8 @@ import {
   UI_TURRET_CROSSHAIR_PATH,
   UI_TURRET_CROSSHAIR_SIZE,
   UI_VIRTUAL_HEIGHT,
-  UI_VIRTUAL_WIDTH
+  UI_VIRTUAL_WIDTH,
+  WEAPON_LIGHT_OVERCHARGE_COLOR
 } from './constants'
 import { getGameState, isWeaponsOvercharged } from './gamestate'
 import { room } from './networking/messages'
@@ -181,10 +182,10 @@ export const uiMenu = () => {
       }}
     >
       <Label
-        value={boldUi(`Weapons overcharged by ${overchargePlayerName}!`)}
+        value={boldUi(`Weapons supercharged by ${overchargePlayerName}!`)}
         font={UI_FONT}
         fontSize={UI_OVERCHARGE_LABEL_FONT_SIZE}
-        color={UI_TINT}
+        color={Color4.fromColor3(WEAPON_LIGHT_OVERCHARGE_COLOR)}
         textAlign="middle-center"
         uiTransform={{
           width: UI_OVERCHARGE_LABEL_WIDTH,

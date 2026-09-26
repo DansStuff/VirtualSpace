@@ -7,13 +7,27 @@ double xp
 
 week 5-6
 
-need to figure out "make it unmistakable whos shooting, locked on or actually shooting
+need to test multiplayer shooting
 
-main laser for you + "supporting lasers"
+replace planet models
 
-"targeted" graphic for only local player
+screen graphics
 
-remove portraits?
+set blender models to origin - done
+  model recolors on overcharge / encounter
+
+camera shake - done
+  ship explosion
+
+double xp
+
+optimize colliders
+
+game balance pass
+
+unify materials
+
+
 
 
 
